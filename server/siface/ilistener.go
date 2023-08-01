@@ -2,10 +2,10 @@ package siface
 
 import "net"
 
-type HasGrpcListener interface {
+type IGrpcListener interface {
 	GrpcListener() (net.Listener, error)
 }
 
-type HasHttpListener interface {
+type IHttpListener interface {
 	HttpListener() (net.Listener, error)
 }

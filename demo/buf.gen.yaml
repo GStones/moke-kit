@@ -1,0 +1,13 @@
+version: v1
+plugins:
+  - plugin: buf.build/protocolbuffers/go
+    out: api/gen/
+  - plugin: buf.build/grpc/go
+    out: api/gen/
+    opt: require_unimplemented_servers=false
+  - plugin: buf.build/grpc-ecosystem/gateway
+    out: api/gen/
+    opt:
+      - generate_unbound_methods=true
+  - plugin: buf.build/grpc-ecosystem/openapiv2
+    out: third_party/OpenAPI

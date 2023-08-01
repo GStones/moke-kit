@@ -4,12 +4,13 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/base64"
+	"fmt"
+	"net"
+
 	"github.com/pkg/errors"
 	"github.com/soheilhy/cmux"
 	"go.uber.org/zap"
 	"google.golang.org/grpc/test/bufconn"
-	"moke-kit/server/network"
-	"net"
 )
 
 var (
@@ -18,7 +19,7 @@ var (
 )
 
 func init() {
-	grpcMatchWriter = cmux.HTTP2MatchHeaderFieldSendSettings("content-type", "application/rpc")
+	grpcMatchWriter = cmux.HTTP2MatchHeaderFieldSendSettings("content-type", "application/grpc")
 	httpMatcher = cmux.HTTP1Fast()
 }
 
@@ -26,7 +27,7 @@ type ConnectionMux struct {
 	logger    *zap.Logger
 	listener  net.Listener
 	mux       cmux.CMux
-	port      network.Port
+	port      int32
 	tlsConfig *tls.Config
 }
 
@@ -50,7 +51,7 @@ func (m *ConnectionMux) HttpListener() (listener net.Listener, err error) {
 }
 
 func (m *ConnectionMux) StartServing(_ context.Context) error {
-	if listener, err := network.NewTcpListener(m.port); err != nil {
+	if listener, err := net.Listen("tcp", fmt.Sprintf(":%d", m.port)); err != nil {
 		return err
 	} else {
 		if m.tlsConfig != nil {
@@ -64,7 +65,7 @@ func (m *ConnectionMux) StartServing(_ context.Context) error {
 		"multiplexing traffic",
 		zap.String("network", m.listener.Addr().Network()),
 		zap.String("address", m.listener.Addr().String()),
-		zap.Int("port", m.port.Value()),
+		zap.Int32("port", m.port),
 		zap.Bool("tls", m.tlsConfig != nil),
 	)
 
@@ -81,35 +82,27 @@ func (m *ConnectionMux) StopServing(_ context.Context) error {
 	return m.listener.Close()
 }
 
-func (m *ConnectionMux) Port() network.Port {
-	return m.port
-}
-
-type TestTcpConnectionMux struct {
+type TestConnectionMux struct {
 	listener *bufconn.Listener
 }
 
-func (m *TestTcpConnectionMux) Port() network.Port {
-	return network.Port(0)
-}
-
-func (m *TestTcpConnectionMux) GrpcListener() (net.Listener, error) {
+func (m *TestConnectionMux) GrpcListener() (net.Listener, error) {
 	return m.listener, nil
 }
 
-func (m *TestTcpConnectionMux) HttpListener() (net.Listener, error) {
+func (m *TestConnectionMux) HttpListener() (net.Listener, error) {
 	return m.listener, nil
 }
 
-func (m *TestTcpConnectionMux) StartServing(ctx context.Context) error {
+func (m *TestConnectionMux) StartServing(ctx context.Context) error {
 	return nil
 }
 
-func (m *TestTcpConnectionMux) StopServing(ctx context.Context) error {
+func (m *TestConnectionMux) StopServing(ctx context.Context) error {
 	return nil
 }
 
-func (m *TestTcpConnectionMux) Dial() (net.Conn, error) {
+func (m *TestConnectionMux) Dial() (net.Conn, error) {
 	return m.listener.Dial()
 }
 

@@ -7,7 +7,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-type Tracer interface {
+type ITracer interface {
 	Runner
 
 	StreamClientInterceptor() grpc.StreamClientInterceptor

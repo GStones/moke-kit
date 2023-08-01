@@ -1,19 +1,32 @@
 package zinx
 
 import (
+	"github.com/aceld/zinx/zconf"
 	"github.com/aceld/zinx/znet"
 	"go.uber.org/zap"
-	"moke-kit/server/network"
+	"moke-kit/server/internal/common"
+
+	"moke-kit/server/siface"
 )
 
-func NewZinxTcpServer(
+func NewZinxServer(
 	logger *zap.Logger,
-	port network.Port,
-) (result *ZinxServer, err error) {
+	mod common.ServerMod,
+	zinxTcpPort int32,
+	zinxWsPost int32,
+) (result siface.IZinxServer, err error) {
+	zconf.GlobalObject.WsPort = int(zinxWsPost)
+	zconf.GlobalObject.TCPPort = int(zinxTcpPort)
+	if mod.IsAll() {
+		zconf.GlobalObject.Mode = ""
+	} else if mod.HasWebsocket() {
+		zconf.GlobalObject.Mode = string(common.WsServerMod)
+	} else if mod.HasTcp() {
+		zconf.GlobalObject.Mode = string(common.TcpServerMod)
+	}
 	sio := znet.NewServer()
 	result = &ZinxServer{
 		logger: logger,
-		port:   port,
 		server: sio,
 	}
 	return

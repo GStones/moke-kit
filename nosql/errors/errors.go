@@ -5,6 +5,8 @@ import (
 )
 
 var (
+	ErrMissingNosqlURL     = errors.New("ErrMissingNosqlURL")
+	ErrInvalidNosqlURL     = errors.New("ErrInvalidNosqlURL")
 	ErrAnyVersionConflict  = errors.New("ErrAnyVersionConflict")
 	ErrDestIsNil           = errors.New("ErrDestIsNil")
 	ErrDestMustBePointer   = errors.New("ErrDestMustBePointer")

@@ -31,7 +31,7 @@ func testConnectionMuxFactory(t *testing.T) (mux *ConnectionMux, err error) {
 		logger := zap.NewNop()
 		port := network.Port(tc.portNumber)
 
-		if tcpConnectionMux, err := NewTcpConnectionMux(logger, port); err != nil {
+		if tcpConnectionMux, err := NewConnectionMux(logger, port); err != nil {
 			t.Error(err)
 		} else {
 			return tcpConnectionMux, err
@@ -44,7 +44,7 @@ func TestNewTcpConnectionMux(t *testing.T) {
 	logger := zap.NewNop()
 	port := network.Port(9083)
 
-	if _, err := NewTcpConnectionMux(logger, port); err != nil {
+	if _, err := NewConnectionMux(logger, port); err != nil {
 		t.Fatal("Could not create a new TCP connection multiplexer:", err)
 	}
 }
