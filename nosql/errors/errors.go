@@ -5,6 +5,7 @@ import (
 )
 
 var (
+	ErrVersionNotMatch     = errors.New("ErrVersionNotMatch")
 	ErrMissingNosqlURL     = errors.New("ErrMissingNosqlURL")
 	ErrInvalidNosqlURL     = errors.New("ErrInvalidNosqlURL")
 	ErrAnyVersionConflict  = errors.New("ErrAnyVersionConflict")

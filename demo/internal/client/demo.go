@@ -2,9 +2,12 @@ package client
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/abiosoft/ishell"
+	mm "github.com/grpc-ecosystem/go-grpc-middleware/v2/metadata"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 
 	pb "moke-kit/demo/api/gen/demo/api"
 	"moke-kit/utility/cshell"
@@ -50,7 +53,9 @@ func (p *Hello) sayHi(c *ishell.Context) {
 	cshell.Info(c, "Enter say hi message...")
 	msg := cshell.ReadLine(c, "message: ")
 
-	if response, err := p.client.Hi(context.Background(), &pb.HiRequest{
+	md := metadata.Pairs("authorization", fmt.Sprintf("%s %v", "bearer", "test"))
+	ctx := mm.MD(md).ToOutgoing(context.Background())
+	if response, err := p.client.Hi(ctx, &pb.HiRequest{
 		Message: msg,
 	}); err != nil {
 		cshell.Warn(c, err)

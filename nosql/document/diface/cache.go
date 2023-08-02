@@ -4,20 +4,20 @@ import (
 	"moke-kit/nosql/document/key"
 )
 
-// DocumentCache provides a cache for Document objects.
-type DocumentCache interface {
-	// Get retrieves a Document from the cache.
+// IDocumentCache provides a cache for Document objects.
+type IDocumentCache interface {
+	// GetCache Get retrieves a Document from the cache.
 	GetCache(key key.Key, doc interface{}) bool
-	// Set sets a Document in the cache.
+	// SetCache Set sets a Document in the cache.
 	SetCache(key key.Key, doc interface{})
-	// Delete deletes a Document from the cache.
+	// DeleteCache Delete deletes a Document from the cache.
 	DeleteCache(key key.Key)
 }
 type defaultDocumentCache struct {
 }
 
-// NewDocumentCache returns a new DocumentCache.
-func NewDocumentCache() DocumentCache {
+// DefaultDocumentCache returns a new IDocumentCache.
+func DefaultDocumentCache() IDocumentCache {
 	return &defaultDocumentCache{}
 }
 

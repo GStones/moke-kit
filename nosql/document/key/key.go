@@ -114,21 +114,21 @@ func (k *Key) Clear() {
 }
 
 // Parts returns a slice of the component parts of the keys.
-func (k Key) Parts() []string {
+func (k *Key) Parts() []string {
 	return strings.Split(k.String(), KeySeparator)[1:]
 }
 
 // Base returns the final KeySeparator-separated element of the keys.
-func (k Key) Base() string {
+func (k *Key) Base() string {
 	return k.String()[strings.LastIndex(k.String(), KeySeparator)+1:]
 }
 
-func (k Key) Prefix() string {
+func (k *Key) Prefix() string {
 	return k.String()[:strings.LastIndex(k.String(), KeySeparator)]
 }
 
 // Prefixes returns a slice of PrefixSeparator-separated elements of the Base.
-func (k Key) Prefixes() []string {
+func (k *Key) Prefixes() []string {
 	p := strings.Split(k.Base(), PrefixSeparator)
 	if len(p) > 0 {
 		p = p[:len(p)-1]
@@ -136,22 +136,22 @@ func (k Key) Prefixes() []string {
 	return p
 }
 
-func (k Key) String() string {
+func (k *Key) String() string {
 	return k.value
 }
 
-func (k Key) Bytes() []byte {
+func (k *Key) Bytes() []byte {
 	return []byte(k.value)
 }
 
-func (k Key) IsEqual(s string) bool {
+func (k *Key) IsEqual(s string) bool {
 	return k.String() == s
 }
 
-func (k Key) IsEmpty() bool {
+func (k *Key) IsEmpty() bool {
 	return k.value == ""
 }
 
-func (k Key) HasValue() bool {
+func (k *Key) HasValue() bool {
 	return k.value != ""
 }

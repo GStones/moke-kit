@@ -2,21 +2,25 @@ package nfx
 
 import (
 	"context"
+	"fmt"
+	"net/url"
 
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 
 	"moke-kit/nosql/document/diface"
+	"moke-kit/nosql/document/mongo"
+	"moke-kit/nosql/errors"
 )
 
 type DocumentStoreParams struct {
 	fx.In
-	DocumentStoreProvider diface.DocumentStoreProvider `name:"DocumentStoreProvider"`
+	DriverProvider diface.IDocumentDb `name:"DriverProvider"`
 }
 
 type DocumentStoreResult struct {
 	fx.Out
-	DocumentStoreProvider diface.DocumentStoreProvider `name:"DocumentStoreProvider"`
+	DriverProvider diface.IDocumentDb `name:"DriverProvider"`
 }
 
 func (g *DocumentStoreResult) NewDocument(
@@ -24,73 +28,40 @@ func (g *DocumentStoreResult) NewDocument(
 	l *zap.Logger,
 	n SettingsParams,
 ) (err error) {
-	//if n.DocumentStoreUrl != "" {
-	//	if u, e := url.Parse(n.DocumentStoreUrl); e != nil {
-	//		err = e
-	//	} else {
-	//		switch u.Scheme {
-	//		case "couchbase":
-	//			username := u.User.Username()
-	//			if username == "" {
-	//				username = n.NoSqlUser
-	//			}
-	//
-	//			password, set := u.User.Password()
-	//			if !set {
-	//				password = n.NoSqlPassword
-	//			}
-	//
-	//			cfg := couchbase.ClusterConfig{
-	//				ConnUrl:  fmt.Sprintf("couchbase://%s", u.Host),
-	//				Username: username,
-	//				Password: password,
-	//			}
-	//			l.Info("Connect to couchbase", zap.String("url", cfg.ConnUrl))
-	//			g.DocumentStoreProvider, err = couchbase.NewDocumentStoreProvider(cfg, l)
-	//		case "badger":
-	//			path := u.Path
-	//			if runtime.GOOS == "windows" {
-	//				// u.Path always has leading /, which on Windows does not play well with drive letters.
-	//				if len(path) > 2 && path[0] == '/' && path[2] == ':' {
-	//					path = path[1:]
-	//				}
-	//			}
-	//			g.DocumentStoreProvider, err = badger.NewDocumentStoreProvider(path, n.GCInterval, l)
-	//		case "mongodb":
-	//			username := u.User.Username()
-	//			if username == "" {
-	//				username = n.NoSqlUser
-	//			}
-	//
-	//			password, set := u.User.Password()
-	//			if !set {
-	//				password = n.NoSqlPassword
-	//			}
-	//
-	//			cfg := mongodb.ClusterConfig{
-	//				ConnUrl:  fmt.Sprintf("mongodb://%s", u.Host),
-	//				Username: username,
-	//				Password: password,
-	//			}
-	//			l.Info("Connect to mongodb", zap.String("url", cfg.ConnUrl))
-	//			g.DocumentStoreProvider, err = mongodb.NewDocumentStoreProvider(cfg, l)
-	//
-	//		case "test":
-	//			l.Info("Connect to test", zap.String("url", "test"))
-	//			g.DocumentStoreProvider, err = mock.NewDocumentStoreProvider()
-	//
-	//		default:
-	//			return errors.ErrInvalidNosqlURL
-	//		}
-	//	}
-	//} else {
-	//	return errors.ErrMissingNosqlURL
-	//}
+	if n.DocumentStoreUrl != "" {
+		if u, e := url.Parse(n.DocumentStoreUrl); e != nil {
+			err = e
+		} else {
+			switch u.Scheme {
+			case "mongodb":
+				username := u.User.Username()
+				if username == "" {
+					username = n.NoSqlUser
+				}
 
-	if g.DocumentStoreProvider != nil {
+				password, set := u.User.Password()
+				if !set {
+					password = n.NoSqlPassword
+				}
+				conn := fmt.Sprintf("mongodb://%s", u.Host)
+				l.Info("Connect to mongodb", zap.String("url", conn))
+				g.DriverProvider, err = mongo.NewDriverProvider(conn, username, password, l)
+			case "test":
+				l.Info("Connect to test", zap.String("url", "test"))
+				//g.DriverProvider, err = mock.NewDocumentStoreProvider()
+
+			default:
+				return errors.ErrInvalidNosqlURL
+			}
+		}
+	} else {
+		return errors.ErrMissingNosqlURL
+	}
+
+	if g.DriverProvider != nil {
 		lc.Append(fx.Hook{
 			OnStop: func(ctx context.Context) error {
-				return g.DocumentStoreProvider.Shutdown()
+				return g.DriverProvider.Shutdown()
 			},
 		})
 	}

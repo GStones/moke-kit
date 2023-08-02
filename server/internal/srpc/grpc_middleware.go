@@ -129,6 +129,8 @@ func addInterceptorOptions(
 		grpc.ChainUnaryInterceptor(ui...),
 	}
 
+	logger.Log("msg", "grpc server interceptor options", "options", interceptorOpts)
+
 	if opts == nil {
 		opts = interceptorOpts
 	} else {

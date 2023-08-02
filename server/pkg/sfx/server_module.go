@@ -3,11 +3,12 @@ package sfx
 import (
 	"go.uber.org/fx"
 	"go.uber.org/zap"
+
 	"moke-kit/server/internal/common"
 	"moke-kit/server/internal/srpc"
 	"moke-kit/server/internal/zinx"
 	"moke-kit/server/siface"
-	fxsvcapp "moke-kit/tracing/tfx"
+	"moke-kit/tracing/tfx"
 	"moke-kit/tracing/tiface"
 )
 
@@ -77,7 +78,7 @@ func (f *ServersResult) Execute(
 var ServersModule = fx.Provide(
 	func(
 		l *zap.Logger,
-		t fxsvcapp.TracerParams,
+		t tfx.TracerParams,
 		g SettingsParams,
 		//a GlobalAuthClient,
 		m ConnectionMuxParams,

@@ -22,6 +22,7 @@ require (
 	github.com/segmentio/kafka-go v0.4.42
 	github.com/soheilhy/cmux v0.1.5
 	github.com/spf13/cobra v1.7.0
+	go.mongodb.org/mongo-driver v1.12.0
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.42.0
 	go.opentelemetry.io/otel/trace v1.16.0
 	go.uber.org/atomic v1.11.0
@@ -126,7 +127,6 @@ require (
 	github.com/xtaci/kcp-go v5.4.20+incompatible // indirect
 	github.com/xtaci/lossyconn v0.0.0-20200209145036-adba10fffc37 // indirect
 	github.com/youmark/pkcs8 v0.0.0-20201027041543-1326539a0a0a // indirect
-	go.mongodb.org/mongo-driver v1.12.0 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	go.opentelemetry.io/otel v1.16.0 // indirect
 	go.opentelemetry.io/otel/metric v1.16.0 // indirect

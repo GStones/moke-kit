@@ -1,13 +1,16 @@
 package main
 
 import (
+	"moke-kit/demo/internal/demo"
 	"moke-kit/demo/pkg/dfx"
-	fxapp "moke-kit/fxmain"
+	"moke-kit/fxmain"
 )
 
 func main() {
-	fxapp.Main(
-		dfx.DemoModule,
-		dfx.DemoGatewayModule,
+	fxmain.Main(
+		dfx.SettingsModule,
+		demo.DemoModule,
+		demo.DemoGatewayModule,
+		dfx.DemoDBModule,
 	)
 }
