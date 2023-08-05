@@ -27,11 +27,9 @@ func (d *DriverProvider) OpenDbDriver(name string) (diface.ICollection, error) {
 	}
 }
 
-func NewProvider(
+func NewDriverProvider(
 	mClient *mongo.Client,
-	logger *zap.Logger) diface.IDocumentDb {
-	return &DriverProvider{
-		mClient: mClient,
-		logger:  logger,
-	}
+	logger *zap.Logger,
+) *DriverProvider {
+	return &DriverProvider{mClient, logger}
 }

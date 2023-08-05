@@ -7,6 +7,7 @@ import (
 )
 
 var Module = fx.Module("nosql", fx.Options(
+	nfx.MongoPureModule,
 	nfx.DocumentStoreModule,
 	nfx.SettingsModule,
 	nfx.RedisModule,

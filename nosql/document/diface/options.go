@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"time"
 
-	"moke-kit/nosql/errors"
+	"moke-kit/nosql/nerrors"
 )
 
 // Options contains all the various options that the provided WithXyz functions construct.
@@ -38,7 +38,7 @@ func NewOptions(opts ...Option) (options Options, err error) {
 func WithVersion(v Version) Option {
 	return func(o *Options) error {
 		if o.AnyVersion {
-			return errors.ErrAnyVersionConflict
+			return nerrors.ErrAnyVersionConflict
 		} else {
 			o.Version = v
 			return nil
@@ -50,7 +50,7 @@ func WithVersion(v Version) Option {
 func WithAnyVersion() Option {
 	return func(o *Options) error {
 		if o.Version != NoVersion {
-			return errors.ErrAnyVersionConflict
+			return nerrors.ErrAnyVersionConflict
 		} else {
 			o.AnyVersion = true
 			return nil
@@ -85,9 +85,9 @@ func WithMultipleSource(src map[string]interface{}) Option {
 func WithDestination(dst interface{}) Option {
 	return func(o *Options) error {
 		if dst == nil {
-			return errors.ErrDestIsNil
+			return nerrors.ErrDestIsNil
 		} else if reflect.TypeOf(dst).Kind() != reflect.Ptr {
-			return errors.ErrDestMustBePointer
+			return nerrors.ErrDestMustBePointer
 		} else {
 			o.Destination = dst
 			return nil
@@ -99,7 +99,7 @@ func WithDestination(dst interface{}) Option {
 func WithDestinationList(dst []interface{}) Option {
 	return func(o *Options) error {
 		if dst == nil {
-			return errors.ErrDestIsNil
+			return nerrors.ErrDestIsNil
 		} else {
 			o.DestinationList = dst
 			return nil

@@ -8,7 +8,7 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 
-	"moke-kit/nosql/errors"
+	"moke-kit/nosql/nerrors"
 )
 
 // RedisParams provides the RedisParams to the mfx dependency graph.
@@ -52,11 +52,11 @@ func (g *RedisResult) Execute(
 					DB:       1,
 				})
 			default:
-				return errors.ErrInvalidNosqlURL
+				return nerrors.ErrInvalidNosqlURL
 			}
 		}
 	} else {
-		return errors.ErrMissingNosqlURL
+		return nerrors.ErrMissingNosqlURL
 	}
 
 	if g.Redis != nil {

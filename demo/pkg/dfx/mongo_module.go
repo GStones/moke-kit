@@ -1,28 +1,28 @@
 package dfx
 
 import (
+	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
-	"moke-kit/nosql/document/diface"
 	"moke-kit/nosql/pkg/nfx"
 )
 
 type DemoDBParams struct {
 	fx.In
-	GameServerStore diface.ICollection `name:"GameServerStore"`
+	DemoDatabase *mongo.Database `name:"DemoDatabase"`
 }
 
 type DemoDBResult struct {
 	fx.Out
-	GameServerStore diface.ICollection `name:"GameServerStore"`
+	DemoDatabase *mongo.Database `name:"DemoDatabase"`
 }
 
 func (g *DemoDBResult) Execute(
 	l *zap.Logger,
 	dbName string,
-	dp diface.IDocumentDb,
+	mClient *mongo.Client,
 ) (err error) {
-	g.GameServerStore, err = dp.OpenDbDriver(dbName)
+	g.DemoDatabase = mClient.Database(dbName)
 	l.Info("OpenDbDriver", zap.String("DbName", dbName))
 	return
 }
@@ -31,9 +31,9 @@ var DemoDBModule = fx.Provide(
 	func(
 		l *zap.Logger,
 		s SettingsParams,
-		dsp nfx.DocumentStoreParams,
+		dsp nfx.MongoParams,
 	) (out DemoDBResult, err error) {
-		if err := out.Execute(l, s.DbName, dsp.DriverProvider); err != nil {
+		if err := out.Execute(l, s.DbName, dsp.MongoClient); err != nil {
 			return out, err
 		}
 		return out, nil

@@ -2,6 +2,7 @@ package mongo
 
 import (
 	"context"
+	"moke-kit/nosql/document/mongo/internal"
 	"time"
 
 	"go.mongodb.org/mongo-driver/mongo"
@@ -10,15 +11,20 @@ import (
 	"go.uber.org/zap"
 
 	"moke-kit/nosql/document/diface"
-	"moke-kit/nosql/document/mongo/internal"
 )
 
-func NewDriverProvider(
+func NewProvider(
+	mClient *mongo.Client,
+	logger *zap.Logger,
+) diface.IDocumentProvider {
+	return internal.NewDriverProvider(mClient, logger)
+}
+
+func NewMongoClient(
 	connect string,
 	username string,
 	password string,
-	l *zap.Logger,
-) (diface.IDocumentDb, error) {
+) (*mongo.Client, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	credential := options.Credential{
@@ -39,7 +45,6 @@ func NewDriverProvider(
 		if err != nil {
 			return nil, err
 		}
-		p := internal.NewProvider(client, l)
-		return p, nil
+		return client, nil
 	}
 }

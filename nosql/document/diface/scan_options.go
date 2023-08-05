@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 
 	"moke-kit/nosql/document/key"
-	errors2 "moke-kit/nosql/errors"
+	errors2 "moke-kit/nosql/nerrors"
 )
 
 const (

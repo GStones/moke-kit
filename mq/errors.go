@@ -58,7 +58,7 @@ var (
 	// topic format did not pass regex semantics validation
 	ErrTopicValidationFail = errors.New("ErrTopicValidationFail")
 
-	// CLI suite errors
+	// CLI suite nerrors
 	ErrInvalidImplementation    = errors.New("ErrInvalidImplementation")
 	ErrInvalidDeliverySemantics = errors.New("ErrInvalidDeliverySemantics")
 )

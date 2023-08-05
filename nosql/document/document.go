@@ -7,13 +7,15 @@ import (
 
 	"moke-kit/nosql/document/diface"
 	"moke-kit/nosql/document/key"
-	"moke-kit/nosql/errors"
+	"moke-kit/nosql/nerrors"
 )
 
 const MaxRetries = 5
 
 type DocumentBase struct {
-	Key      key.Key
+	Key  key.Key
+	Name string
+
 	clear    func()
 	dataType reflect.Type
 	data     interface{}
@@ -27,9 +29,8 @@ type DocumentBase struct {
 func (d *DocumentBase) Init(
 	data interface{},
 	clear func(),
-	key key.Key,
 	store diface.ICollection,
-
+	key key.Key,
 ) {
 	d.clear = clear
 	d.dataType = reflect.TypeOf(data)
@@ -46,7 +47,7 @@ func (d *DocumentBase) InitWithCache(
 	key key.Key,
 	cache diface.IDocumentCache,
 ) {
-	d.Init(data, clear, key, store)
+	d.Init(data, clear, store, key)
 	d.cache = cache
 }
 
@@ -57,7 +58,7 @@ func (d *DocumentBase) InitWithVersion(
 	key key.Key,
 	version diface.Version,
 ) {
-	d.Init(data, clear, key, store)
+	d.Init(data, clear, store, key)
 	d.version = version
 }
 
@@ -150,11 +151,11 @@ func (d *DocumentBase) doUpdate(f func() bool, u func() error) error {
 				}
 			}
 		} else {
-			return errors.ErrUpdateLogicFailed
+			return nerrors.ErrUpdateLogicFailed
 		}
 	}
 
-	return errors.ErrTooManyRetries
+	return nerrors.ErrTooManyRetries
 }
 
 func (d *DocumentBase) Update(f func() bool) error {

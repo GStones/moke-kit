@@ -15,6 +15,7 @@ func NewZinxServer(
 	zinxTcpPort int32,
 	zinxWsPost int32,
 ) (result siface.IZinxServer, err error) {
+	zconf.GlobalObject.LogIsolationLevel = 3
 	zconf.GlobalObject.WsPort = int(zinxWsPost)
 	zconf.GlobalObject.TCPPort = int(zinxTcpPort)
 	if mod.IsAll() {

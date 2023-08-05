@@ -2,13 +2,14 @@ package internal
 
 import (
 	"context"
-
+	"errors"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"moke-kit/nosql/document/diface"
 	"moke-kit/nosql/document/key"
-	"moke-kit/nosql/errors"
+	"moke-kit/nosql/nerrors"
 )
 
 type DatabaseDriver struct {
@@ -24,29 +25,25 @@ func (c *DatabaseDriver) Set(key key.Key, opts ...diface.Option) (diface.Version
 	if o, err := diface.NewOptions(opts...); err != nil {
 		return diface.NoVersion, err
 	} else if o.Source == nil {
-		return diface.NoVersion, errors.ErrSourceIsNil
-	} else if o.Version == diface.NoVersion {
-		if _, err := coll.InsertOne(
-			context.Background(),
-			bson.M{"_id": key.String(), "version": 1, "source": o.Source}); err != nil {
-			return 0, err
+		return diface.NoVersion, nerrors.ErrSourceIsNil
+	} else {
+		opt := options.Update()
+		filter := bson.M{"_id": key.String()}
+		if o.Version != diface.NoVersion {
+			filter["version"] = o.Version
 		} else {
-			return 1, nil
+			opt.SetUpsert(true)
 		}
-	} else if o.Version > 0 {
-		filter := bson.M{"_id": key.String(), "version": o.Version}
-		update := bson.M{"$set": o.Source, "$inc": bson.M{"version": 1}}
-		if res, err := coll.UpdateOne(context.Background(), filter, update); err != nil {
+		update := bson.M{"$set": bson.M{"data": o.Source}, "$inc": bson.M{"version": 1}}
+		if res, err := coll.UpdateOne(context.Background(), filter, update, opt); err != nil {
 			return 0, err
 		} else {
-			if res.MatchedCount == 0 {
-				return 0, errors.ErrVersionNotMatch
+			if res.MatchedCount == 0 && o.Version != diface.NoVersion {
+				return 0, nerrors.ErrVersionNotMatch
 			} else {
 				return o.Version + 1, nil
 			}
 		}
-	} else {
-		return diface.NoVersion, errors.ErrSourceIsNil
 	}
 }
 
@@ -56,13 +53,27 @@ func (c *DatabaseDriver) Get(key key.Key, opts ...diface.Option) (diface.Version
 		return diface.NoVersion, err
 	} else {
 		filter := bson.M{"_id": key.String()}
-		if o.Version > 0 {
+		if o.Version != diface.NoVersion {
 			filter["version"] = o.Version
 		}
-		if err := coll.FindOne(context.Background(), filter).Decode(o.Destination); err != nil {
-			return 0, err
+		if res := coll.FindOne(context.Background(), filter); res.Err() != nil {
+			if errors.Is(res.Err(), mongo.ErrNoDocuments) {
+				return 0, nerrors.ErrNotFound
+			}
+			return 0, res.Err()
 		} else {
-			return diface.NoVersion, nil
+			bRaw := &bson.Raw{}
+			if err := res.Decode(bRaw); err != nil {
+				return 0, err
+			} else {
+				if err := bRaw.Lookup("data").Unmarshal(o.Destination); err != nil {
+					return 0, err
+				}
+				if err := bRaw.Lookup("version").Unmarshal(&o.Version); err != nil {
+					return 0, err
+				}
+				return o.Version, nil
+			}
 		}
 	}
 }

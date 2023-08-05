@@ -2,6 +2,8 @@ package demo
 
 import (
 	"context"
+	"moke-kit/nosql/document/diface"
+	"moke-kit/nosql/pkg/nfx"
 
 	"go.uber.org/fx"
 	"go.uber.org/zap"
@@ -26,7 +28,12 @@ func (s *Service) Hi(ctx context.Context, request *pb.HiRequest) (*pb.HiResponse
 		return nil, err
 	} else {
 		s.logger.Info("LoadOrCreateDemo", zap.Any("data", data))
-		data.SetMessage(message)
+		if err := data.Update(func() bool {
+			data.SetMessage(message)
+			return true
+		}); err != nil {
+			return nil, err
+		}
 	}
 
 	return &pb.HiResponse{
@@ -51,21 +58,26 @@ func (s *Service) RegisterWithGatewayServer(server siface.IGatewayServer) error 
 
 func NewService(
 	logger *zap.Logger,
-	demoDb dfx.DemoDBParams,
+	coll diface.ICollection,
 ) (result *Service, err error) {
 	result = &Service{
 		logger:   logger,
-		database: db.OpenDatabase(logger, demoDb.GameServerStore),
+		database: db.OpenDatabase(logger, coll),
 	}
+
 	return
 }
 
-var DemoModule = fx.Provide(
+var Module = fx.Provide(
 	func(
 		l *zap.Logger,
 		db dfx.DemoDBParams,
+		dProvider nfx.DocumentStoreParams,
+		setting dfx.SettingsParams,
 	) (out sfx.GrpcServiceResult, err error) {
-		if s, err := NewService(l, db); err != nil {
+		if coll, err := dProvider.DriverProvider.OpenDbDriver(setting.DbName); err != nil {
+			return out, err
+		} else if s, err := NewService(l, coll); err != nil {
 			return out, err
 		} else {
 			out.GrpcService = s
@@ -78,8 +90,12 @@ var DemoGatewayModule = fx.Provide(
 	func(
 		l *zap.Logger,
 		db dfx.DemoDBParams,
+		dProvider nfx.DocumentStoreParams,
+		setting dfx.SettingsParams,
 	) (out sfx.GatewayServiceResult, err error) {
-		if s, err := NewService(l, db); err != nil {
+		if coll, err := dProvider.DriverProvider.OpenDbDriver(setting.DbName); err != nil {
+			return out, err
+		} else if s, err := NewService(l, coll); err != nil {
 			return out, err
 		} else {
 			out.GatewayService = s

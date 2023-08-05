@@ -1,19 +1,17 @@
 package diface
 
 import (
-	"math"
-
 	"moke-kit/nosql/document/key"
 )
 
-type Version = uint64
+type Version = int64
 
 const (
-	NoVersion Version = math.MaxUint64
+	NoVersion Version = 0
 )
 
-// IDocumentDb knows how to open document stores by name.
-type IDocumentDb interface {
+// IDocumentProvider knows how to open document stores by name.
+type IDocumentProvider interface {
 	OpenDbDriver(name string) (ICollection, error)
 	Shutdown() error
 }

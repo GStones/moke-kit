@@ -1,10 +1,11 @@
-package errors
+package nerrors
 
 import (
 	"errors"
 )
 
 var (
+	ErrNotFound            = errors.New("ErrNotFound")
 	ErrVersionNotMatch     = errors.New("ErrVersionNotMatch")
 	ErrMissingNosqlURL     = errors.New("ErrMissingNosqlURL")
 	ErrInvalidNosqlURL     = errors.New("ErrInvalidNosqlURL")

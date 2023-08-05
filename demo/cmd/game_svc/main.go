@@ -9,7 +9,7 @@ import (
 func main() {
 	fxmain.Main(
 		dfx.SettingsModule,
-		demo.DemoModule,
+		demo.Module,
 		demo.DemoGatewayModule,
 		dfx.DemoDBModule,
 	)

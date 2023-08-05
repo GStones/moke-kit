@@ -1,4 +1,4 @@
-package db
+package demo
 
 import "moke-kit/nosql/document/key"
 
