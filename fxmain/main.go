@@ -3,7 +3,7 @@ package fxmain
 import (
 	"context"
 	"moke-kit/fxmain/internal"
-	"moke-kit/fxmain/pkg/mfx"
+	"moke-kit/fxmain/pkg/module"
 	"time"
 
 	"go.uber.org/fx"
@@ -25,7 +25,7 @@ func AppRun(opts ...fx.Option) error {
 
 func Main(opts ...fx.Option) {
 	if err := AppRun(
-		mfx.InfraModule,
+		module.AppModule,
 		fx.Options(opts...),
 		fx.Invoke(internal.Launch),
 	); err != nil {

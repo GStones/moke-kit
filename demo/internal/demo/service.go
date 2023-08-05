@@ -22,7 +22,7 @@ type Service struct {
 
 func (s *Service) Hi(ctx context.Context, request *pb.HiRequest) (*pb.HiResponse, error) {
 	message := request.GetMessage()
-	s.logger.Info("Hi", zap.String("message", message), zap.Any("ctx", ctx))
+	s.logger.Info("Hi", zap.String("message", message))
 
 	if data, err := s.database.LoadOrCreateDemo("19000"); err != nil {
 		return nil, err

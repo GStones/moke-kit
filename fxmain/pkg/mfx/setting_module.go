@@ -1,6 +1,7 @@
 package mfx
 
 import (
+	"moke-kit/utility/uconfig"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -29,12 +30,12 @@ type AppResult struct {
 	Version     string `name:"Version" default:"unknown"`
 }
 
-func (l *AppResult) LoadConstant(value string) error {
-	l.AppName = value
+func (ar *AppResult) LoadConstant(value string) error {
+	ar.AppName = value
 	return nil
 }
 
-func (l *AppResult) LoadFromExecutable() (err error) {
+func (ar *AppResult) LoadFromExecutable() (err error) {
 	if exeName, e := os.Executable(); e != nil {
 		err = e
 	} else {
@@ -42,14 +43,23 @@ func (l *AppResult) LoadFromExecutable() (err error) {
 		if runtime.GOOS == "windows" && strings.HasSuffix(exeName, ".exe") {
 			exeName = exeName[:len(exeName)-4]
 		}
-		l.AppName = exeName
+		ar.AppName = exeName
 	}
 	return
 }
 
-var AppModule = fx.Provide(
+func (ar *AppResult) LoadFromEnv() (err error) {
+	err = uconfig.Load(ar)
+	return
+}
+
+var SettingModule = fx.Provide(
 	func() (out AppResult, err error) {
 		err = out.LoadFromExecutable()
+		if err != nil {
+			return
+		}
+		err = out.LoadFromEnv()
 		return
 	},
 )

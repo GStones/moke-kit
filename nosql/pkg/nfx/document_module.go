@@ -2,10 +2,12 @@ package nfx
 
 import (
 	"context"
-	"net/url"
-
+	mongo2 "go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
+	"moke-kit/fxmain/pkg/mfx"
+	"moke-kit/nosql/document/key"
+	"net/url"
 
 	"moke-kit/nosql/document/diface"
 	"moke-kit/nosql/document/mongo"
@@ -25,20 +27,23 @@ type DocumentStoreResult struct {
 func (g *DocumentStoreResult) NewDocument(
 	lc fx.Lifecycle,
 	l *zap.Logger,
-	mParams MongoParams,
-	n SettingsParams,
-) (err error) {
+	mClient *mongo2.Client,
+	connect string,
+	deployment string,
 
-	if mParams.MongoClient != nil {
-		g.DriverProvider = mongo.NewProvider(mParams.MongoClient, l)
+) (err error) {
+	key.SetNamespace(deployment)
+
+	if mClient != nil {
+		g.DriverProvider = mongo.NewProvider(mClient, l)
 	}
-	if n.DocumentStoreUrl != "" {
-		if u, e := url.Parse(n.DocumentStoreUrl); e != nil {
+	if connect != "" {
+		if u, e := url.Parse(connect); e != nil {
 			err = e
 		} else {
 			switch u.Scheme {
 			case "mongodb":
-				g.DriverProvider = mongo.NewProvider(mParams.MongoClient, l)
+				g.DriverProvider = mongo.NewProvider(mClient, l)
 			case "test":
 				l.Info("Connect to test", zap.String("url", "test"))
 				//g.DriverProvider, err = mock.NewDocumentStoreProvider()
@@ -67,8 +72,12 @@ var DocumentStoreModule = fx.Provide(
 		l *zap.Logger,
 		mp MongoParams,
 		sp SettingsParams,
+		as mfx.AppParams,
 	) (dOut DocumentStoreResult, err error) {
-		err = dOut.NewDocument(lc, l, mp, sp)
+		err = dOut.NewDocument(
+			lc, l, mp.MongoClient,
+			sp.DocumentStoreUrl, as.Deployment,
+		)
 		return
 	},
 )
