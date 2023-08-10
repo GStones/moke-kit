@@ -15,11 +15,8 @@ require (
 	github.com/hashicorp/vault/api v1.9.2
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/nats-io/nats.go v1.28.0
-	github.com/nsqio/go-nsq v1.1.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.14.0
-	github.com/rs/xid v1.5.0
-	github.com/segmentio/kafka-go v0.4.42
 	github.com/soheilhy/cmux v0.1.5
 	github.com/spf13/cobra v1.7.0
 	go.mongodb.org/mongo-driver v1.12.0
@@ -44,7 +41,6 @@ require (
 	github.com/DataDog/sketches-go v1.4.1 // indirect
 	github.com/Microsoft/go-winio v0.6.0 // indirect
 	github.com/abiosoft/readline v0.0.0-20180607040430-155bce2042db // indirect
-	github.com/benbjohnson/clock v1.3.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cenkalti/backoff/v3 v3.2.2 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
@@ -102,6 +98,7 @@ require (
 	github.com/nats-io/nats-server/v2 v2.9.20 // indirect
 	github.com/nats-io/nkeys v0.4.4 // indirect
 	github.com/nats-io/nuid v1.0.1 // indirect
+	github.com/nsqio/go-nsq v1.1.0 // indirect
 	github.com/onsi/ginkgo v1.16.5 // indirect
 	github.com/onsi/gomega v1.27.10 // indirect
 	github.com/opentracing/opentracing-go v1.2.0 // indirect
@@ -112,8 +109,10 @@ require (
 	github.com/prometheus/client_model v0.3.0 // indirect
 	github.com/prometheus/common v0.42.0 // indirect
 	github.com/prometheus/procfs v0.9.0 // indirect
+	github.com/rs/xid v1.4.0 // indirect
 	github.com/ryanuber/go-glob v1.0.0 // indirect
 	github.com/secure-systems-lab/go-securesystemslib v0.5.0 // indirect
+	github.com/segmentio/kafka-go v0.4.39 // indirect
 	github.com/snichols/gocb v1.3.4 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/testify v1.8.4 // indirect

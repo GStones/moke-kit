@@ -3,11 +3,11 @@ package db
 import (
 	"errors"
 	"moke-kit/demo/internal/demo/db/demo"
-	"moke-kit/nosql/document/diface"
+	"moke-kit/gorm/nosql/diface"
 
 	"go.uber.org/zap"
 
-	"moke-kit/nosql/nerrors"
+	"moke-kit/gorm/nerrors"
 )
 
 type Database struct {

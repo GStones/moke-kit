@@ -2,15 +2,17 @@ package demo
 
 import (
 	"context"
-	"moke-kit/nosql/document/diface"
-	"moke-kit/nosql/pkg/nfx"
-
 	"go.uber.org/fx"
 	"go.uber.org/zap"
+	"moke-kit/mq/common"
 
 	pb "moke-kit/demo/api/gen/demo/api"
 	"moke-kit/demo/internal/demo/db"
 	"moke-kit/demo/pkg/dfx"
+	"moke-kit/gorm/nosql/diface"
+	"moke-kit/gorm/pkg/nfx"
+	"moke-kit/mq/pkg/qfx"
+	"moke-kit/mq/qiface"
 	"moke-kit/server/pkg/sfx"
 	"moke-kit/server/siface"
 )
@@ -18,12 +20,14 @@ import (
 type Service struct {
 	logger   *zap.Logger
 	database db.Database
+	mq       qiface.MessageQueue
 }
 
 func (s *Service) Hi(ctx context.Context, request *pb.HiRequest) (*pb.HiResponse, error) {
 	message := request.GetMessage()
 	s.logger.Info("Hi", zap.String("message", message))
 
+	// database create
 	if data, err := s.database.LoadOrCreateDemo("19000"); err != nil {
 		return nil, err
 	} else {
@@ -34,6 +38,13 @@ func (s *Service) Hi(ctx context.Context, request *pb.HiRequest) (*pb.HiResponse
 		}); err != nil {
 			return nil, err
 		}
+	}
+
+	// mq publish
+	if err := s.mq.Publish(
+		common.NatsHeader.CreateTopic("demo"), qiface.WithBytes([]byte(message)),
+	); err != nil {
+		return nil, err
 	}
 
 	return &pb.HiResponse{
@@ -59,10 +70,12 @@ func (s *Service) RegisterWithGatewayServer(server siface.IGatewayServer) error 
 func NewService(
 	logger *zap.Logger,
 	coll diface.ICollection,
+	mq qiface.MessageQueue,
 ) (result *Service, err error) {
 	result = &Service{
 		logger:   logger,
 		database: db.OpenDatabase(logger, coll),
+		mq:       mq,
 	}
 
 	return
@@ -74,10 +87,11 @@ var Module = fx.Provide(
 		db dfx.DemoDBParams,
 		dProvider nfx.DocumentStoreParams,
 		setting dfx.SettingsParams,
+		mqParams qfx.MessageQueueParams,
 	) (out sfx.GrpcServiceResult, err error) {
 		if coll, err := dProvider.DriverProvider.OpenDbDriver(setting.DbName); err != nil {
 			return out, err
-		} else if s, err := NewService(l, coll); err != nil {
+		} else if s, err := NewService(l, coll, mqParams.MessageQueue); err != nil {
 			return out, err
 		} else {
 			out.GrpcService = s
@@ -86,16 +100,17 @@ var Module = fx.Provide(
 	},
 )
 
-var DemoGatewayModule = fx.Provide(
+var GatewayModule = fx.Provide(
 	func(
 		l *zap.Logger,
 		db dfx.DemoDBParams,
 		dProvider nfx.DocumentStoreParams,
 		setting dfx.SettingsParams,
+		mqParams qfx.MessageQueueParams,
 	) (out sfx.GatewayServiceResult, err error) {
 		if coll, err := dProvider.DriverProvider.OpenDbDriver(setting.DbName); err != nil {
 			return out, err
-		} else if s, err := NewService(l, coll); err != nil {
+		} else if s, err := NewService(l, coll, mqParams.MessageQueue); err != nil {
 			return out, err
 		} else {
 			out.GatewayService = s

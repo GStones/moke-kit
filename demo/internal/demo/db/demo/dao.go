@@ -1,15 +1,15 @@
 package demo
 
 import (
-	"moke-kit/nosql/document"
-	"moke-kit/nosql/document/diface"
+	"moke-kit/gorm/nosql"
+	"moke-kit/gorm/nosql/diface"
 )
 
 type Dao struct {
-	document.DocumentBase `bson:"-"`
-	Id                    string `bson:"_id"`
-	appId                 string `bson:"-"`
-	Data                  *Data  `bson:"data"`
+	nosql.DocumentBase `bson:"-"`
+	Id                 string `bson:"_id"`
+	appId              string `bson:"-"`
+	Data               *Data  `bson:"data"`
 }
 
 func (dm *Dao) Init(id string, doc diface.ICollection) error {
