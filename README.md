@@ -24,6 +24,13 @@ Manage the startup and shutdown of all modules
 * Provide basic creation method of service
 * Provide basic lifecycle management of services
 * Provide basic dependency injection of services
+## tracing(TODO)
+Provide basic tracing support
+## logging
+Provide `uber/zap` basic logging support
+
+## demo 
+  An example for moke-kits
 
 
 
