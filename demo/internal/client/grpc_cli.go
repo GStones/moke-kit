@@ -13,30 +13,30 @@ import (
 	"moke-kit/utility/cshell"
 )
 
-type Hello struct {
-	client pb.HelloClient
+type DemoGrpc struct {
+	client pb.DemoClient
 	cmd    *ishell.Cmd
 }
 
-func NewHello(conn *grpc.ClientConn) *Hello {
+func NewDemoGrpc(conn *grpc.ClientConn) *DemoGrpc {
 	cmd := &ishell.Cmd{
 		Name:    "demo",
 		Help:    "demo interactive",
 		Aliases: []string{"D"},
 	}
-	p := &Hello{
-		client: pb.NewHelloClient(conn),
+	p := &DemoGrpc{
+		client: pb.NewDemoClient(conn),
 		cmd:    cmd,
 	}
 	p.initSubShells()
 	return p
 }
 
-func (p *Hello) GetCmd() *ishell.Cmd {
+func (p *DemoGrpc) GetCmd() *ishell.Cmd {
 	return p.cmd
 }
 
-func (p *Hello) initSubShells() {
+func (p *DemoGrpc) initSubShells() {
 	p.cmd.AddCmd(&ishell.Cmd{
 		Name:    "hi",
 		Help:    "say hi",
@@ -52,7 +52,7 @@ func (p *Hello) initSubShells() {
 
 }
 
-func (p *Hello) sayHi(c *ishell.Context) {
+func (p *DemoGrpc) sayHi(c *ishell.Context) {
 	c.ShowPrompt(false)
 	defer c.ShowPrompt(true)
 
@@ -62,6 +62,7 @@ func (p *Hello) sayHi(c *ishell.Context) {
 	md := metadata.Pairs("authorization", fmt.Sprintf("%s %v", "bearer", "test"))
 	ctx := mm.MD(md).ToOutgoing(context.Background())
 	if response, err := p.client.Hi(ctx, &pb.HiRequest{
+		Uid:     "10000",
 		Message: msg,
 	}); err != nil {
 		cshell.Warn(c, err)
@@ -70,7 +71,7 @@ func (p *Hello) sayHi(c *ishell.Context) {
 	}
 }
 
-func (p *Hello) watch(c *ishell.Context) {
+func (p *DemoGrpc) watch(c *ishell.Context) {
 
 	c.ShowPrompt(false)
 	defer c.ShowPrompt(true)

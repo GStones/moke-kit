@@ -5,7 +5,7 @@ option go_package = "demo/api;pb";
 
 import "google/api/annotations.proto";
 
-service Hello {
+service Demo {
   rpc Hi (HiRequest) returns (HiResponse) {
     option (google.api.http) = {
       post: "/v1/hello/hi"
@@ -20,7 +20,8 @@ service Hello {
 }
 
 message HiRequest {
-  string message = 1;
+  string uid = 1;
+  string message = 2;
 }
 
 message HiResponse {
@@ -28,7 +29,8 @@ message HiResponse {
 }
 
 message WatchRequest {
-  string topic = 1;
+  string uid = 1;
+  string topic = 2;
 }
 
 message WatchResponse {

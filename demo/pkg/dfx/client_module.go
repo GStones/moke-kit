@@ -11,7 +11,7 @@ import (
 )
 
 type DemoClient struct {
-	client pb.HelloClient
+	client pb.DemoClient
 }
 
 func (dc *DemoClient) Hi(ctx context.Context, message string) (string, error) {
@@ -50,7 +50,7 @@ func NewDemoClient(
 		return nil, err
 	}
 	result = &DemoClient{
-		client: pb.NewHelloClient(cConn),
+		client: pb.NewDemoClient(cConn),
 	}
 	return
 }

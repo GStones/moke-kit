@@ -11,10 +11,16 @@ import (
 func main() {
 	fxmain.Main(
 		dfx.SettingsModule,
-		demo.Module,
-		demo.GatewayModule,
+		// db
 		dfx.DemoDBModule,
+		// message queue
 		mq.Module,
 		qfx.NatsModule,
+		// grpc server
+		demo.GrpcModule,
+		// http server
+		demo.GatewayModule,
+		// tcp/websocket server
+		demo.ZinxModule,
 	)
 }

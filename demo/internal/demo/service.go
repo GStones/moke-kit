@@ -2,12 +2,13 @@ package demo
 
 import (
 	"context"
+	"github.com/aceld/zinx/ziface"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
-	"moke-kit/mq/common"
-
+	"google.golang.org/protobuf/proto"
 	pb "moke-kit/demo/api/gen/demo/api"
 	"moke-kit/demo/internal/demo/db"
+	"moke-kit/demo/internal/demo/handlers"
 	"moke-kit/demo/pkg/dfx"
 	"moke-kit/mq/pkg/qfx"
 	"moke-kit/mq/qiface"
@@ -18,31 +19,27 @@ import (
 )
 
 type Service struct {
-	logger   *zap.Logger
-	database db.Database
-	mq       qiface.MessageQueue
+	logger      *zap.Logger
+	demoHandler *handlers.Demo
 }
 
-func (s *Service) Watch(request *pb.WatchRequest, server pb.Hello_WatchServer) error {
+// ---------------- grpc ----------------
+
+func (s *Service) Watch(request *pb.WatchRequest, server pb.Demo_WatchServer) error {
 	topic := request.GetTopic()
 	s.logger.Info("Watch", zap.String("topic", topic))
 
-	// mq subscribe
-	sub, err := s.mq.Subscribe(
-		common.NatsHeader.CreateTopic(topic),
-		func(msg qiface.Message, err error) common.ConsumptionCode {
+	if err := s.demoHandler.Watch(
+		server.Context(),
+		topic,
+		func(message string) error {
 			if err := server.Send(&pb.WatchResponse{
-				Message: string(msg.Data()),
+				Message: message,
 			}); err != nil {
-				return common.ConsumeNackPersistentFailure
+				return err
 			}
-			return common.ConsumeAck
-		})
-	if err != nil {
-		return err
-	}
-	<-server.Context().Done()
-	if err := sub.Unsubscribe(); err != nil {
+			return nil
+		}); err != nil {
 		return err
 	}
 
@@ -53,39 +50,23 @@ func (s *Service) Hi(ctx context.Context, request *pb.HiRequest) (*pb.HiResponse
 	message := request.GetMessage()
 	s.logger.Info("Hi", zap.String("message", message))
 
-	// database create
-	if data, err := s.database.LoadOrCreateDemo("19000"); err != nil {
-		return nil, err
-	} else {
-		s.logger.Info("LoadOrCreateDemo", zap.Any("data", data))
-		if err := data.Update(func() bool {
-			data.SetMessage(message)
-			return true
-		}); err != nil {
-			return nil, err
-		}
-	}
-
-	// mq publish
-	if err := s.mq.Publish(
-		common.NatsHeader.CreateTopic("demo"), qiface.WithBytes([]byte(message)),
-	); err != nil {
+	if err := s.demoHandler.Hi(request.GetUid(), request.GetMessage()); err != nil {
 		return nil, err
 	}
-
 	return &pb.HiResponse{
 		Message: "response:  " + message,
 	}, nil
 
 }
-
 func (s *Service) RegisterWithGrpcServer(server siface.IGrpcServer) error {
-	pb.RegisterHelloServer(server.GrpcServer(), s)
+	pb.RegisterDemoServer(server.GrpcServer(), s)
 	return nil
 }
 
+// ---------------- gateway ----------------
+
 func (s *Service) RegisterWithGatewayServer(server siface.IGatewayServer) error {
-	return pb.RegisterHelloHandlerFromEndpoint(
+	return pb.RegisterDemoHandlerFromEndpoint(
 		context.Background(),
 		server.GatewayRuntimeMux(),
 		server.Endpoint(),
@@ -93,21 +74,72 @@ func (s *Service) RegisterWithGatewayServer(server siface.IGatewayServer) error 
 	)
 }
 
+//---------------- zinx ----------------
+
+func (s *Service) PreHandle(request ziface.IRequest) {
+
+}
+
+func (s *Service) Handle(request ziface.IRequest) {
+	switch request.GetMsgID() {
+	case 1:
+		req := &pb.HiRequest{}
+		if err := proto.Unmarshal(request.GetData(), req); err != nil {
+			s.logger.Error("unmarshal request data error", zap.Error(err))
+		} else {
+			if err := s.demoHandler.Hi(req.GetUid(), req.GetMessage()); err != nil {
+				s.logger.Error("Hi error", zap.Error(err))
+			}
+		}
+	case 2:
+		req := &pb.WatchRequest{}
+		if err := proto.Unmarshal(request.GetData(), req); err != nil {
+			s.logger.Error("unmarshal request data error", zap.Error(err))
+		} else {
+			if err := s.demoHandler.Watch(
+				request.GetConnection().Context(),
+				req.GetTopic(),
+				func(message string) error {
+					resp := &pb.WatchResponse{
+						Message: message,
+					}
+					if data, err := proto.Marshal(resp); err != nil {
+						return err
+					} else if err := request.GetConnection().SendMsg(2, data); err != nil {
+						return err
+					}
+					return nil
+				}); err != nil {
+				s.logger.Error("Watch error", zap.Error(err))
+			}
+		}
+	}
+}
+
+func (s *Service) PostHandle(request ziface.IRequest) {
+
+}
+
+func (s *Service) RegisterWithServer(server siface.IZinxServer) {
+	server.ZinxServer().AddRouter(1, s)
+	server.ZinxServer().AddRouter(2, s)
+}
+
 func NewService(
 	logger *zap.Logger,
 	coll diface.ICollection,
 	mq qiface.MessageQueue,
 ) (result *Service, err error) {
-	result = &Service{
-		logger:   logger,
-		database: db.OpenDatabase(logger, coll),
-		mq:       mq,
-	}
+	handler := handlers.NewDemo(logger, db.OpenDatabase(logger, coll), mq)
 
+	result = &Service{
+		logger:      logger,
+		demoHandler: handler,
+	}
 	return
 }
 
-var Module = fx.Provide(
+var GrpcModule = fx.Provide(
 	func(
 		l *zap.Logger,
 		db dfx.DemoDBParams,
@@ -140,6 +172,25 @@ var GatewayModule = fx.Provide(
 			return out, err
 		} else {
 			out.GatewayService = s
+		}
+		return
+	},
+)
+
+var ZinxModule = fx.Provide(
+	func(
+		l *zap.Logger,
+		db dfx.DemoDBParams,
+		dProvider nfx.DocumentStoreParams,
+		setting dfx.SettingsParams,
+		mqParams qfx.MessageQueueParams,
+	) (out sfx.ZinxServiceResult, err error) {
+		if coll, err := dProvider.DriverProvider.OpenDbDriver(setting.DbName); err != nil {
+			return out, err
+		} else if s, err := NewService(l, coll, mqParams.MessageQueue); err != nil {
+			return out, err
+		} else {
+			out.ZinxService = s
 		}
 		return
 	},

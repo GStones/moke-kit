@@ -9,11 +9,13 @@ import (
 )
 
 var options struct {
-	host string
+	host    string
+	tcpHost string
 }
 
 const (
-	DefaultHost = "localhost:8081"
+	DefaultHost    = "localhost:8081"
+	DefaultTcpHost = "localhost:8888"
 )
 
 func main() {
@@ -26,16 +28,30 @@ func main() {
 		&options.host,
 		"host",
 		DefaultHost,
-		"service (<host>:<port>)",
+		"grpc http service (<host>:<port>)",
 	)
 
-	shell := &cobra.Command{
-		Use:   "shell",
-		Short: "Run an interactive auth service client",
+	rootCmd.PersistentFlags().StringVar(
+		&options.tcpHost,
+		"tcp_host",
+		DefaultTcpHost,
+		"zinx service (<host>:<port>)",
+	)
+
+	sGrpc := &cobra.Command{
+		Use:   "grpc",
+		Short: "Run an interactive grpc client",
 		Run: func(cmd *cobra.Command, args []string) {
-			client.Shell(options.host)
+			client.RunGrpc(options.host)
 		},
 	}
-	rootCmd.AddCommand(shell)
+	sZinx := &cobra.Command{
+		Use:   "zinx",
+		Short: "Run an interactive zinx client",
+		Run: func(cmd *cobra.Command, args []string) {
+			client.RunZinx(options.tcpHost)
+		},
+	}
+	rootCmd.AddCommand(sGrpc, sZinx)
 	_ = rootCmd.ExecuteContext(context.Background())
 }
