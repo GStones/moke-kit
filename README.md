@@ -1,20 +1,30 @@
-# moke-kit 
- 一个基于uber/fx搭建的依赖框架结构套件，提供各种组建的依赖注入，以及各种组件的初始化，以及各种组件的生命周期管理。
+# moke-kit
+A dependency framework structure kit based on uber/fx, which provides dependency injection of various components, as well as initialization of various components, and lifecycle management of various components.
+
+## warning
+The current framework is still in the development stage and cannot be used in a production environment
 ## server
-提供可支持`http` `tcp` `grpc` 的服务注入机制
- * http: 基于 grpc-gateway 代理实现
- * grpc: 基于`grpc`实现 
- * tcp： 基于`zinx`实现
- 
+Provides services that support `http` `tcp` `grpc` injection mechanism
+ * http: Based on grpc-gateway proxy implementation
+ * grpc: Based on `grpc` implementation
+ * tcp: Based on `zinx` implementation
+
 ## gorm
- * mongodb: 提供mongodb的基本adapter
- * mock: 提供mock实现(TODO)
+nosql orm framework
+* mongodb: Provides basic adapter for mongodb
+* mock: Provides mock implementation (TODO)
 ## mq
- * nats: 提供nats的基本adapter 
- * kafka: 提供kafka的基本adapter(TODO)
- * rabbitmq: 提供rabbitmq的基本adapter(TODO)
- * mock: 提供mock实现(TODO)
+messageQueue basic adapter
+* nats: Provides basic adapter for nats
+* kafka: Provides basic adapter for kafka (TODO)
+* rabbitmq: Provides basic adapter for rabbitmq (TODO)
+* mock: Provides mock implementation (TODO)
 ## fxmain
- * 提供服务的基本创建方法
- * 提供服务的基本生命周期管理
- * 提供服务的基本依赖注入
+Manage the startup and shutdown of all modules
+* Provide basic creation method of service
+* Provide basic lifecycle management of services
+* Provide basic dependency injection of services
+
+
+
+
