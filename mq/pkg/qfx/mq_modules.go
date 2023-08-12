@@ -2,11 +2,11 @@ package qfx
 
 import (
 	"go.uber.org/fx"
-	"moke-kit/mq/common"
-	"moke-kit/mq/qiface"
 
 	"moke-kit/fxmain/pkg/mfx"
+	"moke-kit/mq/common"
 	"moke-kit/mq/internal"
+	"moke-kit/mq/qiface"
 )
 
 type MessageQueueParams struct {
@@ -23,8 +23,9 @@ type MessageQueueResult struct {
 
 type MQImplementations struct {
 	fx.In
-	KafkaMQ qiface.MessageQueue `name:"KafkaMQ" optional:"true"`
+
 	NatsMQ  qiface.MessageQueue `name:"NatsMQ" optional:"true"`
+	KafkaMQ qiface.MessageQueue `name:"KafkaMQ" optional:"true"`
 	NsqMQ   qiface.MessageQueue `name:"NsqMQ" optional:"true"`
 	LocalMQ qiface.MessageQueue `name:"LocalMQ" optional:"true"`
 }
@@ -43,7 +44,7 @@ func (g *MessageQueueResult) Execute(s mfx.AppParams, i MQImplementations) (err 
 	return nil
 }
 
-var Module = fx.Provide(
+var MqModule = fx.Provide(
 	func(s mfx.AppParams, i MQImplementations) (out MessageQueueResult, err error) {
 		err = out.Execute(s, i)
 		return

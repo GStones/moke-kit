@@ -43,6 +43,12 @@ func (p *Hello) initSubShells() {
 		Aliases: []string{"hi"},
 		Func:    p.sayHi,
 	})
+	p.cmd.AddCmd(&ishell.Cmd{
+		Name:    "watch",
+		Help:    "watch topic",
+		Aliases: []string{"w"},
+		Func:    p.watch,
+	})
 
 }
 
@@ -61,5 +67,31 @@ func (p *Hello) sayHi(c *ishell.Context) {
 		cshell.Warn(c, err)
 	} else {
 		cshell.Infof(c, "Response: %s", response.Message)
+	}
+}
+
+func (p *Hello) watch(c *ishell.Context) {
+
+	c.ShowPrompt(false)
+	defer c.ShowPrompt(true)
+
+	cshell.Info(c, "Enter watch topic...")
+	topic := cshell.ReadLine(c, "topic: ")
+
+	md := metadata.Pairs("authorization", fmt.Sprintf("%s %v", "bearer", "test"))
+	ctx := mm.MD(md).ToOutgoing(context.Background())
+	if stream, err := p.client.Watch(ctx, &pb.WatchRequest{
+		Topic: topic,
+	}); err != nil {
+		cshell.Warn(c, err)
+	} else {
+		for {
+			if response, err := stream.Recv(); err != nil {
+				cshell.Warn(c, err)
+				break
+			} else {
+				cshell.Infof(c, "Response: %s \r\n", response.Message)
+			}
+		}
 	}
 }

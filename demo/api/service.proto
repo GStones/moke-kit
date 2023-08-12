@@ -12,6 +12,11 @@ service Hello {
       body: "*"
     };
   };
+  rpc Watch(WatchRequest) returns (stream WatchResponse) {
+    option (google.api.http) = {
+      get: "/v1/hello/watch"
+    };
+  };
 }
 
 message HiRequest {
@@ -19,5 +24,13 @@ message HiRequest {
 }
 
 message HiResponse {
+  string message = 1;
+}
+
+message WatchRequest {
+  string topic = 1;
+}
+
+message WatchResponse {
   string message = 1;
 }

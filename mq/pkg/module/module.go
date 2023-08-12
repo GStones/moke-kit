@@ -7,6 +7,6 @@ import (
 )
 
 var Module = fx.Module("mq", fx.Options(
-	qfx.Module,
+	qfx.MqModule,
 	qfx.SettingModule,
 ))

@@ -3,18 +3,18 @@ package qfx
 import (
 	"go.uber.org/fx"
 	"go.uber.org/zap"
-	"moke-kit/mq/qiface"
 
 	"moke-kit/mq/internal/nats"
+	"moke-kit/mq/qiface"
 )
 
 type NatsResult struct {
 	fx.Out
-	qiface.MessageQueue `name:"NatsMQ"`
+	NatsMQ qiface.MessageQueue `name:"NatsMQ"`
 }
 
 func (k *NatsResult) Execute(logger *zap.Logger, s SettingsParams) (err error) {
-	k.MessageQueue, err = nats.NewMessageQueue(logger, s.NatsUrl)
+	k.NatsMQ, err = nats.NewMessageQueue(logger, s.NatsUrl)
 	if err != nil {
 		logger.Error("Nats message queue connect failure:",
 			zap.Error(err),

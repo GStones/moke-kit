@@ -23,6 +23,32 @@ type Service struct {
 	mq       qiface.MessageQueue
 }
 
+func (s *Service) Watch(request *pb.WatchRequest, server pb.Hello_WatchServer) error {
+	topic := request.GetTopic()
+	s.logger.Info("Watch", zap.String("topic", topic))
+
+	// mq subscribe
+	sub, err := s.mq.Subscribe(
+		common.NatsHeader.CreateTopic(topic),
+		func(msg qiface.Message, err error) common.ConsumptionCode {
+			if err := server.Send(&pb.WatchResponse{
+				Message: string(msg.Data()),
+			}); err != nil {
+				return common.ConsumeNackPersistentFailure
+			}
+			return common.ConsumeAck
+		})
+	if err != nil {
+		return err
+	}
+	<-server.Context().Done()
+	if err := sub.Unsubscribe(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (s *Service) Hi(ctx context.Context, request *pb.HiRequest) (*pb.HiResponse, error) {
 	message := request.GetMessage()
 	s.logger.Info("Hi", zap.String("message", message))

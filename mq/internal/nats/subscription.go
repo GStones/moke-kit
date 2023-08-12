@@ -1,24 +1,24 @@
 package nats
 
 import (
-	"moke-kit/mq/common"
-	qiface2 "moke-kit/mq/qiface"
 	"sync"
 
 	"github.com/google/uuid"
 	"github.com/nats-io/nats.go"
 	"github.com/pkg/errors"
 
+	"moke-kit/mq/common"
 	"moke-kit/mq/internal/qerrors"
+	"moke-kit/mq/qiface"
 )
 
 type Subscription struct {
 	topic       string
 	mutex       sync.Mutex
 	nSub        *nats.Subscription
-	handler     qiface2.SubResponseHandler
-	decoder     qiface2.Decoder
-	vPtrFactory qiface2.ValuePtrFactory
+	handler     qiface.SubResponseHandler
+	decoder     qiface.Decoder
+	vPtrFactory qiface.ValuePtrFactory
 }
 
 func NewSubscription(
@@ -26,9 +26,9 @@ func NewSubscription(
 	conn *nats.Conn,
 	deliverySemantics common.DeliverySemantics,
 	queue string,
-	handler qiface2.SubResponseHandler,
-	decoder qiface2.Decoder,
-	vPtrFactory qiface2.ValuePtrFactory,
+	handler qiface.SubResponseHandler,
+	decoder qiface.Decoder,
+	vPtrFactory qiface.ValuePtrFactory,
 ) (*Subscription, error) {
 	sub := &Subscription{
 		topic:       topic,
