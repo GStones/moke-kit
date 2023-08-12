@@ -9,10 +9,10 @@ import (
 	"go.uber.org/zap"
 
 	"moke-kit/fxmain/pkg/mfx"
-	"moke-kit/gorm/nerrors"
-	"moke-kit/gorm/nosql/diface"
-	"moke-kit/gorm/nosql/key"
-	"moke-kit/gorm/nosql/mongo"
+	"moke-kit/nsorm/nerrors"
+	"moke-kit/nsorm/nosql/diface"
+	"moke-kit/nsorm/nosql/key"
+	"moke-kit/nsorm/nosql/mongo"
 )
 
 type DocumentStoreParams struct {

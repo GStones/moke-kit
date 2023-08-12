@@ -4,8 +4,8 @@ import (
 	"go.uber.org/fx"
 
 	"moke-kit/fxmain/pkg/mfx"
-	nosql "moke-kit/gorm/pkg/module"
 	"moke-kit/logging"
+	nosql "moke-kit/nsorm/pkg/module"
 	server "moke-kit/server/pkg/module"
 	tracing "moke-kit/tracing/module"
 )

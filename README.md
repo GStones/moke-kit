@@ -9,7 +9,7 @@ Provides services that support `http` `tcp` `grpc` injection mechanism
  * grpc: Based on `grpc` implementation
  * tcp: Based on `zinx` implementation
 
-## gorm
+## nsorm
 nosql orm framework
 * mongodb: Provides basic adapter for mongodb
 * mock: Provides mock implementation (TODO)

@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"time"
 
-	"moke-kit/gorm/nerrors"
+	"moke-kit/nsorm/nerrors"
 )
 
 type Version = int64

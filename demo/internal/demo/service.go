@@ -9,10 +9,10 @@ import (
 	pb "moke-kit/demo/api/gen/demo/api"
 	"moke-kit/demo/internal/demo/db"
 	"moke-kit/demo/pkg/dfx"
-	"moke-kit/gorm/nosql/diface"
-	"moke-kit/gorm/pkg/nfx"
 	"moke-kit/mq/pkg/qfx"
 	"moke-kit/mq/qiface"
+	"moke-kit/nsorm/nosql/diface"
+	"moke-kit/nsorm/pkg/nfx"
 	"moke-kit/server/pkg/sfx"
 	"moke-kit/server/siface"
 )

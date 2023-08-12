@@ -8,7 +8,7 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 
-	"moke-kit/gorm/nerrors"
+	"moke-kit/nsorm/nerrors"
 )
 
 // RedisParams provides the RedisParams to the mfx dependency graph.

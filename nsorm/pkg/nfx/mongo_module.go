@@ -3,14 +3,14 @@ package nfx
 import (
 	"context"
 	"fmt"
-	"moke-kit/gorm/nerrors"
+	"moke-kit/nsorm/nerrors"
 	"net/url"
 
 	mongo2 "go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 
-	"moke-kit/gorm/nosql/mongo"
+	"moke-kit/nsorm/nosql/mongo"
 )
 
 type MongoParams struct {

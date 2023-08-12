@@ -3,7 +3,7 @@ package module
 import (
 	"go.uber.org/fx"
 
-	"moke-kit/gorm/pkg/nfx"
+	"moke-kit/nsorm/pkg/nfx"
 )
 
 var Module = fx.Module("nosql", fx.Options(
