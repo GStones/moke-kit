@@ -6,14 +6,15 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
+	"gorm.io/gorm"
 	pb "moke-kit/demo/api/gen/demo/api"
-	"moke-kit/demo/internal/demo/db"
+	"moke-kit/demo/internal/demo/db_nosql"
 	"moke-kit/demo/internal/demo/handlers"
 	"moke-kit/demo/pkg/dfx"
 	"moke-kit/mq/pkg/qfx"
 	"moke-kit/mq/qiface"
-	"moke-kit/nsorm/nosql/diface"
-	"moke-kit/nsorm/pkg/nfx"
+	"moke-kit/orm/nosql/diface"
+	"moke-kit/orm/pkg/nfx"
 	"moke-kit/server/pkg/sfx"
 	"moke-kit/server/siface"
 )
@@ -129,8 +130,14 @@ func NewService(
 	logger *zap.Logger,
 	coll diface.ICollection,
 	mq qiface.MessageQueue,
+	gdb *gorm.DB,
 ) (result *Service, err error) {
-	handler := handlers.NewDemo(logger, db.OpenDatabase(logger, coll), mq)
+	handler := handlers.NewDemo(
+		logger,
+		db_nosql.OpenDatabase(logger, coll),
+		mq,
+		gdb,
+	)
 
 	result = &Service{
 		logger:      logger,
@@ -142,14 +149,15 @@ func NewService(
 var GrpcModule = fx.Provide(
 	func(
 		l *zap.Logger,
-		db dfx.DemoDBParams,
 		dProvider nfx.DocumentStoreParams,
 		setting dfx.SettingsParams,
 		mqParams qfx.MessageQueueParams,
+		gParams nfx.GormParams,
+
 	) (out sfx.GrpcServiceResult, err error) {
 		if coll, err := dProvider.DriverProvider.OpenDbDriver(setting.DbName); err != nil {
 			return out, err
-		} else if s, err := NewService(l, coll, mqParams.MessageQueue); err != nil {
+		} else if s, err := NewService(l, coll, mqParams.MessageQueue, gParams.GormDB); err != nil {
 			return out, err
 		} else {
 			out.GrpcService = s
@@ -161,14 +169,14 @@ var GrpcModule = fx.Provide(
 var GatewayModule = fx.Provide(
 	func(
 		l *zap.Logger,
-		db dfx.DemoDBParams,
 		dProvider nfx.DocumentStoreParams,
 		setting dfx.SettingsParams,
 		mqParams qfx.MessageQueueParams,
+		gParams nfx.GormParams,
 	) (out sfx.GatewayServiceResult, err error) {
 		if coll, err := dProvider.DriverProvider.OpenDbDriver(setting.DbName); err != nil {
 			return out, err
-		} else if s, err := NewService(l, coll, mqParams.MessageQueue); err != nil {
+		} else if s, err := NewService(l, coll, mqParams.MessageQueue, gParams.GormDB); err != nil {
 			return out, err
 		} else {
 			out.GatewayService = s
@@ -180,14 +188,14 @@ var GatewayModule = fx.Provide(
 var ZinxModule = fx.Provide(
 	func(
 		l *zap.Logger,
-		db dfx.DemoDBParams,
 		dProvider nfx.DocumentStoreParams,
 		setting dfx.SettingsParams,
 		mqParams qfx.MessageQueueParams,
+		gParams nfx.GormParams,
 	) (out sfx.ZinxServiceResult, err error) {
 		if coll, err := dProvider.DriverProvider.OpenDbDriver(setting.DbName); err != nil {
 			return out, err
-		} else if s, err := NewService(l, coll, mqParams.MessageQueue); err != nil {
+		} else if s, err := NewService(l, coll, mqParams.MessageQueue, gParams.GormDB); err != nil {
 			return out, err
 		} else {
 			out.ZinxService = s

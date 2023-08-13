@@ -4,7 +4,6 @@ import (
 	"moke-kit/demo/internal/demo"
 	"moke-kit/demo/pkg/dfx"
 	"moke-kit/fxmain"
-	mq "moke-kit/mq/pkg/module"
 	"moke-kit/mq/pkg/qfx"
 )
 
@@ -13,8 +12,9 @@ func main() {
 		dfx.SettingsModule,
 		// db
 		dfx.DemoDBModule,
-		// message queue
-		mq.Module,
+		// sqlite db
+		dfx.SqliteDriverModule,
+		// nats message queue
 		qfx.NatsModule,
 		// grpc server
 		demo.GrpcModule,

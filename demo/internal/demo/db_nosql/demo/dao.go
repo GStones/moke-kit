@@ -1,8 +1,8 @@
 package demo
 
 import (
-	"moke-kit/nsorm/nosql"
-	"moke-kit/nsorm/nosql/diface"
+	"moke-kit/orm/nosql"
+	"moke-kit/orm/nosql/diface"
 )
 
 type Dao struct {

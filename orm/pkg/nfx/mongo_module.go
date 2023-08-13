@@ -3,14 +3,14 @@ package nfx
 import (
 	"context"
 	"fmt"
-	"moke-kit/nsorm/nerrors"
 	"net/url"
 
 	mongo2 "go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 
-	"moke-kit/nsorm/nosql/mongo"
+	"moke-kit/orm/nerrors"
+	"moke-kit/orm/nosql/mongo"
 )
 
 type MongoParams struct {
@@ -30,7 +30,7 @@ func (mr *MongoResult) NewDocument(
 	l *zap.Logger,
 	n SettingsParams,
 ) (err error) {
-	if u, e := url.Parse(n.DocumentStoreUrl); e != nil {
+	if u, e := url.Parse(n.NosqlUrl); e != nil {
 		err = e
 	} else if u.Scheme == "mongodb" {
 		username := u.User.Username()

@@ -1,13 +1,13 @@
-package db
+package db_nosql
 
 import (
 	"errors"
-	"moke-kit/demo/internal/demo/db/demo"
-	"moke-kit/nsorm/nosql/diface"
+	"moke-kit/demo/internal/demo/db_nosql/demo"
+	"moke-kit/orm/nosql/diface"
 
 	"go.uber.org/zap"
 
-	"moke-kit/nsorm/nerrors"
+	"moke-kit/orm/nerrors"
 )
 
 type Database struct {

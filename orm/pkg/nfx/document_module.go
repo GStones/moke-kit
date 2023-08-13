@@ -9,10 +9,10 @@ import (
 	"go.uber.org/zap"
 
 	"moke-kit/fxmain/pkg/mfx"
-	"moke-kit/nsorm/nerrors"
-	"moke-kit/nsorm/nosql/diface"
-	"moke-kit/nsorm/nosql/key"
-	"moke-kit/nsorm/nosql/mongo"
+	"moke-kit/orm/nerrors"
+	"moke-kit/orm/nosql/diface"
+	"moke-kit/orm/nosql/key"
+	"moke-kit/orm/nosql/mongo"
 )
 
 type DocumentStoreParams struct {
@@ -77,7 +77,7 @@ var DocumentStoreModule = fx.Provide(
 	) (dOut DocumentStoreResult, err error) {
 		err = dOut.NewDocument(
 			lc, l, mp.MongoClient,
-			sp.DocumentStoreUrl, as.Deployment,
+			sp.NosqlUrl, as.Deployment,
 		)
 		return
 	},

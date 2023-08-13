@@ -2,13 +2,13 @@ package nosql
 
 import (
 	"math/rand"
-	"moke-kit/nsorm/nosql/noptions"
+	"moke-kit/orm/nosql/noptions"
 	"reflect"
 	"time"
 
-	"moke-kit/nsorm/nerrors"
-	"moke-kit/nsorm/nosql/diface"
-	"moke-kit/nsorm/nosql/key"
+	"moke-kit/orm/nerrors"
+	"moke-kit/orm/nosql/diface"
+	"moke-kit/orm/nosql/key"
 )
 
 const MaxRetries = 5

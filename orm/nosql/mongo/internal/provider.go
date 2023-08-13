@@ -6,7 +6,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/zap"
 
-	"moke-kit/nsorm/nosql/diface"
+	"moke-kit/orm/nosql/diface"
 )
 
 type DriverProvider struct {

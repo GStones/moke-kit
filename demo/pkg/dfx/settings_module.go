@@ -11,6 +11,7 @@ type SettingsParams struct {
 
 	DemoUrl string `name:"DemoUrl"`
 	DbName  string `name:"DbName"`
+	GormDns string `name:"GormDns"`
 }
 
 type SettingsResult struct {
@@ -18,6 +19,7 @@ type SettingsResult struct {
 
 	DemoUrl string `name:"DemoUrl" envconfig:"DEMO_URL" default:"localhost:8081"`
 	DbName  string `name:"DbName" envconfig:"DB_NAME" default:"demo"`
+	GormDns string `name:"GormDns" envconfig:"GORM_DNS" default:"demo.db"`
 }
 
 func (g *SettingsResult) LoadFromEnv() (err error) {

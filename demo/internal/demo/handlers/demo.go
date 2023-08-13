@@ -3,32 +3,37 @@ package handlers
 import (
 	"context"
 	"go.uber.org/zap"
-	"moke-kit/demo/internal/demo/db"
+	"gorm.io/gorm"
+	"moke-kit/demo/internal/demo/db_nosql"
+	"moke-kit/demo/internal/demo/db_sql"
 	"moke-kit/mq/common"
 	"moke-kit/mq/qiface"
 )
 
 type Demo struct {
-	logger   *zap.Logger
-	database db.Database
-	mq       qiface.MessageQueue
+	logger  *zap.Logger
+	nosqlDb db_nosql.Database
+	mq      qiface.MessageQueue
+	gormDb  *gorm.DB
 }
 
 func NewDemo(
 	logger *zap.Logger,
-	database db.Database,
+	database db_nosql.Database,
 	mq qiface.MessageQueue,
+	gormDb *gorm.DB,
 ) *Demo {
 	return &Demo{
-		logger:   logger,
-		database: database,
-		mq:       mq,
+		logger:  logger,
+		nosqlDb: database,
+		mq:      mq,
+		gormDb:  gormDb,
 	}
 }
 
 func (d *Demo) Hi(uid, message string) error {
-	// database create
-	if data, err := d.database.LoadOrCreateDemo(uid); err != nil {
+	// nosqlDb create
+	if data, err := d.nosqlDb.LoadOrCreateDemo(uid); err != nil {
 		return err
 	} else {
 		if err := data.Update(func() bool {
@@ -37,6 +42,9 @@ func (d *Demo) Hi(uid, message string) error {
 		}); err != nil {
 			return err
 		}
+	}
+	if err := db_sql.FirstOrInit(d.gormDb, uid, message); err != nil {
+		return err
 	}
 
 	// mq publish
