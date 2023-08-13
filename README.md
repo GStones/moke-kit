@@ -6,7 +6,7 @@ The current framework is still in the development stage and cannot be used in a 
 
 ## Getting started
  * [Introduction](https://github.com/GStones/moke-kit/wiki/Introduction)
- * [Demo](https://github.com/GStones/moke-kit/demo)
+ * [Demo](./demo)
 
 
 
