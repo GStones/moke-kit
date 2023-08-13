@@ -1,0 +1,6 @@
+/.idea/git_toolbox_prj.xml
+/demo/api/gen/
+/demo/third_party/
+/.idea/moke-kit.iml
+/demo/cmd/demo_cli/game_cli
+/demo.db
