@@ -6,28 +6,28 @@ import (
 	"moke-kit/fxmain/pkg/mfx"
 	"moke-kit/mq/common"
 	"moke-kit/mq/internal"
-	"moke-kit/mq/qiface"
+	"moke-kit/mq/logic"
 )
 
 type MessageQueueParams struct {
 	fx.In
 
-	MessageQueue qiface.MessageQueue `name:"MessageQueue"`
+	MessageQueue logic.MessageQueue `name:"MessageQueue"`
 }
 
 type MessageQueueResult struct {
 	fx.Out
 
-	MessageQueue qiface.MessageQueue `name:"MessageQueue"`
+	MessageQueue logic.MessageQueue `name:"MessageQueue"`
 }
 
 type MQImplementations struct {
 	fx.In
 
-	NatsMQ  qiface.MessageQueue `name:"NatsMQ" optional:"true"`
-	KafkaMQ qiface.MessageQueue `name:"KafkaMQ" optional:"true"`
-	NsqMQ   qiface.MessageQueue `name:"NsqMQ" optional:"true"`
-	LocalMQ qiface.MessageQueue `name:"LocalMQ" optional:"true"`
+	NatsMQ  logic.MessageQueue `name:"NatsMQ" optional:"true"`
+	KafkaMQ logic.MessageQueue `name:"KafkaMQ" optional:"true"`
+	NsqMQ   logic.MessageQueue `name:"NsqMQ" optional:"true"`
+	LocalMQ logic.MessageQueue `name:"LocalMQ" optional:"true"`
 }
 
 func (g *MessageQueueResult) Execute(s mfx.AppParams, i MQImplementations) (err error) {

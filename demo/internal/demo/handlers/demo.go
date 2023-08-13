@@ -7,20 +7,20 @@ import (
 	"moke-kit/demo/internal/demo/db_nosql"
 	"moke-kit/demo/internal/demo/db_sql"
 	"moke-kit/mq/common"
-	"moke-kit/mq/qiface"
+	"moke-kit/mq/logic"
 )
 
 type Demo struct {
 	logger  *zap.Logger
 	nosqlDb db_nosql.Database
-	mq      qiface.MessageQueue
+	mq      logic.MessageQueue
 	gormDb  *gorm.DB
 }
 
 func NewDemo(
 	logger *zap.Logger,
 	database db_nosql.Database,
-	mq qiface.MessageQueue,
+	mq logic.MessageQueue,
 	gormDb *gorm.DB,
 ) *Demo {
 	return &Demo{
@@ -43,14 +43,14 @@ func (d *Demo) Hi(uid, message string) error {
 			return err
 		}
 	}
-	if err := db_sql.FirstOrInit(d.gormDb, uid, message); err != nil {
+	if err := db_sql.FirstOrCreate(d.gormDb, uid, message); err != nil {
 		return err
 	}
 
 	// mq publish
 	if err := d.mq.Publish(
 		common.NatsHeader.CreateTopic("demo"),
-		qiface.WithBytes([]byte(message)),
+		logic.WithBytes([]byte(message)),
 	); err != nil {
 		return err
 	}
@@ -61,7 +61,7 @@ func (d *Demo) Watch(ctx context.Context, topic string, callback func(message st
 	// mq subscribe
 	sub, err := d.mq.Subscribe(
 		common.NatsHeader.CreateTopic(topic),
-		func(msg qiface.Message, err error) common.ConsumptionCode {
+		func(msg logic.Message, err error) common.ConsumptionCode {
 			if err := callback(string(msg.Data())); err != nil {
 				return common.ConsumeNackPersistentFailure
 			}

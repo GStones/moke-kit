@@ -8,11 +8,10 @@ type HelloData struct {
 	Message string
 }
 
-func FirstOrInit(db *gorm.DB, id, message string) error {
+func FirstOrCreate(db *gorm.DB, id, message string) error {
 	err := db.AutoMigrate(&HelloData{})
 	if err != nil {
 		return err
 	}
-	return db.Create(&HelloData{Id: id, Message: message}).Error
-	//return db.FirstOrCreate(&HelloData{Id: id, Message: message}).Error
+	return db.FirstOrCreate(&HelloData{Id: id, Message: message}).Error
 }

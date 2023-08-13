@@ -1,4 +1,4 @@
-package qiface
+package logic
 
 import (
 	"encoding/json"

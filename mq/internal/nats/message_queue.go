@@ -8,7 +8,7 @@ import (
 
 	"moke-kit/mq/common"
 	"moke-kit/mq/internal/qerrors"
-	"moke-kit/mq/qiface"
+	"moke-kit/mq/logic"
 )
 
 type MessageQueue struct {
@@ -28,16 +28,16 @@ func NewMessageQueue(logger *zap.Logger, address string) (*MessageQueue, error) 
 
 func (m *MessageQueue) Subscribe(
 	topic string,
-	handler qiface.SubResponseHandler,
-	sOpts ...qiface.SubOption,
-) (qiface.Subscription, error) {
+	handler logic.SubResponseHandler,
+	sOpts ...logic.SubOption,
+) (logic.Subscription, error) {
 	if topic == "" {
 		return nil, qerrors.ErrEmptyTopic
 	} else {
 		topic = common.NamespaceTopic(topic)
 	}
 
-	if options, err := qiface.NewSubOptions(sOpts...); err != nil {
+	if options, err := logic.NewSubOptions(sOpts...); err != nil {
 		return nil, err
 	} else {
 		return NewSubscription(
@@ -51,14 +51,14 @@ func (m *MessageQueue) Subscribe(
 	}
 }
 
-func (m *MessageQueue) Publish(topic string, pOpts ...qiface.PubOption) error {
+func (m *MessageQueue) Publish(topic string, pOpts ...logic.PubOption) error {
 	if topic == "" {
 		return qerrors.ErrEmptyTopic
 	} else {
 		topic = common.NamespaceTopic(topic)
 	}
 
-	if options, err := qiface.NewPubOptions(pOpts...); err != nil {
+	if options, err := logic.NewPubOptions(pOpts...); err != nil {
 		return err
 	} else if options.Delay != 0 {
 		return qerrors.ErrDelayedPublishUnsupported

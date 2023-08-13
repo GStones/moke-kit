@@ -1,7 +1,7 @@
 package internal
 
 import (
-	"moke-kit/mq/qiface"
+	"moke-kit/mq/logic"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -10,17 +10,17 @@ import (
 )
 
 type MessageQueue struct {
-	kafkaMQ qiface.MessageQueue
-	natsMQ  qiface.MessageQueue
-	nsqMQ   qiface.MessageQueue
-	localMQ qiface.MessageQueue
+	kafkaMQ logic.MessageQueue
+	natsMQ  logic.MessageQueue
+	nsqMQ   logic.MessageQueue
+	localMQ logic.MessageQueue
 }
 
 func NewMessageQueue(
-	kafkaMQ qiface.MessageQueue,
-	natsMQ qiface.MessageQueue,
-	nsqMQ qiface.MessageQueue,
-	localMQ qiface.MessageQueue,
+	kafkaMQ logic.MessageQueue,
+	natsMQ logic.MessageQueue,
+	nsqMQ logic.MessageQueue,
+	localMQ logic.MessageQueue,
 ) *MessageQueue {
 	return &MessageQueue{
 		kafkaMQ: kafkaMQ,
@@ -32,9 +32,9 @@ func NewMessageQueue(
 
 func (m *MessageQueue) Subscribe(
 	topic string,
-	handler qiface.SubResponseHandler,
-	opts ...qiface.SubOption,
-) (qiface.Subscription, error) {
+	handler logic.SubResponseHandler,
+	opts ...logic.SubOption,
+) (logic.Subscription, error) {
 	if mqType, t, err := parseTopic(topic); err != nil {
 		return nil, err
 	} else {
@@ -86,7 +86,7 @@ func (m *MessageQueue) Subscribe(
 	}
 }
 
-func (m *MessageQueue) Publish(topic string, opts ...qiface.PubOption) error {
+func (m *MessageQueue) Publish(topic string, opts ...logic.PubOption) error {
 	if mqType, t, err := parseTopic(topic); err != nil {
 		return err
 	} else {

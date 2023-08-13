@@ -3,3 +3,4 @@
 /demo/third_party/
 /.idea/moke-kit.iml
 /demo/cmd/game_cli/game_cli
+/demo.db

@@ -11,8 +11,8 @@ import (
 	"moke-kit/demo/internal/demo/db_nosql"
 	"moke-kit/demo/internal/demo/handlers"
 	"moke-kit/demo/pkg/dfx"
+	"moke-kit/mq/logic"
 	"moke-kit/mq/pkg/qfx"
-	"moke-kit/mq/qiface"
 	"moke-kit/orm/nosql/diface"
 	"moke-kit/orm/pkg/nfx"
 	"moke-kit/server/pkg/sfx"
@@ -129,7 +129,7 @@ func (s *Service) RegisterWithServer(server siface.IZinxServer) {
 func NewService(
 	logger *zap.Logger,
 	coll diface.ICollection,
-	mq qiface.MessageQueue,
+	mq logic.MessageQueue,
 	gdb *gorm.DB,
 ) (result *Service, err error) {
 	handler := handlers.NewDemo(

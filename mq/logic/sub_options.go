@@ -1,4 +1,4 @@
-package qiface
+package logic
 
 import (
 	"moke-kit/mq/common"

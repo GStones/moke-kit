@@ -1,7 +1,7 @@
 package nats
 
 import (
-	"moke-kit/mq/qiface"
+	"moke-kit/mq/logic"
 )
 
 type message struct {
@@ -11,7 +11,7 @@ type message struct {
 	vPtr  interface{}
 }
 
-func NewMessage(id string, topic string, data []byte, vPtr interface{}) qiface.Message {
+func NewMessage(id string, topic string, data []byte, vPtr interface{}) logic.Message {
 	return &message{
 		id:    id,
 		topic: topic,
