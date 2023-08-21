@@ -5,7 +5,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"moke-kit/demo/internal/client"
+	"github.com/gstones/moke-kit/demo/internal/client"
 )
 
 var options struct {

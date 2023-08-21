@@ -25,7 +25,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"moke-kit/tracing/tiface"
+	"github.com/gstones/moke-kit/tracing/tiface"
 )
 
 const (

@@ -1,4 +1,4 @@
-module moke-kit
+module github.com/gstones/moke-kit
 
 go 1.20
 
@@ -27,6 +27,8 @@ require (
 	google.golang.org/genproto/googleapis/api v0.0.0-20230629202037-9506855d4529
 	google.golang.org/grpc v1.56.2
 	google.golang.org/protobuf v1.31.0
+	gorm.io/driver/sqlite v1.5.2
+	gorm.io/gorm v1.25.3
 )
 
 require (
@@ -106,6 +108,4 @@ require (
 	golang.org/x/time v0.3.0 // indirect
 	google.golang.org/genproto v0.0.0-20230706204954-ccb25ca9f130 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20230720185612-659f7aaaa771 // indirect
-	gorm.io/driver/sqlite v1.5.2 // indirect
-	gorm.io/gorm v1.25.3 // indirect
 )

@@ -2,7 +2,8 @@ package sfx
 
 import (
 	"go.uber.org/fx"
-	"moke-kit/utility/uconfig"
+
+	"github.com/gstones/moke-kit/utility/uconfig"
 )
 
 type SettingsParams struct {

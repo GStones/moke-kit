@@ -1,7 +1,7 @@
 package diface
 
 import (
-	"moke-kit/orm/nosql/key"
+	"github.com/gstones/moke-kit/orm/nosql/key"
 )
 
 // IDocumentCache provides a cache for Document objects.

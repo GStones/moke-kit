@@ -2,9 +2,10 @@ package fxmain
 
 import (
 	"context"
-	"moke-kit/fxmain/internal"
-	"moke-kit/fxmain/pkg/module"
 	"time"
+
+	"github.com/gstones/moke-kit/fxmain/internal"
+	"github.com/gstones/moke-kit/fxmain/pkg/module"
 
 	"go.uber.org/fx"
 )

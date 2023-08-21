@@ -4,7 +4,7 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 
-	server "moke-kit/server/pkg/module"
+	server "github.com/gstones/moke-kit/server/pkg/module"
 )
 
 type launchParams struct {

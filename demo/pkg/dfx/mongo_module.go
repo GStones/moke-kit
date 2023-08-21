@@ -4,7 +4,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
-	"moke-kit/orm/pkg/nfx"
+
+	"github.com/gstones/moke-kit/orm/pkg/nfx"
 )
 
 type DemoDBParams struct {

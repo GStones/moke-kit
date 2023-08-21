@@ -2,12 +2,14 @@ package handlers
 
 import (
 	"context"
+
 	"go.uber.org/zap"
 	"gorm.io/gorm"
-	"moke-kit/demo/internal/demo/db_nosql"
-	"moke-kit/demo/internal/demo/db_sql"
-	"moke-kit/mq/common"
-	"moke-kit/mq/logic"
+
+	"github.com/gstones/moke-kit/demo/internal/demo/db_nosql"
+	"github.com/gstones/moke-kit/demo/internal/demo/db_sql"
+	"github.com/gstones/moke-kit/mq/common"
+	"github.com/gstones/moke-kit/mq/logic"
 )
 
 type Demo struct {

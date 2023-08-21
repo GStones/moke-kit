@@ -1,16 +1,18 @@
 package client
 
 import (
+	"io"
+	"net"
+
 	"github.com/aceld/zinx/zconf"
 	"github.com/aceld/zinx/ziface"
 	"github.com/aceld/zinx/zpack"
 	"google.golang.org/protobuf/proto"
-	"io"
-	"net"
 
 	"github.com/abiosoft/ishell"
-	pb "moke-kit/demo/api/gen/demo/api"
-	"moke-kit/utility/cshell"
+
+	pb "github.com/gstones/moke-kit/demo/api/gen/demo/api"
+	"github.com/gstones/moke-kit/utility/cshell"
 )
 
 type DemoZinx struct {

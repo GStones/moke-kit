@@ -4,12 +4,12 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 
-	"moke-kit/server/internal/common"
-	"moke-kit/server/internal/srpc"
-	"moke-kit/server/internal/zinx"
-	"moke-kit/server/siface"
-	"moke-kit/tracing/tfx"
-	"moke-kit/tracing/tiface"
+	"github.com/gstones/moke-kit/server/internal/common"
+	"github.com/gstones/moke-kit/server/internal/srpc"
+	"github.com/gstones/moke-kit/server/internal/zinx"
+	"github.com/gstones/moke-kit/server/siface"
+	"github.com/gstones/moke-kit/tracing/tfx"
+	"github.com/gstones/moke-kit/tracing/tiface"
 )
 
 type ServersParams struct {

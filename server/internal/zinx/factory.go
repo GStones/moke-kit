@@ -4,9 +4,10 @@ import (
 	"github.com/aceld/zinx/zconf"
 	"github.com/aceld/zinx/znet"
 	"go.uber.org/zap"
-	"moke-kit/server/internal/common"
 
-	"moke-kit/server/siface"
+	"github.com/gstones/moke-kit/server/internal/common"
+
+	"github.com/gstones/moke-kit/server/siface"
 )
 
 func NewZinxServer(

@@ -7,9 +7,9 @@ import (
 	"github.com/nats-io/nats.go"
 	"github.com/pkg/errors"
 
-	"moke-kit/mq/common"
-	"moke-kit/mq/internal/qerrors"
-	"moke-kit/mq/logic"
+	"github.com/gstones/moke-kit/mq/common"
+	"github.com/gstones/moke-kit/mq/internal/qerrors"
+	"github.com/gstones/moke-kit/mq/logic"
 )
 
 type Subscription struct {

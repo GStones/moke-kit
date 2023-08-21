@@ -1,11 +1,12 @@
 package mfx
 
 import (
-	"moke-kit/utility/uconfig"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
+
+	"github.com/gstones/moke-kit/utility/uconfig"
 
 	"go.uber.org/fx"
 )

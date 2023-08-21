@@ -11,7 +11,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
-	"moke-kit/server/siface"
+	"github.com/gstones/moke-kit/server/siface"
 )
 
 type GatewayServer struct {

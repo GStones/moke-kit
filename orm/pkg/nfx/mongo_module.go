@@ -9,8 +9,8 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 
-	"moke-kit/orm/nerrors"
-	"moke-kit/orm/nosql/mongo"
+	"github.com/gstones/moke-kit/orm/nerrors"
+	"github.com/gstones/moke-kit/orm/nosql/mongo"
 )
 
 type MongoParams struct {

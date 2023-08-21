@@ -3,10 +3,10 @@ package cmux
 import (
 	"context"
 	"log"
-	"moke-kit/server/network"
+	"net"
 	"testing"
 
-	"net"
+	"github.com/gstones/moke-kit/server/network"
 
 	"go.uber.org/zap"
 	"google.golang.org/grpc/test/bufconn"

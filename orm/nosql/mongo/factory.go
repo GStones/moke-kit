@@ -9,8 +9,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 	"go.uber.org/zap"
 
-	"moke-kit/orm/nosql/diface"
-	"moke-kit/orm/nosql/mongo/internal"
+	"github.com/gstones/moke-kit/orm/nosql/diface"
+	"github.com/gstones/moke-kit/orm/nosql/mongo/internal"
 )
 
 func NewProvider(

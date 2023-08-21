@@ -9,8 +9,8 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 
-	pb "moke-kit/demo/api/gen/demo/api"
-	"moke-kit/utility/cshell"
+	pb "github.com/gstones/moke-kit/demo/api/gen/demo/api"
+	"github.com/gstones/moke-kit/utility/cshell"
 )
 
 type DemoGrpc struct {

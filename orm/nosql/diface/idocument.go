@@ -1,8 +1,8 @@
 package diface
 
 import (
-	"moke-kit/orm/nosql/key"
-	"moke-kit/orm/nosql/noptions"
+	"github.com/gstones/moke-kit/orm/nosql/key"
+	"github.com/gstones/moke-kit/orm/nosql/noptions"
 )
 
 // IDocumentProvider knows how to open nosql stores by name.

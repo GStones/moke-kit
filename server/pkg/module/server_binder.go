@@ -8,7 +8,7 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 
-	"moke-kit/server/siface"
+	"github.com/gstones/moke-kit/server/siface"
 )
 
 type LifecycleHook = func(lc fx.Lifecycle)
