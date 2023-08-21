@@ -3,7 +3,7 @@ package module
 import (
 	"go.uber.org/fx"
 
-	"moke-kit/server/pkg/sfx"
+	"github.com/gstones/moke-kit/server/pkg/sfx"
 )
 
 var Module = fx.Module("server", fx.Options(

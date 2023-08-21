@@ -1,8 +1,8 @@
 package logic
 
 import (
-	"moke-kit/mq/common"
-	"moke-kit/mq/internal/qerrors"
+	"github.com/gstones/moke-kit/mq/common"
+	"github.com/gstones/moke-kit/mq/internal/qerrors"
 )
 
 // SubOptions contains all the various options that the provided WithXyz functions construct.

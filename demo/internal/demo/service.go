@@ -2,21 +2,23 @@ package demo
 
 import (
 	"context"
+
 	"github.com/aceld/zinx/ziface"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 	"gorm.io/gorm"
-	pb "moke-kit/demo/api/gen/demo/api"
-	"moke-kit/demo/internal/demo/db_nosql"
-	"moke-kit/demo/internal/demo/handlers"
-	"moke-kit/demo/pkg/dfx"
-	"moke-kit/mq/logic"
-	"moke-kit/mq/pkg/qfx"
-	"moke-kit/orm/nosql/diface"
-	"moke-kit/orm/pkg/nfx"
-	"moke-kit/server/pkg/sfx"
-	"moke-kit/server/siface"
+
+	pb "github.com/gstones/moke-kit/demo/api/gen/demo/api"
+	"github.com/gstones/moke-kit/demo/internal/demo/db_nosql"
+	"github.com/gstones/moke-kit/demo/internal/demo/handlers"
+	"github.com/gstones/moke-kit/demo/pkg/dfx"
+	"github.com/gstones/moke-kit/mq/logic"
+	"github.com/gstones/moke-kit/mq/pkg/qfx"
+	"github.com/gstones/moke-kit/orm/nosql/diface"
+	"github.com/gstones/moke-kit/orm/pkg/nfx"
+	"github.com/gstones/moke-kit/server/pkg/sfx"
+	"github.com/gstones/moke-kit/server/siface"
 )
 
 type Service struct {

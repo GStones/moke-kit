@@ -1,10 +1,10 @@
 package main
 
 import (
-	"moke-kit/demo/internal/demo"
-	"moke-kit/demo/pkg/dfx"
-	"moke-kit/fxmain"
-	"moke-kit/mq/pkg/qfx"
+	"github.com/gstones/moke-kit/demo/internal/demo"
+	"github.com/gstones/moke-kit/demo/pkg/dfx"
+	"github.com/gstones/moke-kit/fxmain"
+	"github.com/gstones/moke-kit/mq/pkg/qfx"
 )
 
 func main() {

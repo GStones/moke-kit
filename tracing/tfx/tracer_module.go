@@ -3,7 +3,8 @@ package tfx
 import (
 	"context"
 	"errors"
-	"moke-kit/tracing/tiface"
+
+	"github.com/gstones/moke-kit/tracing/tiface"
 
 	"go.uber.org/fx"
 	"go.uber.org/zap"

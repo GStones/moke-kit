@@ -2,12 +2,13 @@ package db_nosql
 
 import (
 	"errors"
-	"moke-kit/demo/internal/demo/db_nosql/demo"
-	"moke-kit/orm/nosql/diface"
+
+	"github.com/gstones/moke-kit/demo/internal/demo/db_nosql/demo"
+	"github.com/gstones/moke-kit/orm/nosql/diface"
 
 	"go.uber.org/zap"
 
-	"moke-kit/orm/nerrors"
+	"github.com/gstones/moke-kit/orm/nerrors"
 )
 
 type Database struct {

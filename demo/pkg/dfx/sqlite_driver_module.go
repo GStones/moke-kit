@@ -4,7 +4,8 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"gorm.io/driver/sqlite"
-	"moke-kit/orm/pkg/nfx"
+
+	"github.com/gstones/moke-kit/orm/pkg/nfx"
 )
 
 var SqliteDriverModule = fx.Provide(

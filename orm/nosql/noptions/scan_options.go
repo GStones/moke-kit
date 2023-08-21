@@ -7,8 +7,8 @@ import (
 
 	"github.com/pkg/errors"
 
-	"moke-kit/orm/nerrors"
-	"moke-kit/orm/nosql/key"
+	"github.com/gstones/moke-kit/orm/nerrors"
+	"github.com/gstones/moke-kit/orm/nosql/key"
 )
 
 const (

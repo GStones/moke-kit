@@ -1,11 +1,12 @@
 package client
 
 import (
-	"github.com/abiosoft/ishell"
 	"net"
 
-	"moke-kit/utility/cshell"
-	"moke-kit/utility/ugrpc"
+	"github.com/abiosoft/ishell"
+
+	"github.com/gstones/moke-kit/utility/cshell"
+	"github.com/gstones/moke-kit/utility/ugrpc"
 )
 
 func RunGrpc(url string) {

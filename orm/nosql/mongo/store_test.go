@@ -1,11 +1,12 @@
 package mongo
 
 import (
-	"moke-kit/orm/nosql/noptions"
 	"testing"
 
-	"moke-kit/orm/nosql/diface"
-	"moke-kit/orm/nosql/key"
+	"github.com/gstones/moke-kit/orm/nosql/noptions"
+
+	"github.com/gstones/moke-kit/orm/nosql/diface"
+	"github.com/gstones/moke-kit/orm/nosql/key"
 )
 
 func TestNewDriverProvider(t *testing.T) {

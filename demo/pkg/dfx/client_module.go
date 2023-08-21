@@ -7,7 +7,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
-	pb "moke-kit/demo/api/gen/demo/api"
+	pb "github.com/gstones/moke-kit/demo/api/gen/demo/api"
 )
 
 type DemoClient struct {

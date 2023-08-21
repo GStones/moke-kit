@@ -1,7 +1,7 @@
 package nats
 
 import (
-	"moke-kit/mq/common"
+	"github.com/gstones/moke-kit/mq/common"
 )
 
 const (

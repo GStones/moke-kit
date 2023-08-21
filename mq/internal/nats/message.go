@@ -1,7 +1,7 @@
 package nats
 
 import (
-	"moke-kit/mq/logic"
+	"github.com/gstones/moke-kit/mq/logic"
 )
 
 type message struct {

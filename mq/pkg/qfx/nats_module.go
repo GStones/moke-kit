@@ -4,8 +4,8 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 
-	"moke-kit/mq/internal/nats"
-	"moke-kit/mq/logic"
+	"github.com/gstones/moke-kit/mq/internal/nats"
+	"github.com/gstones/moke-kit/mq/logic"
 )
 
 type NatsResult struct {

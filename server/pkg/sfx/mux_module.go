@@ -4,8 +4,8 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 
-	"moke-kit/server/internal/cmux"
-	"moke-kit/server/siface"
+	"github.com/gstones/moke-kit/server/internal/cmux"
+	"github.com/gstones/moke-kit/server/siface"
 )
 
 type ConnectionMuxParams struct {

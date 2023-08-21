@@ -1,12 +1,13 @@
 package internal
 
 import (
-	"moke-kit/mq/logic"
 	"strings"
+
+	"github.com/gstones/moke-kit/mq/logic"
 
 	"github.com/pkg/errors"
 
-	"moke-kit/mq/internal/qerrors"
+	"github.com/gstones/moke-kit/mq/internal/qerrors"
 )
 
 type MessageQueue struct {

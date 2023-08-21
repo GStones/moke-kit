@@ -3,10 +3,10 @@ package qfx
 import (
 	"go.uber.org/fx"
 
-	"moke-kit/fxmain/pkg/mfx"
-	"moke-kit/mq/common"
-	"moke-kit/mq/internal"
-	"moke-kit/mq/logic"
+	"github.com/gstones/moke-kit/fxmain/pkg/mfx"
+	"github.com/gstones/moke-kit/mq/common"
+	"github.com/gstones/moke-kit/mq/internal"
+	"github.com/gstones/moke-kit/mq/logic"
 )
 
 type MessageQueueParams struct {

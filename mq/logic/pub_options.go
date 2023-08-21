@@ -2,10 +2,11 @@ package logic
 
 import (
 	"encoding/json"
-	"moke-kit/mq/common"
 	"time"
 
-	"moke-kit/mq/internal/qerrors"
+	"github.com/gstones/moke-kit/mq/common"
+
+	"github.com/gstones/moke-kit/mq/internal/qerrors"
 )
 
 // PubOptions contains all the various options that the provided WithXyz functions construct.

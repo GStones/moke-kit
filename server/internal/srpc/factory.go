@@ -5,8 +5,8 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/test/bufconn"
 
-	"moke-kit/server/siface"
-	"moke-kit/tracing/tiface"
+	"github.com/gstones/moke-kit/server/siface"
+	"github.com/gstones/moke-kit/tracing/tiface"
 )
 
 func NewGrpcServer(
