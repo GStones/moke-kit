@@ -109,6 +109,10 @@ func addInterceptorOptions(
 		return nil
 	}
 
+	//TODO: add rate limit interceptor here
+	//https: //github.com/grpc-ecosystem/go-grpc-middleware#server
+	//TODO: add auth interceptor here
+	//https://github.com/grpc-ecosystem/go-grpc-middleware#auth
 	ui := []grpc.UnaryServerInterceptor{
 		otelgrpc.UnaryServerInterceptor(),
 		srvMetrics.UnaryServerInterceptor(grpcprom.WithExemplarFromContext(exemplarFromContext)),
