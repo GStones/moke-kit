@@ -9,7 +9,7 @@ require (
 	github.com/go-redis/redis v6.15.9+incompatible
 	github.com/google/uuid v1.3.0
 	github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus v1.0.0-rc.0
-	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.0.0-rc.5
+	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.0.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.16.0
 	github.com/hashicorp/vault/api v1.9.2
 	github.com/kelseyhightower/envconfig v1.4.0
@@ -24,8 +24,8 @@ require (
 	go.uber.org/atomic v1.11.0
 	go.uber.org/fx v1.20.0
 	go.uber.org/zap v1.24.0
-	google.golang.org/genproto/googleapis/api v0.0.0-20230629202037-9506855d4529
-	google.golang.org/grpc v1.56.2
+	google.golang.org/genproto/googleapis/api v0.0.0-20230726155614-23370e0ffb3e
+	google.golang.org/grpc v1.57.0
 	google.golang.org/protobuf v1.31.0
 	gorm.io/driver/sqlite v1.5.2
 	gorm.io/gorm v1.25.3
@@ -85,7 +85,6 @@ require (
 	github.com/prometheus/procfs v0.9.0 // indirect
 	github.com/ryanuber/go-glob v1.0.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
-	github.com/stretchr/testify v1.8.4 // indirect
 	github.com/templexxx/cpufeat v0.0.0-20180724012125-cef66df7f161 // indirect
 	github.com/templexxx/xor v0.0.0-20191217153810-f85b25db303b // indirect
 	github.com/tjfoc/gmsm v1.4.1 // indirect
@@ -100,12 +99,12 @@ require (
 	go.uber.org/dig v1.17.0 // indirect
 	go.uber.org/goleak v1.2.1 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	golang.org/x/crypto v0.11.0 // indirect
-	golang.org/x/net v0.12.0 // indirect
+	golang.org/x/crypto v0.12.0 // indirect
+	golang.org/x/net v0.14.0 // indirect
 	golang.org/x/sync v0.2.0 // indirect
-	golang.org/x/sys v0.10.0 // indirect
-	golang.org/x/text v0.11.0 // indirect
+	golang.org/x/sys v0.11.0 // indirect
+	golang.org/x/text v0.12.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
-	google.golang.org/genproto v0.0.0-20230706204954-ccb25ca9f130 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20230720185612-659f7aaaa771 // indirect
+	google.golang.org/genproto v0.0.0-20230803162519-f966b187b2e5 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20230821184602-ccc8af3d0e93 // indirect
 )
