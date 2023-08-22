@@ -6,9 +6,6 @@ import (
 	"runtime/debug"
 	"strings"
 
-	"github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/log/level"
-	zapKit "github.com/go-kit/kit/log/zap"
 	grpcprom "github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/auth"
@@ -20,7 +17,6 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -45,23 +41,42 @@ func authFunc() auth.AuthFunc {
 	}
 }
 
-func interceptorLogger(l log.Logger) logging.Logger {
-	return logging.LoggerFunc(
-		func(_ context.Context, lvl logging.Level, msg string, fields ...any) {
-			args := append([]any{"msg", msg}, fields...)
-			switch lvl {
-			case logging.LevelDebug:
-				_ = level.Debug(l).Log(args...)
-			case logging.LevelInfo:
-				_ = level.Info(l).Log(args...)
-			case logging.LevelWarn:
-				_ = level.Warn(l).Log(args...)
-			case logging.LevelError:
-				_ = level.Error(l).Log(args...)
+// interceptorLogger adapts zap logger to interceptor logger.
+func interceptorLogger(l *zap.Logger) logging.Logger {
+	return logging.LoggerFunc(func(ctx context.Context, lvl logging.Level, msg string, fields ...any) {
+		f := make([]zap.Field, 0, len(fields)/2)
+
+		for i := 0; i < len(fields); i += 2 {
+			key := fields[i]
+			value := fields[i+1]
+
+			switch v := value.(type) {
+			case string:
+				f = append(f, zap.String(key.(string), v))
+			case int:
+				f = append(f, zap.Int(key.(string), v))
+			case bool:
+				f = append(f, zap.Bool(key.(string), v))
 			default:
-				panic(fmt.Sprintf("unknown level %v", lvl))
+				f = append(f, zap.Any(key.(string), v))
 			}
-		})
+		}
+
+		logger := l.WithOptions(zap.AddCallerSkip(1)).With(f...)
+
+		switch lvl {
+		case logging.LevelDebug:
+			logger.Debug(msg)
+		case logging.LevelInfo:
+			logger.Info(msg)
+		case logging.LevelWarn:
+			logger.Warn(msg)
+		case logging.LevelError:
+			logger.Error(msg)
+		default:
+			panic(fmt.Sprintf("unknown level %v", lvl))
+		}
+	})
 }
 
 func allButLogin(_ context.Context, callMeta interceptors.CallMeta) bool {
@@ -76,13 +91,11 @@ func fieldsFromCtx(ctx context.Context) logging.Fields {
 }
 
 func addInterceptorOptions(
-	zapLogger *zap.Logger,
-	tracer tiface.ITracer,
+	logger *zap.Logger,
+	_ tiface.ITracer,
 	//authClient cli.AuthClient,
 	opts ...grpc.ServerOption,
 ) []grpc.ServerOption {
-	logger := zapKit.NewZapSugarLogger(zapLogger, zapcore.InfoLevel)
-
 	// Setup metrics.
 	srvMetrics := grpcprom.NewServerMetrics(
 		grpcprom.WithServerHandlingTimeHistogram(
@@ -99,7 +112,7 @@ func addInterceptorOptions(
 	})
 	grpcPanicRecoveryHandler := func(p any) (err error) {
 		panicsTotal.Inc()
-		_ = level.Error(logger).Log("msg", "recovered from panic", "panic", p, "stack", debug.Stack())
+		logger.Error("recovered from panic", zap.Any("panic", p), zap.String("stack", string(debug.Stack())))
 		return status.Errorf(codes.Internal, "%s", p)
 	}
 	exemplarFromContext := func(ctx context.Context) prometheus.Labels {
@@ -132,9 +145,7 @@ func addInterceptorOptions(
 		grpc.ChainStreamInterceptor(si...),
 		grpc.ChainUnaryInterceptor(ui...),
 	}
-
-	logger.Log("msg", "grpc server interceptor options", "options", interceptorOpts)
-
+	logger.Info("grpc server interceptor options", zap.Any("options", interceptorOpts))
 	if opts == nil {
 		opts = interceptorOpts
 	} else {
