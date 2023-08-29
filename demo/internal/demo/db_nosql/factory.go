@@ -32,7 +32,11 @@ func (db *Database) LoadOrCreateDemo(id string) (*demo.Dao, error) {
 		} else if err := dm.InitDefault(); err != nil {
 			return nil, err
 		} else if err = dm.Create(); err != nil {
-			err = dm.Load()
+			if err = dm.Load(); err != nil {
+				return nil, err
+			} else {
+				return dm, nil
+			}
 		} else {
 			return dm, nil
 		}
