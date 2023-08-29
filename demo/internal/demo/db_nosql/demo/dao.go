@@ -8,7 +8,6 @@ import (
 type Dao struct {
 	nosql.DocumentBase `bson:"-"`
 	Id                 string `bson:"_id"`
-	appId              string `bson:"-"`
 	Data               *Data  `bson:"data"`
 }
 

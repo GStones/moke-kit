@@ -4,8 +4,8 @@ type DeliverySemantics string
 
 const (
 	AtLeastOnce DeliverySemantics = "at-least-once"
-	AtMostOnce                    = "at-most-once"
-	Unset                         = ""
+	AtMostOnce  DeliverySemantics = "at-most-once"
+	Unset       DeliverySemantics = ""
 )
 
 type GroupId string

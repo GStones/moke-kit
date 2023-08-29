@@ -49,8 +49,6 @@ func (f *TracerResult) Execute(
 				err = ErrUnsupportedTracer
 			}
 		}
-	} else {
-		//f.ITracer = noop.NewTracer()
 	}
 
 	if f.Tracer != nil {

@@ -107,34 +107,30 @@ func watchResponse(c *ishell.Context, conn net.Conn) {
 	dp := zpack.NewDataPack()
 	go func() {
 		for {
-			select {
-			default:
-				id, data, err := unPackResponse(dp, conn)
+			id, data, err := unPackResponse(dp, conn)
+			if err != nil {
+				cshell.Warn(c, err)
+				return
+			}
+			if id == 1 {
+				resp := &pb.HiResponse{}
+				err := proto.Unmarshal(data, resp)
 				if err != nil {
 					cshell.Warn(c, err)
 					return
 				}
-				if id == 1 {
-					resp := &pb.HiResponse{}
-					err := proto.Unmarshal(data, resp)
-					if err != nil {
-						cshell.Warn(c, err)
-						return
-					}
-					cshell.Infof(c, "response: %s \r\n", resp.String())
-					continue
-				} else if id == 2 {
-					resp := &pb.WatchResponse{}
-					err := proto.Unmarshal(data, resp)
-					if err != nil {
-						cshell.Warn(c, err)
-						return
-					}
-					cshell.Infof(c, "watching:%d %s \r\n", id, resp.String())
-					continue
+				cshell.Infof(c, "response: %s \r\n", resp.String())
+				continue
+			} else if id == 2 {
+				resp := &pb.WatchResponse{}
+				err := proto.Unmarshal(data, resp)
+				if err != nil {
+					cshell.Warn(c, err)
+					return
 				}
+				cshell.Infof(c, "watching:%d %s \r\n", id, resp.String())
+				continue
 			}
-
 		}
 	}()
 
