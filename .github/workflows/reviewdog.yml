@@ -1,18 +1,260 @@
 name: reviewdog
-on: [pull_request]
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
 jobs:
-  reviewdog:
-    name: reviewdog
+  reviewdog-github-check:
+    permissions:
+      checks: write
+      contents: read
+      pull-requests: write
+    name: reviewdog (github-check)
     runs-on: ubuntu-latest
     steps:
-      # ...
-      - uses: reviewdog/action-setup@v1
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-go@v4
         with:
-          reviewdog_version: latest # Optional. [latest,nightly,v.X.Y.Z]
+          go-version-file: "go.mod"
+
+      - name: Install linters
+        run: go install golang.org/x/lint/golint@latest
+
+      - name: Setup reviewdog
+        # uses: reviewdog/action-setup@v1
+        run: |
+          go install ./cmd/reviewdog
+
       - name: Run reviewdog
         env:
           REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-#          reviewdog -reporter=github-pr-check -runners=golint,govet
-          # or
-          reviewdog -reporter=github-pr-review -runners=golint,govet
+          golint ./... | reviewdog -f=golint -name=golint-github-check -reporter=github-check -level=warning
+
+      - name: Run reviewdog with sub-dir (github-check)
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd ./_testdata/ && golint ./... | reviewdog -f=golint -name=golint-check-subdir -reporter=github-check -level=info -filter-mode=nofilter
+
+      - name: Custom rdjson test (github-check)
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cat ./_testdata/custom_rdjson.json | \
+            reviewdog -name="custom-rdjson" -f=rdjson -reporter=github-check -level=info
+
+  reviewdog-pr:
+    permissions:
+      checks: write
+      contents: read
+      pull-requests: write
+    if: github.event_name == 'pull_request'
+    name: reviewdog on Pull Request
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-go@v4
+        with:
+          go-version-file: "go.mod"
+
+      - name: Install linters
+        run: go install golang.org/x/lint/golint@latest
+
+      - name: Setup reviewdog
+        # uses: reviewdog/action-setup@v1
+        run: |
+          go install ./cmd/reviewdog
+
+      - name: Run reviewdog (github-pr-check)
+        continue-on-error: true
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          reviewdog -reporter=github-pr-check -runners=golint,govet -fail-on-error
+
+      - name: Run reviewdog (github-pr-review with tee)
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Remove Go Problem Matchers [1] as it reports duplicate results with
+          # reviewdog.
+          # [1]: https://github.com/actions/toolkit/blob/master/docs/commands.md#problem-matchers
+          echo "::remove-matcher owner=go::"
+          golint ./... | reviewdog -f=golint -name=golint-pr-review -reporter=github-pr-review -tee
+
+      - name: Run reviewdog with sub-dir (github-pr-review)
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd ./_testdata/ && golint ./... | reviewdog -f=golint -name=golint-pr-review-subdir -reporter=github-pr-review -tee
+
+      - name: Run reviewdog with sub-dir (local+fail-on-error)
+        run: |
+          echo 'var LocalTest = 14' >> ./_testdata/golint.go
+          cd ./_testdata/ && golint ./... | reviewdog -f=golint -diff="git diff" -fail-on-error || EXIT_CODE=$?
+          git reset --hard @
+          test "${EXIT_CODE}" = 1
+
+      - name: Run reviewdog (github-pr-check with fail-on-error)
+        continue-on-error: true
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd ./_testdata/ && golint ./... | reviewdog -f=golint -name=golint-pr-check-fail-on-error -reporter=github-pr-check -fail-on-error
+
+      - name: Run reviewdog (github-pr-check with -filter-mode=file)
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          golint | reviewdog -f=golint -name=golint-pr-check-filter-mode-file -reporter=github-pr-check -filter-mode=file -level=warning
+
+      - name: Run reviewdog (github-pr-review -filter-mode=nofilter)
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd ./_testdata/ && golint ./... | reviewdog -f=golint -name=golint-pr-review-nofilter -reporter=github-pr-review -filter-mode=nofilter -fail-on-error || EXIT_CODE=$?
+          test "${EXIT_CODE}" = 1
+
+      - name: Unexpected failure (github-pr-review)
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd ./_testdata/ && reviewdog -conf=reviewdog_error.yml \
+            -reporter=github-pr-review || EXIT_CODE=$?
+          test "${EXIT_CODE}" = 1
+      - name: Unexpected failure (github-check)
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd ./_testdata/ && reviewdog -conf=reviewdog_error.yml \
+            -reporter=github-check || EXIT_CODE=$?
+          test "${EXIT_CODE}" = 1
+      - name: Unexpected failure (local)
+        run: |
+          cd ./_testdata/ && reviewdog -conf=reviewdog_error.yml \
+            -reporter=local -diff='git diff master' || EXIT_CODE=$?
+          test "${EXIT_CODE}" = 1
+      - name: Suggestion (rdjsonl)
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cat ./_testdata/suggestions.json | \
+            reviewdog -name="suggestion-test" -f=rdjsonl -reporter=github-pr-review
+
+      - name: Custom rdjsonl test (github-pr-review)
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cat ./_testdata/custom_rdjson.json | \
+            reviewdog -name="custom-rdjson" -f=rdjson -reporter=github-pr-review
+
+      - name: gofmt -s with reviewdog
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gofmt -s -d . | \
+            reviewdog -name="gofmt" -f=diff -f.diff.strip=0 -reporter=github-pr-review
+
+  golangci-lint:
+    permissions:
+      checks: write
+      contents: read
+      pull-requests: write
+    if: github.event_name == 'pull_request'
+    name: runner / golangci-lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: reviewdog/action-golangci-lint@v2
+        with:
+          github_token: ${{ secrets.github_token }}
+          golangci_lint_flags: "--enable-all --exclude-use-default=false -D wsl -D testpackage"
+          level: "warning"
+          reporter: github-pr-check
+
+  staticcheck:
+    permissions:
+      checks: write
+      contents: read
+      pull-requests: write
+    if: github.event_name == 'pull_request'
+    name: runner / staticcheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v4
+        with:
+          go-version-file: "go.mod"
+      - uses: reviewdog/action-staticcheck@v1
+        with:
+          github_token: ${{ secrets.github_token }}
+          reporter: github-pr-review
+          filter_mode: nofilter
+          fail_on_error: true
+          # workdir: ./_testdata/
+
+  misspell:
+    name: runner / misspell
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: reviewdog/action-misspell@v1
+        with:
+          github_token: ${{ secrets.github_token }}
+          locale: "US"
+          reporter: github-check
+
+  languagetool:
+    name: runner / languagetool
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: reviewdog/action-languagetool@v1
+        with:
+          github_token: ${{ secrets.github_token }}
+          reporter: github-check
+          level: info
+          patterns: |
+            **/*.md
+            !**/testdata/**
+
+  shellcheck:
+    if: github.event_name == 'pull_request'
+    name: runner / shellcheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: reviewdog/action-shellcheck@v1
+        with:
+          github_token: ${{ secrets.github_token }}
+          reporter: github-pr-review
+
+  alex:
+    name: runner / alex
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: reviewdog/action-alex@v1
+        with:
+          github_token: ${{ secrets.github_token }}
+          reporter: github-check
+          level: info
+
+  textlint:
+    name: runner / textlint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: reviewdog/action-setup@v1
+      - run: npm install
+      - name: textlint
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          npx textlint -f checkstyle README.md | \
+            reviewdog -f=checkstyle -name="textlint" -reporter=github-check -level=info
