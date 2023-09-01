@@ -17,10 +17,10 @@ jobs:
       # run staticcheck
       - uses: reviewdog/action-staticcheck@v1
         with:
-          github_token: ${{ secrets.github_token }}
+          github_token: ${{ secrets.REVIEW_DOG }}
           # Change reviewdog reporter if you need [github-pr-check,github-check,github-pr-review].
           reporter: github-pr-review
           # Report all results.
           filter_mode: nofilter
           # Exit with 1 when it find at least one finding.
-#          fail_on_error: true
+          fail_on_error: true
