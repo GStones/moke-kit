@@ -2,12 +2,13 @@ package module
 
 import (
 	"context"
-	"fmt"
 	"reflect"
 
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 
+	"github.com/gstones/moke-kit/server/internal/srpc"
+	"github.com/gstones/moke-kit/server/internal/zinx"
 	"github.com/gstones/moke-kit/server/siface"
 )
 
@@ -17,11 +18,9 @@ type BinderFunc func(*zap.Logger) ([]LifecycleHook, error)
 type ServiceBinder struct {
 	fx.In
 
-	TcpConnectionMux siface.IConnectionMux `name:"ConnectionMux"`
-
-	GrpcServer    siface.IGrpcServer    `name:"GrpcServer"`
-	GatewayServer siface.IGatewayServer `name:"GatewayServer"`
-	ZinxServer    siface.IZinxServer    `name:"ZinxServer"`
+	ConnectionMux siface.IConnectionMux `name:"ConnectionMux"`
+	ZinxTcpPort   int32                 `name:"ZinxTcpPort"`
+	ZinxWSPort    int32                 `name:"ZinxWSPort"`
 
 	GrpcServices    []siface.IGrpcService    `group:"GrpcService"`
 	GatewayServices []siface.IGatewayService `group:"GatewayService"`
@@ -29,6 +28,7 @@ type ServiceBinder struct {
 }
 
 func (g *ServiceBinder) Execute(l *zap.Logger, lc fx.Lifecycle) error {
+	connectionMuxHook(lc, g.ConnectionMux)
 	if hooks, err := bind(
 		l,
 		g.bindGrpcServices,
@@ -37,7 +37,7 @@ func (g *ServiceBinder) Execute(l *zap.Logger, lc fx.Lifecycle) error {
 	); err != nil {
 		return err
 	} else {
-		connectionMuxHook(lc, g.TcpConnectionMux)
+
 		for _, h := range hooks {
 			h(lc)
 		}
@@ -51,17 +51,21 @@ func (g *ServiceBinder) bindGrpcServices(
 	if len(g.GrpcServices) == 0 {
 		return nil, nil
 	}
-	if g.GrpcServer == nil {
-		return nil, fmt.Errorf("please add grpc mod")
-	}
-
-	for _, s := range g.GrpcServices {
-		l.Info("register grpc service", zap.String("service", reflect.TypeOf(s).String()))
-		if err := s.RegisterWithGrpcServer(g.GrpcServer); err != nil {
-			return nil, err
+	if grpcServer, err := srpc.NewGrpcServer(
+		l,
+		nil,
+		g.ConnectionMux,
+	); err != nil {
+		return nil, err
+	} else {
+		for _, s := range g.GrpcServices {
+			l.Info("register grpc service", zap.String("service", reflect.TypeOf(s).String()))
+			if err := s.RegisterWithGrpcServer(grpcServer); err != nil {
+				return nil, err
+			}
 		}
+		hooks = append(hooks, makeServerHook(grpcServer))
 	}
-	hooks = append(hooks, makeServerHook(g.GrpcServer))
 	return
 }
 
@@ -71,39 +75,46 @@ func (g *ServiceBinder) bindZinxServices(
 	if len(g.ZinxServices) == 0 {
 		return nil, nil
 	}
-
-	if g.ZinxServer == nil {
-		return nil, fmt.Errorf("please add tcp/websocket mod")
+	if zinxServer, err := zinx.NewZinxServer(
+		l,
+		g.ZinxTcpPort,
+		g.ZinxWSPort,
+	); err != nil {
+		return nil, err
+	} else {
+		for _, s := range g.ZinxServices {
+			l.Info("register zinx service", zap.String("service", reflect.TypeOf(s).String()))
+			s.RegisterWithServer(zinxServer)
+		}
+		hooks = append(hooks, makeServerHook(zinxServer))
 	}
 
-	for _, s := range g.ZinxServices {
-		l.Info("register zinx service", zap.String("service", reflect.TypeOf(s).String()))
-		s.RegisterWithServer(g.ZinxServer)
-	}
-	hooks = append(hooks, makeServerHook(g.ZinxServer))
 	return
 }
 
 func (g *ServiceBinder) bindGatewayServices(
 	l *zap.Logger,
 ) (hooks []LifecycleHook, err error) {
-
 	if len(g.GatewayServices) == 0 {
 		return nil, nil
 	}
 
-	if g.GatewayServer == nil {
-		return nil, fmt.Errorf("please add http mod")
+	if gatewayServer, err := srpc.NewGatewayServer(
+		l,
+		g.ConnectionMux,
+	); err != nil {
+		return nil, err
+	} else {
+		for _, s := range g.GatewayServices {
+			l.Info("register gateway service", zap.String("service", reflect.TypeOf(s).String()))
+			err := s.RegisterWithGatewayServer(gatewayServer)
+			if err != nil {
+				return nil, err
+			}
+		}
+		hooks = append(hooks, makeServerHook(gatewayServer))
 	}
 
-	for _, s := range g.GatewayServices {
-		l.Info("register gateway service", zap.String("service", reflect.TypeOf(s).String()))
-		err := s.RegisterWithGatewayServer(g.GatewayServer)
-		if err != nil {
-			return nil, err
-		}
-	}
-	hooks = append(hooks, makeServerHook(g.GatewayServer))
 	return
 }
 
