@@ -16,11 +16,15 @@ import (
 var (
 	httpMatcher     cmux.Matcher
 	grpcMatchWriter cmux.MatchWriter
+	wsl             cmux.Matcher
+	tcp             cmux.Matcher
 )
 
 func init() {
 	grpcMatchWriter = cmux.HTTP2MatchHeaderFieldSendSettings("content-type", "application/grpc")
+	wsl = cmux.HTTP1HeaderField("Upgrade", "websocket")
 	httpMatcher = cmux.HTTP1Fast()
+	tcp = cmux.Any()
 }
 
 type ConnectionMux struct {
@@ -40,6 +44,15 @@ func (m *ConnectionMux) GrpcListener() (listener net.Listener, err error) {
 	return
 }
 
+func (m *ConnectionMux) WSListener() (listener net.Listener, err error) {
+	if m.mux == nil {
+		err = errors.New("connection mux is not serving")
+	} else {
+		listener = m.mux.Match(wsl)
+	}
+	return
+}
+
 func (m *ConnectionMux) HttpListener() (listener net.Listener, err error) {
 	if m.mux == nil {
 		err = errors.New("connection mux is not serving")
@@ -50,8 +63,17 @@ func (m *ConnectionMux) HttpListener() (listener net.Listener, err error) {
 	return
 }
 
-func (m *ConnectionMux) StartServing(_ context.Context) error {
-	if listener, err := net.Listen("tcp", fmt.Sprintf(":%d", m.port)); err != nil {
+func (m *ConnectionMux) TcpListener() (listener net.Listener, err error) {
+	if m.mux == nil {
+		err = errors.New("connection mux is not serving")
+	} else {
+		listener = m.mux.Match(tcp)
+	}
+	return
+}
+
+func (m *ConnectionMux) run() error {
+	if listener, err := net.Listen("tcp", fmt.Sprintf("localhost:%d", m.port)); err != nil {
 		return err
 	} else {
 		if m.tlsConfig != nil {
@@ -75,6 +97,10 @@ func (m *ConnectionMux) StartServing(_ context.Context) error {
 		m.mux.Serve()
 	}()
 
+	return nil
+}
+
+func (m *ConnectionMux) StartServing(_ context.Context) error {
 	return nil
 }
 

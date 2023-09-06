@@ -2,7 +2,6 @@ package srpc
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"strings"
 
@@ -20,7 +19,6 @@ type GatewayServer struct {
 	mux      *runtime.ServeMux
 	listener siface.IHttpListener
 	opts     []grpc.DialOption
-	endpoint string
 }
 
 func (s *GatewayServer) StartServing(_ context.Context) error {
@@ -68,22 +66,29 @@ func (s *GatewayServer) GatewayOption() []grpc.DialOption {
 }
 
 func (s *GatewayServer) Endpoint() string {
-	return s.endpoint
+	if lis, err := s.listener.HttpListener(); err != nil {
+		return ""
+	} else {
+		return lis.Addr().String()
+	}
 }
 
 func NewGatewayServer(
 	logger *zap.Logger,
 	listener siface.IHttpListener,
-	port int32,
-	endpoint string,
 ) (result *GatewayServer, err error) {
 	mux := runtime.NewServeMux(
 		runtime.WithIncomingHeaderMatcher(Matcher),
 		runtime.WithOutgoingHeaderMatcher(Matcher),
 	)
+	addr, err := listener.HttpListener()
+	if err != nil {
+		return nil, err
+	}
+
 	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
 	server := &http.Server{
-		Addr:    fmt.Sprintf("0.0.0.0:%d", port),
+		Addr:    addr.Addr().String(),
 		Handler: allowCORS(withLogger(mux)),
 	}
 	result = &GatewayServer{
@@ -92,7 +97,6 @@ func NewGatewayServer(
 		mux:      mux,
 		opts:     opts,
 		listener: listener,
-		endpoint: endpoint,
 	}
 	return
 }
@@ -109,7 +113,7 @@ func allowCORS(h http.Handler) http.Handler {
 	})
 }
 
-func preflightHandler(w http.ResponseWriter, r *http.Request) {
+func preflightHandler(w http.ResponseWriter, _ *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 
 	headers := []string{"*"}

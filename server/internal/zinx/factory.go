@@ -1,6 +1,8 @@
 package zinx
 
 import (
+	"errors"
+
 	"github.com/aceld/zinx/zconf"
 	"github.com/aceld/zinx/znet"
 	"go.uber.org/zap"
@@ -12,19 +14,20 @@ import (
 
 func NewZinxServer(
 	logger *zap.Logger,
-	mod common.ServerMod,
 	zinxTcpPort int32,
 	zinxWsPost int32,
 ) (result siface.IZinxServer, err error) {
 	zconf.GlobalObject.LogIsolationLevel = 3
 	zconf.GlobalObject.WsPort = int(zinxWsPost)
 	zconf.GlobalObject.TCPPort = int(zinxTcpPort)
-	if mod.IsAll() {
+	if zinxTcpPort != 0 && zinxWsPost != 0 {
 		zconf.GlobalObject.Mode = ""
-	} else if mod.HasWebsocket() {
+	} else if zinxWsPost != 0 {
 		zconf.GlobalObject.Mode = string(common.WsServerMod)
-	} else if mod.HasTcp() {
+	} else if zinxTcpPort != 0 {
 		zconf.GlobalObject.Mode = string(common.TcpServerMod)
+	} else {
+		return nil, errors.New("please set wsPort or tcpPort")
 	}
 	sio := znet.NewServer()
 	result = &ZinxServer{
