@@ -49,7 +49,7 @@ func (s *Service) Watch(request *pb.WatchRequest, server pb.Demo_WatchServer) er
 	return nil
 }
 
-func (s *Service) Hi(ctx context.Context, request *pb.HiRequest) (*pb.HiResponse, error) {
+func (s *Service) Hi(_ context.Context, request *pb.HiRequest) (*pb.HiResponse, error) {
 	message := request.GetMessage()
 	s.logger.Info("Hi", zap.String("message", message))
 
@@ -79,7 +79,7 @@ func (s *Service) RegisterWithGatewayServer(server siface.IGatewayServer) error 
 
 //---------------- zinx ----------------
 
-func (s *Service) PreHandle(request ziface.IRequest) {
+func (s *Service) PreHandle(_ ziface.IRequest) {
 
 }
 
@@ -119,7 +119,7 @@ func (s *Service) Handle(request ziface.IRequest) {
 	}
 }
 
-func (s *Service) PostHandle(request ziface.IRequest) {
+func (s *Service) PostHandle(_ ziface.IRequest) {
 
 }
 

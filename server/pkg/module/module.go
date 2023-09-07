@@ -9,6 +9,5 @@ import (
 var Module = fx.Module("server", fx.Options(
 	sfx.ConnectionMuxModule,
 	sfx.SecuritySettingsModule,
-	sfx.ServersModule,
 	sfx.SettingsModule,
 ))

@@ -4,12 +4,12 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 
-	server "github.com/gstones/moke-kit/server/pkg/module"
+	"github.com/gstones/moke-kit/server/pkg/sfx"
 )
 
 type launchParams struct {
 	fx.In
-	ServiceBinder server.ServiceBinder
+	ServiceBinder sfx.ServiceBinder
 
 	Lifecycle fx.Lifecycle
 	Logger    *zap.Logger

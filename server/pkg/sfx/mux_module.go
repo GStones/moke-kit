@@ -18,22 +18,16 @@ type ConnectionMuxResult struct {
 	ConnectionMux siface.IConnectionMux `name:"ConnectionMux"`
 }
 
-func (f *ConnectionMuxResult) Execute(
+func (cmr *ConnectionMuxResult) Execute(
 	l *zap.Logger,
 	g SettingsParams,
 	s SecuritySettingsParams,
 ) (err error) {
-	newConnectionMux := func(out *siface.IConnectionMux) {
-		if err != nil {
-			return
-		}
-		if s.TlsCert != "" && s.TlsKey != "" {
-			*out, err = cmux.NewTlsConnectionMux(l, g.Port, s.TlsCert, s.TlsKey)
-		} else {
-			*out, err = cmux.NewConnectionMux(l, g.Port)
-		}
+	if s.TlsCert != "" && s.TlsKey != "" {
+		cmr.ConnectionMux, err = cmux.NewTlsConnectionMux(l, g.Port, s.TlsCert, s.TlsKey)
+	} else {
+		cmr.ConnectionMux, err = cmux.NewConnectionMux(l, g.Port)
 	}
-	newConnectionMux(&f.ConnectionMux)
 	return
 }
 
