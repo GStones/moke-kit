@@ -20,8 +20,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-
-	"github.com/gstones/moke-kit/tracing/tiface"
 )
 
 const (
@@ -92,11 +90,9 @@ func fieldsFromCtx(ctx context.Context) logging.Fields {
 
 func addInterceptorOptions(
 	logger *zap.Logger,
-	_ tiface.ITracer,
 	//authClient cli.AuthClient,
 	opts ...grpc.ServerOption,
 ) []grpc.ServerOption {
-	// Setup metrics.
 	srvMetrics := grpcprom.NewServerMetrics(
 		grpcprom.WithServerHandlingTimeHistogram(
 			grpcprom.WithHistogramBuckets([]float64{0.001, 0.01, 0.1, 0.3, 0.6, 1, 3, 6, 9, 20, 30, 60, 90, 120}),
@@ -124,8 +120,8 @@ func addInterceptorOptions(
 
 	//TODO: add rate limit interceptor here
 	//https: //github.com/grpc-ecosystem/go-grpc-middleware#server
-	//TODO: add auth interceptor here
-	//https://github.com/grpc-ecosystem/go-grpc-middleware#auth
+	//TODO: add external auth interceptor here
+	//https://github.com/grpc/proposal/blob/master/A43-grpc-authorization-api.md
 	ui := []grpc.UnaryServerInterceptor{
 		otelgrpc.UnaryServerInterceptor(),
 		srvMetrics.UnaryServerInterceptor(grpcprom.WithExemplarFromContext(exemplarFromContext)),
