@@ -8,12 +8,10 @@ import (
 	mq "github.com/gstones/moke-kit/mq/pkg/module"
 	nosql "github.com/gstones/moke-kit/orm/pkg/module"
 	server "github.com/gstones/moke-kit/server/pkg/module"
-	tracing "github.com/gstones/moke-kit/tracing/module"
 )
 
 var AppModule = fx.Module("app",
 	mfx.SettingModule,
-	tracing.Module,
 	server.Module,
 	nosql.Module,
 	logging.Module,
