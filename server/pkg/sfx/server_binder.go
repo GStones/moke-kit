@@ -54,7 +54,6 @@ func (g *ServiceBinder) bindGrpcServices(
 		err = e
 	} else if grpcServer, e := srpc.NewGrpcServer(
 		l,
-		nil,
 		listener,
 	); e != nil {
 		err = e
