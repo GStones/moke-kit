@@ -42,7 +42,7 @@ func WithBytes(data []byte) PubOption {
 }
 
 // WithJson Use WithJson to set the PubOptions' Data field with a JSON object
-func WithJson(data interface{}) PubOption {
+func WithJson(data any) PubOption {
 	return func(o *PubOptions) (err error) {
 		if len(o.Data) != 0 {
 			return qerrors.ErrDataAlreadySet
@@ -54,7 +54,7 @@ func WithJson(data interface{}) PubOption {
 }
 
 // WithEncoder Use WithEncoder to set the PubOptions' Data field with with encoded data
-func WithEncoder(encoder Encoder, topic string, data interface{}) PubOption {
+func WithEncoder(encoder Encoder, topic string, data any) PubOption {
 	return func(o *PubOptions) error {
 		if len(o.Data) != 0 {
 			return qerrors.ErrDataAlreadySet

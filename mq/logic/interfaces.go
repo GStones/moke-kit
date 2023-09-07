@@ -14,15 +14,15 @@ type Message interface {
 	ID() string
 	Topic() string
 	Data() []byte
-	VPtr() (vPtr interface{})
+	VPtr() (vPtr any)
 }
 
 type Encoder interface {
-	Encode(subject string, v interface{}) ([]byte, error)
+	Encode(subject string, v any) ([]byte, error)
 }
 
 type Decoder interface {
-	Decode(subject string, data []byte, vPtr interface{}) error
+	Decode(subject string, data []byte, vPtr any) error
 }
 
 type Codec interface {
@@ -33,5 +33,5 @@ type Codec interface {
 // ValuePtrFactory is used during optional subscription decoding.
 // A ValuePtrFactory produces the value pointer populated by Decode()
 type ValuePtrFactory interface {
-	NewVPtr() (vPtr interface{})
+	NewVPtr() (vPtr any)
 }
