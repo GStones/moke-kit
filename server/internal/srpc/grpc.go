@@ -3,41 +3,36 @@ package srpc
 import (
 	"context"
 	"errors"
+	"net"
 
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/test/bufconn"
-
-	"github.com/gstones/moke-kit/server/siface"
 )
 
 type GrpcServer struct {
 	logger   *zap.Logger
 	server   *grpc.Server
-	listener siface.IGrpcListener
+	listener net.Listener
 }
 
 func (s *GrpcServer) StartServing(_ context.Context) error {
-	if listener, err := s.listener.GrpcListener(); err != nil {
-		return err
-	} else {
-		s.logger.Info(
-			"grpc start serving ",
-			zap.String("network", listener.Addr().Network()),
-			zap.String("address", listener.Addr().String()),
-		)
+	s.logger.Info(
+		"grpc start serving ",
+		zap.String("network", s.listener.Addr().Network()),
+		zap.String("address", s.listener.Addr().String()),
+	)
 
-		go func() {
-			if err := s.server.Serve(listener); err != nil && !errors.Is(err, grpc.ErrServerStopped) {
-				s.logger.Error(
-					"failed to serve grpc",
-					zap.String("network", listener.Addr().Network()),
-					zap.String("address", listener.Addr().String()),
-					zap.Error(err),
-				)
-			}
-		}()
-	}
+	go func() {
+		if err := s.server.Serve(s.listener); err != nil && !errors.Is(err, grpc.ErrServerStopped) {
+			s.logger.Error(
+				"failed to serve grpc",
+				zap.String("network", s.listener.Addr().Network()),
+				zap.String("address", s.listener.Addr().String()),
+				zap.Error(err),
+			)
+		}
+	}()
 	return nil
 }
 

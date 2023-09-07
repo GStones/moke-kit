@@ -80,7 +80,7 @@ func interceptorLogger(l *zap.Logger) logging.Logger {
 }
 
 func allButLogin(_ context.Context, callMeta interceptors.CallMeta) bool {
-	return !strings.Contains(callMeta.FullMethod(), "Login")
+	return !strings.Contains(callMeta.FullMethod(), "Auth")
 }
 
 func fieldsFromCtx(ctx context.Context) logging.Fields {

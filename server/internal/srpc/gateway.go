@@ -2,6 +2,7 @@ package srpc
 
 import (
 	"context"
+	"net"
 	"net/http"
 	"strings"
 
@@ -9,40 +10,29 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-
-	"github.com/gstones/moke-kit/server/siface"
 )
 
 type GatewayServer struct {
 	logger   *zap.Logger
 	server   *http.Server
 	mux      *runtime.ServeMux
-	listener siface.IHttpListener
+	listener net.Listener
 	opts     []grpc.DialOption
 }
 
 func (s *GatewayServer) StartServing(_ context.Context) error {
-	if listener, err := s.listener.HttpListener(); err != nil {
-		return err
-	} else {
-		s.logger.Info(
-			"serving srpc gateway",
-			zap.String("network", listener.Addr().Network()),
-			zap.String("address", listener.Addr().String()),
-		)
-		go func() {
-			if err := s.server.Serve(listener); err != nil {
-				if !strings.Contains(err.Error(), "Server closed") {
-					s.logger.Error(
-						"failed to serve srpc gateway",
-						zap.String("network", listener.Addr().Network()),
-						zap.String("address", listener.Addr().String()),
-						zap.Error(err),
-					)
-				}
+	go func() {
+		if err := s.server.Serve(s.listener); err != nil {
+			if !strings.Contains(err.Error(), "Server closed") {
+				s.logger.Error(
+					"failed to serve grpc gateway",
+					zap.String("network", s.listener.Addr().Network()),
+					zap.String("address", s.listener.Addr().String()),
+					zap.Error(err),
+				)
 			}
-		}()
-	}
+		}
+	}()
 	return nil
 }
 
@@ -66,29 +56,20 @@ func (s *GatewayServer) GatewayOption() []grpc.DialOption {
 }
 
 func (s *GatewayServer) Endpoint() string {
-	if lis, err := s.listener.HttpListener(); err != nil {
-		return ""
-	} else {
-		return lis.Addr().String()
-	}
+	return s.server.Addr
 }
 
 func NewGatewayServer(
 	logger *zap.Logger,
-	listener siface.IHttpListener,
+	listener net.Listener,
 ) (result *GatewayServer, err error) {
 	mux := runtime.NewServeMux(
 		runtime.WithIncomingHeaderMatcher(Matcher),
 		runtime.WithOutgoingHeaderMatcher(Matcher),
 	)
-	addr, err := listener.HttpListener()
-	if err != nil {
-		return nil, err
-	}
-
 	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
 	server := &http.Server{
-		Addr:    addr.Addr().String(),
+		Addr:    listener.Addr().String(),
 		Handler: allowCORS(withLogger(mux)),
 	}
 	result = &GatewayServer{

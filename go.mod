@@ -1,6 +1,8 @@
 module github.com/gstones/moke-kit
 
-go 1.20
+go 1.21
+
+toolchain go1.21.0
 
 require (
 	github.com/abiosoft/ishell v2.0.0+incompatible

@@ -7,9 +7,12 @@ import (
 	"github.com/aceld/zinx/znet"
 	"go.uber.org/zap"
 
-	"github.com/gstones/moke-kit/server/internal/common"
-
 	"github.com/gstones/moke-kit/server/siface"
+)
+
+const (
+	TcpServerMod string = "tcp"
+	WsServerMod  string = "websocket"
 )
 
 func NewZinxServer(
@@ -23,9 +26,9 @@ func NewZinxServer(
 	if zinxTcpPort != 0 && zinxWsPost != 0 {
 		zconf.GlobalObject.Mode = ""
 	} else if zinxWsPost != 0 {
-		zconf.GlobalObject.Mode = string(common.WsServerMod)
+		zconf.GlobalObject.Mode = WsServerMod
 	} else if zinxTcpPort != 0 {
-		zconf.GlobalObject.Mode = string(common.TcpServerMod)
+		zconf.GlobalObject.Mode = TcpServerMod
 	} else {
 		return nil, errors.New("please set wsPort or tcpPort")
 	}

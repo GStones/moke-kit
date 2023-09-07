@@ -28,7 +28,6 @@ type ServiceBinder struct {
 }
 
 func (g *ServiceBinder) Execute(l *zap.Logger, lc fx.Lifecycle) error {
-	connectionMuxHook(lc, g.ConnectionMux)
 	if hooks, err := bind(
 		l,
 		g.bindGrpcServices,
@@ -37,7 +36,7 @@ func (g *ServiceBinder) Execute(l *zap.Logger, lc fx.Lifecycle) error {
 	); err != nil {
 		return err
 	} else {
-
+		connectionMuxHook(lc, g.ConnectionMux)
 		for _, h := range hooks {
 			h(lc)
 		}
@@ -51,17 +50,19 @@ func (g *ServiceBinder) bindGrpcServices(
 	if len(g.GrpcServices) == 0 {
 		return nil, nil
 	}
-	if grpcServer, err := srpc.NewGrpcServer(
+	if listener, e := g.ConnectionMux.GrpcListener(); e != nil {
+		err = e
+	} else if grpcServer, e := srpc.NewGrpcServer(
 		l,
 		nil,
-		g.ConnectionMux,
-	); err != nil {
-		return nil, err
+		listener,
+	); e != nil {
+		err = e
 	} else {
 		for _, s := range g.GrpcServices {
 			l.Info("register grpc service", zap.String("service", reflect.TypeOf(s).String()))
-			if err := s.RegisterWithGrpcServer(grpcServer); err != nil {
-				return nil, err
+			if e := s.RegisterWithGrpcServer(grpcServer); e != nil {
+				err = e
 			}
 		}
 		hooks = append(hooks, makeServerHook(grpcServer))
@@ -98,10 +99,11 @@ func (g *ServiceBinder) bindGatewayServices(
 	if len(g.GatewayServices) == 0 {
 		return nil, nil
 	}
-
-	if gatewayServer, err := srpc.NewGatewayServer(
+	if hLis, e := g.ConnectionMux.HttpListener(); e != nil {
+		err = e
+	} else if gatewayServer, err := srpc.NewGatewayServer(
 		l,
-		g.ConnectionMux,
+		hLis,
 	); err != nil {
 		return nil, err
 	} else {

@@ -10,7 +10,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/soheilhy/cmux"
 	"go.uber.org/zap"
-	"google.golang.org/grpc/test/bufconn"
 )
 
 var (
@@ -72,64 +71,43 @@ func (m *ConnectionMux) TcpListener() (listener net.Listener, err error) {
 	return
 }
 
-func (m *ConnectionMux) run() error {
-	if listener, err := net.Listen("tcp", fmt.Sprintf("localhost:%d", m.port)); err != nil {
+func (m *ConnectionMux) init() error {
+	if listener, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", m.port)); err != nil {
 		return err
 	} else {
 		if m.tlsConfig != nil {
-			m.listener = tls.NewListener(listener, m.tlsConfig)
-		} else {
-			m.listener = listener
+			listener = tls.NewListener(listener, m.tlsConfig)
 		}
+		m.mux = cmux.New(listener)
 	}
-
-	m.logger.Info(
-		"multiplexing traffic",
-		zap.String("network", m.listener.Addr().Network()),
-		zap.String("address", m.listener.Addr().String()),
-		zap.Int32("port", m.port),
-		zap.Bool("tls", m.tlsConfig != nil),
-	)
-
-	m.mux = cmux.New(m.listener)
-
-	go func() {
-		m.mux.Serve()
-	}()
-
 	return nil
 }
 
 func (m *ConnectionMux) StartServing(_ context.Context) error {
+	go func() {
+		if err := m.mux.Serve(); err != nil {
+			m.logger.Error(
+				"failed to serve",
+				zap.String("network", m.listener.Addr().Network()),
+				zap.String("address", m.listener.Addr().String()),
+				zap.Error(err),
+			)
+		} else {
+			m.logger.Info(
+				"multiplexing traffic",
+				zap.String("network", m.listener.Addr().Network()),
+				zap.String("address", m.listener.Addr().String()),
+				zap.Int32("port", m.port),
+				zap.Bool("tls", m.tlsConfig != nil),
+			)
+		}
+	}()
 	return nil
 }
 
 func (m *ConnectionMux) StopServing(_ context.Context) error {
-	return m.listener.Close()
-}
-
-type TestConnectionMux struct {
-	listener *bufconn.Listener
-}
-
-func (m *TestConnectionMux) GrpcListener() (net.Listener, error) {
-	return m.listener, nil
-}
-
-func (m *TestConnectionMux) HttpListener() (net.Listener, error) {
-	return m.listener, nil
-}
-
-func (m *TestConnectionMux) StartServing(ctx context.Context) error {
+	m.mux.Close()
 	return nil
-}
-
-func (m *TestConnectionMux) StopServing(ctx context.Context) error {
-	return nil
-}
-
-func (m *TestConnectionMux) Dial() (net.Conn, error) {
-	return m.listener.Dial()
 }
 
 func makeTlsConfig(tlsCert, tlsKey string) (config *tls.Config, err error) {
