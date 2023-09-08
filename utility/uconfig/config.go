@@ -10,7 +10,7 @@ import (
 	"github.com/kelseyhightower/envconfig"
 )
 
-func Load(spec interface{}) error {
+func Load(spec any) error {
 	if err := envconfig.Process("", spec); err != nil {
 		return err
 	}
@@ -20,7 +20,7 @@ func Load(spec interface{}) error {
 	return nil
 }
 
-func loadFromVault(spec interface{}) error {
+func loadFromVault(spec any) error {
 	if !reflect.ValueOf(spec).Elem().FieldByName("VaultAddr").IsValid() {
 		return nil
 	}
@@ -44,7 +44,7 @@ func loadFromVault(spec interface{}) error {
 		}
 		return err
 	}
-	m, ok := secret.Data["data"].(map[string]interface{})
+	m, ok := secret.Data["data"].(map[string]any)
 	if !ok {
 		return errors.New("can't read from vault")
 	}

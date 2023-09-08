@@ -20,22 +20,29 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	"github.com/gstones/moke-kit/server/siface"
 )
+
+type UID string
 
 const (
-	TokenContextKey = "bearer"
+	TokenContextKey     = "bearer"
+	UIDContextKey   UID = "uid"
 )
 
-func authFunc() auth.AuthFunc {
+func authFunc(authClient siface.IAuth) auth.AuthFunc {
 	return func(ctx context.Context) (context.Context, error) {
 		if token, err := auth.AuthFromMD(ctx, TokenContextKey); err != nil {
 			return nil, err
-			//TODO change auth client validate token  perform proper Oauth/OIDC verification!
-		} else if token != "test" {
-			return nil, status.Error(codes.Unauthenticated, "invalid auth token")
-		} else {
-			return ctx, nil
+		} else if authClient != nil {
+			if uid, err := authClient.Auth(token); err != nil {
+				return nil, err
+			} else {
+				return context.WithValue(ctx, UIDContextKey, uid), nil
+			}
 		}
+		return ctx, nil
 	}
 }
 
@@ -90,7 +97,7 @@ func fieldsFromCtx(ctx context.Context) logging.Fields {
 
 func addInterceptorOptions(
 	logger *zap.Logger,
-	//authClient cli.AuthClient,
+	authClient siface.IAuth,
 	opts ...grpc.ServerOption,
 ) []grpc.ServerOption {
 	srvMetrics := grpcprom.NewServerMetrics(
@@ -126,14 +133,14 @@ func addInterceptorOptions(
 		otelgrpc.UnaryServerInterceptor(),
 		srvMetrics.UnaryServerInterceptor(grpcprom.WithExemplarFromContext(exemplarFromContext)),
 		logging.UnaryServerInterceptor(interceptorLogger(logger), logging.WithFieldsFromContext(fieldsFromCtx)),
-		selector.UnaryServerInterceptor(auth.UnaryServerInterceptor(authFunc()), selector.MatchFunc(allButLogin)),
+		selector.UnaryServerInterceptor(auth.UnaryServerInterceptor(authFunc(authClient)), selector.MatchFunc(allButLogin)),
 		recovery.UnaryServerInterceptor(recovery.WithRecoveryHandler(grpcPanicRecoveryHandler)),
 	}
 	si := []grpc.StreamServerInterceptor{
 		otelgrpc.StreamServerInterceptor(),
 		srvMetrics.StreamServerInterceptor(grpcprom.WithExemplarFromContext(exemplarFromContext)),
 		logging.StreamServerInterceptor(interceptorLogger(logger), logging.WithFieldsFromContext(fieldsFromCtx)),
-		selector.StreamServerInterceptor(auth.StreamServerInterceptor(authFunc()), selector.MatchFunc(allButLogin)),
+		selector.StreamServerInterceptor(auth.StreamServerInterceptor(authFunc(authClient)), selector.MatchFunc(allButLogin)),
 		recovery.StreamServerInterceptor(recovery.WithRecoveryHandler(grpcPanicRecoveryHandler)),
 	}
 

@@ -7,7 +7,7 @@ type IGrpcListener interface {
 }
 
 type IHttpListener interface {
-	HttpListener() (net.Listener, error)
+	HTTPListener() (net.Listener, error)
 }
 
 type IWebSocketListener interface {
@@ -15,5 +15,5 @@ type IWebSocketListener interface {
 }
 
 type ITcpListener interface {
-	TcpListener() (net.Listener, error)
+	TCPListener() (net.Listener, error)
 }

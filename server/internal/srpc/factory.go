@@ -12,10 +12,10 @@ import (
 func NewGrpcServer(
 	logger *zap.Logger,
 	listener net.Listener,
-	//authClient auth.AuthClient,
+	auth siface.IAuth,
 	opts ...grpc.ServerOption,
 ) (result siface.IGrpcServer, err error) {
-	opts = addInterceptorOptions(logger, opts...)
+	opts = addInterceptorOptions(logger, auth, opts...)
 	result = &GrpcServer{
 		logger:   logger,
 		listener: listener,

@@ -18,10 +18,10 @@ type Options struct {
 	Version         Version
 	AnyVersion      bool
 	TTL             time.Duration
-	Source          interface{}
-	Sources         map[string]interface{}
-	Destination     interface{}
-	DestinationList []interface{}
+	Source          any
+	Sources         map[string]any
+	Destination     any
+	DestinationList []any
 }
 
 // Option is a closure that updates Options.
@@ -73,14 +73,14 @@ func WithTTL(ttl time.Duration) Option {
 }
 
 // WithSource provides an interface to source data when updating a nosql.
-func WithSource(src interface{}) Option {
+func WithSource(src any) Option {
 	return func(o *Options) (err error) {
 		o.Source = src
 		return
 	}
 }
 
-func WithMultipleSource(src map[string]interface{}) Option {
+func WithMultipleSource(src map[string]any) Option {
 	return func(o *Options) (err error) {
 		o.Sources = src
 		return
@@ -88,7 +88,7 @@ func WithMultipleSource(src map[string]interface{}) Option {
 }
 
 // WithDestination provides an interface for receiving data when getting a nosql.
-func WithDestination(dst interface{}) Option {
+func WithDestination(dst any) Option {
 	return func(o *Options) error {
 		if dst == nil {
 			return nerrors.ErrDestIsNil
@@ -102,7 +102,7 @@ func WithDestination(dst interface{}) Option {
 }
 
 // WithDestinationList provides a interface list for receiving data when getting a nosql.
-func WithDestinationList(dst []interface{}) Option {
+func WithDestinationList(dst []any) Option {
 	return func(o *Options) error {
 		if dst == nil {
 			return nerrors.ErrDestIsNil

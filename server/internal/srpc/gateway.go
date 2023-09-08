@@ -20,14 +20,14 @@ type GatewayServer struct {
 	opts     []grpc.DialOption
 }
 
-func (s *GatewayServer) StartServing(_ context.Context) error {
+func (gs *GatewayServer) StartServing(_ context.Context) error {
 	go func() {
-		if err := s.server.Serve(s.listener); err != nil {
+		if err := gs.server.Serve(gs.listener); err != nil {
 			if !strings.Contains(err.Error(), "Server closed") {
-				s.logger.Error(
+				gs.logger.Error(
 					"failed to serve grpc gateway",
-					zap.String("network", s.listener.Addr().Network()),
-					zap.String("address", s.listener.Addr().String()),
+					zap.String("network", gs.listener.Addr().Network()),
+					zap.String("address", gs.listener.Addr().String()),
 					zap.Error(err),
 				)
 			}
@@ -36,27 +36,27 @@ func (s *GatewayServer) StartServing(_ context.Context) error {
 	return nil
 }
 
-func (s *GatewayServer) StopServing(ctx context.Context) error {
-	if err := s.server.Shutdown(ctx); err != nil {
+func (gs *GatewayServer) StopServing(ctx context.Context) error {
+	if err := gs.server.Shutdown(ctx); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (s *GatewayServer) GatewayServer() *http.Server {
-	return s.server
+func (gs *GatewayServer) GatewayServer() *http.Server {
+	return gs.server
 }
 
-func (s *GatewayServer) GatewayRuntimeMux() *runtime.ServeMux {
-	return s.mux
+func (gs *GatewayServer) GatewayRuntimeMux() *runtime.ServeMux {
+	return gs.mux
 }
 
-func (s *GatewayServer) GatewayOption() []grpc.DialOption {
-	return s.opts
+func (gs *GatewayServer) GatewayOption() []grpc.DialOption {
+	return gs.opts
 }
 
-func (s *GatewayServer) Endpoint() string {
-	return s.server.Addr
+func (gs *GatewayServer) Endpoint() string {
+	return gs.server.Addr
 }
 
 func NewGatewayServer(

@@ -16,6 +16,8 @@ func main() {
 		dfx.SqliteDriverModule,
 		// nats message queue
 		qfx.NatsModule,
+		// auth function(optional)
+		demo.AuthModule,
 		// grpc server
 		demo.GrpcModule,
 		// http server

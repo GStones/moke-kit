@@ -50,7 +50,7 @@ type ScanOptions struct {
 
 type KeyValue struct {
 	Index string
-	Value interface{}
+	Value any
 }
 
 type ScanQuery struct {

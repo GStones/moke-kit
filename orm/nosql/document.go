@@ -19,7 +19,7 @@ type DocumentBase struct {
 
 	clear    func()
 	dataType reflect.Type
-	data     interface{}
+	data     any
 	version  noptions.Version
 
 	DocumentStore diface.ICollection
@@ -28,7 +28,7 @@ type DocumentBase struct {
 
 // Init performs an in-place initialization of a DocumentBase.
 func (d *DocumentBase) Init(
-	data interface{},
+	data any,
 	clear func(),
 	store diface.ICollection,
 	key key.Key,
@@ -42,7 +42,7 @@ func (d *DocumentBase) Init(
 }
 
 func (d *DocumentBase) InitWithCache(
-	data interface{},
+	data any,
 	clear func(),
 	store diface.ICollection,
 	key key.Key,
@@ -53,7 +53,7 @@ func (d *DocumentBase) InitWithCache(
 }
 
 func (d *DocumentBase) InitWithVersion(
-	data interface{},
+	data any,
 	clear func(),
 	store diface.ICollection,
 	key key.Key,

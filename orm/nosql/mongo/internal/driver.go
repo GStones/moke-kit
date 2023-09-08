@@ -18,12 +18,12 @@ type DatabaseDriver struct {
 	database *mongo.Database
 }
 
-func (c *DatabaseDriver) GetName() string {
-	return c.database.Name()
+func (dd *DatabaseDriver) GetName() string {
+	return dd.database.Name()
 }
 
-func (c *DatabaseDriver) Set(key key.Key, opts ...noptions.Option) (noptions.Version, error) {
-	coll := c.database.Collection(key.Prefix())
+func (dd *DatabaseDriver) Set(key key.Key, opts ...noptions.Option) (noptions.Version, error) {
+	coll := dd.database.Collection(key.Prefix())
 	if o, err := noptions.NewOptions(opts...); err != nil {
 		return noptions.NoVersion, err
 	} else if o.Source == nil {
@@ -49,8 +49,8 @@ func (c *DatabaseDriver) Set(key key.Key, opts ...noptions.Option) (noptions.Ver
 	}
 }
 
-func (c *DatabaseDriver) Get(key key.Key, opts ...noptions.Option) (noptions.Version, error) {
-	coll := c.database.Collection(key.Prefix())
+func (dd *DatabaseDriver) Get(key key.Key, opts ...noptions.Option) (noptions.Version, error) {
+	coll := dd.database.Collection(key.Prefix())
 	if o, err := noptions.NewOptions(opts...); err != nil {
 		return noptions.NoVersion, err
 	} else {

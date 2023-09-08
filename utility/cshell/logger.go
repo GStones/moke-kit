@@ -18,7 +18,7 @@ func Info(c ishell.Actions, msg string) {
 }
 
 // Infof printf prints to output using string format.
-func Infof(c *ishell.Context, format string, vals ...interface{}) {
+func Infof(c *ishell.Context, format string, vals ...any) {
 	c.Printf(format, vals...)
 }
 

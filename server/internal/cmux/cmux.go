@@ -34,79 +34,79 @@ type ConnectionMux struct {
 	tlsConfig *tls.Config
 }
 
-func (m *ConnectionMux) GrpcListener() (listener net.Listener, err error) {
-	if m.mux == nil {
+func (cm *ConnectionMux) GrpcListener() (listener net.Listener, err error) {
+	if cm.mux == nil {
 		err = errors.New("connection mux is not serving")
 	} else {
-		listener = m.mux.MatchWithWriters(grpcMatchWriter)
+		listener = cm.mux.MatchWithWriters(grpcMatchWriter)
 	}
 	return
 }
 
-func (m *ConnectionMux) WSListener() (listener net.Listener, err error) {
-	if m.mux == nil {
+func (cm *ConnectionMux) WSListener() (listener net.Listener, err error) {
+	if cm.mux == nil {
 		err = errors.New("connection mux is not serving")
 	} else {
-		listener = m.mux.Match(wsl)
+		listener = cm.mux.Match(wsl)
 	}
 	return
 }
 
-func (m *ConnectionMux) HttpListener() (listener net.Listener, err error) {
-	if m.mux == nil {
+func (cm *ConnectionMux) HTTPListener() (listener net.Listener, err error) {
+	if cm.mux == nil {
 		err = errors.New("connection mux is not serving")
 	} else {
-		listener = m.mux.Match(httpMatcher)
+		listener = cm.mux.Match(httpMatcher)
 	}
 
 	return
 }
 
-func (m *ConnectionMux) TcpListener() (listener net.Listener, err error) {
-	if m.mux == nil {
+func (cm *ConnectionMux) TCPListener() (listener net.Listener, err error) {
+	if cm.mux == nil {
 		err = errors.New("connection mux is not serving")
 	} else {
-		listener = m.mux.Match(tcp)
+		listener = cm.mux.Match(tcp)
 	}
 	return
 }
 
-func (m *ConnectionMux) init() error {
-	if listener, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", m.port)); err != nil {
+func (cm *ConnectionMux) init() error {
+	if listener, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", cm.port)); err != nil {
 		return err
 	} else {
-		if m.tlsConfig != nil {
-			listener = tls.NewListener(listener, m.tlsConfig)
+		if cm.tlsConfig != nil {
+			listener = tls.NewListener(listener, cm.tlsConfig)
 		}
-		m.mux = cmux.New(listener)
+		cm.mux = cmux.New(listener)
 	}
 	return nil
 }
 
-func (m *ConnectionMux) StartServing(_ context.Context) error {
+func (cm *ConnectionMux) StartServing(_ context.Context) error {
 	go func() {
-		if err := m.mux.Serve(); err != nil {
-			m.logger.Error(
+		if err := cm.mux.Serve(); err != nil {
+			cm.logger.Error(
 				"failed to serve",
-				zap.String("network", m.listener.Addr().Network()),
-				zap.String("address", m.listener.Addr().String()),
+				zap.String("network", cm.listener.Addr().Network()),
+				zap.String("address", cm.listener.Addr().String()),
 				zap.Error(err),
 			)
 		} else {
-			m.logger.Info(
+			cm.logger.Info(
 				"multiplexing traffic",
-				zap.String("network", m.listener.Addr().Network()),
-				zap.String("address", m.listener.Addr().String()),
-				zap.Int32("port", m.port),
-				zap.Bool("tls", m.tlsConfig != nil),
+				zap.String("network", cm.listener.Addr().Network()),
+				zap.String("address", cm.listener.Addr().String()),
+				zap.Int32("port", cm.port),
+				zap.Bool("tls", cm.tlsConfig != nil),
 			)
 		}
 	}()
 	return nil
 }
 
-func (m *ConnectionMux) StopServing(_ context.Context) error {
-	m.mux.Close()
+func (cm *ConnectionMux) StopServing(_ context.Context) error {
+	cm.mux.Close()
 	return nil
 }
 

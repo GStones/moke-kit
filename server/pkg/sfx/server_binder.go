@@ -17,7 +17,8 @@ type BinderFunc func(*zap.Logger) ([]LifecycleHook, error)
 
 type ServiceBinder struct {
 	fx.In
-
+	// auth service
+	AuthService   siface.IAuth          `name:"AuthService" optional:"true"`
 	ConnectionMux siface.IConnectionMux `name:"ConnectionMux"`
 	ZinxTcpPort   int32                 `name:"ZinxTcpPort"`
 	ZinxWSPort    int32                 `name:"ZinxWSPort"`
@@ -27,16 +28,16 @@ type ServiceBinder struct {
 	ZinxServices    []siface.IZinxService    `group:"ZinxService"`
 }
 
-func (g *ServiceBinder) Execute(l *zap.Logger, lc fx.Lifecycle) error {
+func (sb *ServiceBinder) Execute(l *zap.Logger, lc fx.Lifecycle) error {
 	if hooks, err := bind(
 		l,
-		g.bindGrpcServices,
-		g.bindGatewayServices,
-		g.bindZinxServices,
+		sb.bindGrpcServices,
+		sb.bindGatewayServices,
+		sb.bindZinxServices,
 	); err != nil {
 		return err
 	} else {
-		connectionMuxHook(lc, g.ConnectionMux)
+		connectionMuxHook(lc, sb.ConnectionMux)
 		for _, h := range hooks {
 			h(lc)
 		}
@@ -44,21 +45,21 @@ func (g *ServiceBinder) Execute(l *zap.Logger, lc fx.Lifecycle) error {
 	return nil
 }
 
-func (g *ServiceBinder) bindGrpcServices(
-	l *zap.Logger,
-) (hooks []LifecycleHook, err error) {
-	if len(g.GrpcServices) == 0 {
+func (sb *ServiceBinder) bindGrpcServices(
+	l *zap.Logger) (hooks []LifecycleHook, err error) {
+	if len(sb.GrpcServices) == 0 {
 		return nil, nil
 	}
-	if listener, e := g.ConnectionMux.GrpcListener(); e != nil {
+	if listener, e := sb.ConnectionMux.GrpcListener(); e != nil {
 		err = e
 	} else if grpcServer, e := srpc.NewGrpcServer(
 		l,
 		listener,
+		sb.AuthService,
 	); e != nil {
 		err = e
 	} else {
-		for _, s := range g.GrpcServices {
+		for _, s := range sb.GrpcServices {
 			l.Info("register grpc service", zap.String("service", reflect.TypeOf(s).String()))
 			if e := s.RegisterWithGrpcServer(grpcServer); e != nil {
 				err = e
@@ -69,20 +70,20 @@ func (g *ServiceBinder) bindGrpcServices(
 	return
 }
 
-func (g *ServiceBinder) bindZinxServices(
+func (sb *ServiceBinder) bindZinxServices(
 	l *zap.Logger,
 ) (hooks []LifecycleHook, err error) {
-	if len(g.ZinxServices) == 0 {
+	if len(sb.ZinxServices) == 0 {
 		return nil, nil
 	}
 	if zinxServer, err := zinx.NewZinxServer(
 		l,
-		g.ZinxTcpPort,
-		g.ZinxWSPort,
+		sb.ZinxTcpPort,
+		sb.ZinxWSPort,
 	); err != nil {
 		return nil, err
 	} else {
-		for _, s := range g.ZinxServices {
+		for _, s := range sb.ZinxServices {
 			l.Info("register zinx service", zap.String("service", reflect.TypeOf(s).String()))
 			s.RegisterWithServer(zinxServer)
 		}
@@ -92,13 +93,13 @@ func (g *ServiceBinder) bindZinxServices(
 	return
 }
 
-func (g *ServiceBinder) bindGatewayServices(
+func (sb *ServiceBinder) bindGatewayServices(
 	l *zap.Logger,
 ) (hooks []LifecycleHook, err error) {
-	if len(g.GatewayServices) == 0 {
+	if len(sb.GatewayServices) == 0 {
 		return nil, nil
 	}
-	if hLis, e := g.ConnectionMux.HttpListener(); e != nil {
+	if hLis, e := sb.ConnectionMux.HTTPListener(); e != nil {
 		err = e
 	} else if gatewayServer, err := srpc.NewGatewayServer(
 		l,
@@ -106,7 +107,7 @@ func (g *ServiceBinder) bindGatewayServices(
 	); err != nil {
 		return nil, err
 	} else {
-		for _, s := range g.GatewayServices {
+		for _, s := range sb.GatewayServices {
 			l.Info("register gateway service", zap.String("service", reflect.TypeOf(s).String()))
 			err := s.RegisterWithGatewayServer(gatewayServer)
 			if err != nil {

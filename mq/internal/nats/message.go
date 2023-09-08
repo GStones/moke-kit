@@ -8,10 +8,10 @@ type message struct {
 	id    string
 	topic string
 	data  []byte
-	vPtr  interface{}
+	vPtr  any
 }
 
-func NewMessage(id string, topic string, data []byte, vPtr interface{}) logic.Message {
+func NewMessage(id string, topic string, data []byte, vPtr any) logic.Message {
 	return &message{
 		id:    id,
 		topic: topic,
@@ -32,6 +32,6 @@ func (m *message) Data() []byte {
 	return m.data
 }
 
-func (m *message) VPtr() (vPtr interface{}) {
+func (m *message) VPtr() (vPtr any) {
 	return m.vPtr
 }
