@@ -13,7 +13,7 @@ import (
 	"github.com/gstones/moke-kit/demo/internal/demo/db_nosql"
 	"github.com/gstones/moke-kit/demo/internal/demo/handlers"
 	"github.com/gstones/moke-kit/demo/pkg/dfx"
-	"github.com/gstones/moke-kit/mq/logic"
+	"github.com/gstones/moke-kit/mq/miface"
 	"github.com/gstones/moke-kit/mq/pkg/qfx"
 	"github.com/gstones/moke-kit/orm/nosql/diface"
 	"github.com/gstones/moke-kit/orm/pkg/nfx"
@@ -131,7 +131,7 @@ func (s *Service) RegisterWithServer(server siface.IZinxServer) {
 func NewService(
 	logger *zap.Logger,
 	coll diface.ICollection,
-	mq logic.MessageQueue,
+	mq miface.MessageQueue,
 	gdb *gorm.DB,
 ) (result *Service, err error) {
 	handler := handlers.NewDemo(

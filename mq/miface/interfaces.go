@@ -1,4 +1,4 @@
-package logic
+package miface
 
 type MessageQueue interface {
 	Subscribe(topic string, handler SubResponseHandler, opts ...SubOption) (Subscription, error)

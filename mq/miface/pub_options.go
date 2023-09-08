@@ -1,4 +1,4 @@
-package logic
+package miface
 
 import (
 	"encoding/json"

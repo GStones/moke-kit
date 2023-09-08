@@ -30,6 +30,9 @@ func (mr *MongoResult) NewDocument(
 	l *zap.Logger,
 	n SettingsParams,
 ) (err error) {
+	if n.NosqlUrl == "" {
+		return nil
+	}
 	if u, e := url.Parse(n.NosqlUrl); e != nil {
 		err = e
 	} else if u.Scheme == "mongodb" {
@@ -56,6 +59,8 @@ func (mr *MongoResult) NewDocument(
 	return
 }
 
+// MongoPureModule is the module for mongo driver
+// https://github.com/mongodb/mongo-go-driver
 var MongoPureModule = fx.Provide(
 	func(
 		lc fx.Lifecycle,

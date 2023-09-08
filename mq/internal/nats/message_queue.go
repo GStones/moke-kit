@@ -8,7 +8,7 @@ import (
 
 	"github.com/gstones/moke-kit/mq/common"
 	"github.com/gstones/moke-kit/mq/internal/qerrors"
-	"github.com/gstones/moke-kit/mq/logic"
+	"github.com/gstones/moke-kit/mq/miface"
 )
 
 type MessageQueue struct {
@@ -28,16 +28,16 @@ func NewMessageQueue(logger *zap.Logger, address string) (*MessageQueue, error) 
 
 func (m *MessageQueue) Subscribe(
 	topic string,
-	handler logic.SubResponseHandler,
-	sOpts ...logic.SubOption,
-) (logic.Subscription, error) {
+	handler miface.SubResponseHandler,
+	sOpts ...miface.SubOption,
+) (miface.Subscription, error) {
 	if topic == "" {
 		return nil, qerrors.ErrEmptyTopic
 	} else {
 		topic = common.NamespaceTopic(topic)
 	}
 
-	if options, err := logic.NewSubOptions(sOpts...); err != nil {
+	if options, err := miface.NewSubOptions(sOpts...); err != nil {
 		return nil, err
 	} else {
 		return NewSubscription(
@@ -51,14 +51,14 @@ func (m *MessageQueue) Subscribe(
 	}
 }
 
-func (m *MessageQueue) Publish(topic string, pOpts ...logic.PubOption) error {
+func (m *MessageQueue) Publish(topic string, pOpts ...miface.PubOption) error {
 	if topic == "" {
 		return qerrors.ErrEmptyTopic
 	} else {
 		topic = common.NamespaceTopic(topic)
 	}
 
-	if options, err := logic.NewPubOptions(pOpts...); err != nil {
+	if options, err := miface.NewPubOptions(pOpts...); err != nil {
 		return err
 	} else if options.Delay != 0 {
 		return qerrors.ErrDelayedPublishUnsupported

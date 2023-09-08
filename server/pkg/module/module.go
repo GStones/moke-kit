@@ -6,8 +6,8 @@ import (
 	"github.com/gstones/moke-kit/server/pkg/sfx"
 )
 
-var Module = fx.Module("server", fx.Options(
+var Module = fx.Module("server",
 	sfx.ConnectionMuxModule,
 	sfx.SecuritySettingsModule,
 	sfx.SettingsModule,
-))
+)

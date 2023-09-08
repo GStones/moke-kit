@@ -1,7 +1,7 @@
 package nats
 
 import (
-	"github.com/gstones/moke-kit/mq/logic"
+	"github.com/gstones/moke-kit/mq/miface"
 )
 
 type message struct {
@@ -11,7 +11,7 @@ type message struct {
 	vPtr  any
 }
 
-func NewMessage(id string, topic string, data []byte, vPtr any) logic.Message {
+func NewMessage(id string, topic string, data []byte, vPtr any) miface.Message {
 	return &message{
 		id:    id,
 		topic: topic,

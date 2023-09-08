@@ -6,28 +6,28 @@ import (
 	"github.com/gstones/moke-kit/fxmain/pkg/mfx"
 	"github.com/gstones/moke-kit/mq/common"
 	"github.com/gstones/moke-kit/mq/internal"
-	"github.com/gstones/moke-kit/mq/logic"
+	"github.com/gstones/moke-kit/mq/miface"
 )
 
 type MessageQueueParams struct {
 	fx.In
 
-	MessageQueue logic.MessageQueue `name:"MessageQueue"`
+	MessageQueue miface.MessageQueue `name:"MessageQueue"`
 }
 
 type MessageQueueResult struct {
 	fx.Out
 
-	MessageQueue logic.MessageQueue `name:"MessageQueue"`
+	MessageQueue miface.MessageQueue `name:"MessageQueue"`
 }
 
 type MQImplementations struct {
 	fx.In
 
-	NatsMQ  logic.MessageQueue `name:"NatsMQ" optional:"true"`
-	KafkaMQ logic.MessageQueue `name:"KafkaMQ" optional:"true"`
-	NsqMQ   logic.MessageQueue `name:"NsqMQ" optional:"true"`
-	LocalMQ logic.MessageQueue `name:"LocalMQ" optional:"true"`
+	NatsMQ  miface.MessageQueue `name:"NatsMQ" optional:"true"`
+	KafkaMQ miface.MessageQueue `name:"KafkaMQ" optional:"true"`
+	NsqMQ   miface.MessageQueue `name:"NsqMQ" optional:"true"`
+	LocalMQ miface.MessageQueue `name:"LocalMQ" optional:"true"`
 }
 
 func (g *MessageQueueResult) Execute(s mfx.AppParams, i MQImplementations) (err error) {

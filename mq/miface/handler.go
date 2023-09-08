@@ -1,4 +1,4 @@
-package logic
+package miface
 
 import (
 	"github.com/gstones/moke-kit/mq/common"

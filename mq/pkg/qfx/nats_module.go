@@ -5,12 +5,12 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/gstones/moke-kit/mq/internal/nats"
-	"github.com/gstones/moke-kit/mq/logic"
+	"github.com/gstones/moke-kit/mq/miface"
 )
 
 type NatsResult struct {
 	fx.Out
-	NatsMQ logic.MessageQueue `name:"NatsMQ"`
+	NatsMQ miface.MessageQueue `name:"NatsMQ"`
 }
 
 func (k *NatsResult) Execute(logger *zap.Logger, s SettingsParams) (err error) {
@@ -31,7 +31,7 @@ var NatsModule = fx.Provide(
 )
 
 // For CLI testing purposes
-func NewNatsMessageQueue(logger *zap.Logger, address string) (logic.MessageQueue, error) {
+func NewNatsMessageQueue(logger *zap.Logger, address string) (miface.MessageQueue, error) {
 	mq, err := nats.NewMessageQueue(logger, address)
 	if err != nil {
 		logger.Error("Nats message queue connect failure:",

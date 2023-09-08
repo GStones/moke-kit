@@ -6,7 +6,7 @@ import (
 	"github.com/gstones/moke-kit/mq/pkg/qfx"
 )
 
-var Module = fx.Module("mq", fx.Options(
+var Module = fx.Module("mq",
 	qfx.MqModule,
 	qfx.SettingModule,
-))
+)

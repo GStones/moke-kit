@@ -67,6 +67,7 @@ func (dsr *DocumentStoreResult) NewDocument(
 	return
 }
 
+// DocumentStoreModule provides  to the mfx dependency graph.
 var DocumentStoreModule = fx.Provide(
 	func(
 		lc fx.Lifecycle,
