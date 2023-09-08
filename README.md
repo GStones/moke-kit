@@ -18,7 +18,7 @@ The current framework is still in the development stage and cannot be used in a 
     * [ ] mock
     * [ ] kafka
     * [ ] rabbitmq
-    * [ ] nats
+    * [ ] nsq
 * [Orm](https://github.com/GStones/moke-kit/tree/main/orm):
     * [x] [gorm](https://gorm.io/)
     * [x] [mongodb](https://github.com/mongodb/mongo-go-driver)
