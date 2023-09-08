@@ -9,20 +9,20 @@ import (
 	"github.com/gstones/moke-kit/demo/internal/demo/db_nosql"
 	"github.com/gstones/moke-kit/demo/internal/demo/db_sql"
 	"github.com/gstones/moke-kit/mq/common"
-	"github.com/gstones/moke-kit/mq/logic"
+	"github.com/gstones/moke-kit/mq/miface"
 )
 
 type Demo struct {
 	logger  *zap.Logger
 	nosqlDb db_nosql.Database
-	mq      logic.MessageQueue
+	mq      miface.MessageQueue
 	gormDb  *gorm.DB
 }
 
 func NewDemo(
 	logger *zap.Logger,
 	database db_nosql.Database,
-	mq logic.MessageQueue,
+	mq miface.MessageQueue,
 	gormDb *gorm.DB,
 ) *Demo {
 	return &Demo{
@@ -52,7 +52,7 @@ func (d *Demo) Hi(uid, message string) error {
 	// mq publish
 	if err := d.mq.Publish(
 		common.NatsHeader.CreateTopic("demo"),
-		logic.WithBytes([]byte(message)),
+		miface.WithBytes([]byte(message)),
 	); err != nil {
 		return err
 	}
@@ -63,7 +63,7 @@ func (d *Demo) Watch(ctx context.Context, topic string, callback func(message st
 	// mq subscribe
 	sub, err := d.mq.Subscribe(
 		common.NatsHeader.CreateTopic(topic),
-		func(msg logic.Message, err error) common.ConsumptionCode {
+		func(msg miface.Message, err error) common.ConsumptionCode {
 			if err := callback(string(msg.Data())); err != nil {
 				return common.ConsumeNackPersistentFailure
 			}

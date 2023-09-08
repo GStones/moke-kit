@@ -10,9 +10,8 @@ import (
 func main() {
 	fxmain.Main(
 		dfx.SettingsModule,
-		// db
-		dfx.DemoDBModule,
-		// sqlite db
+		// config sqlite db module
+		//(you can customize it as gorm support db adapter)
 		dfx.SqliteDriverModule,
 		// nats message queue
 		qfx.NatsModule,

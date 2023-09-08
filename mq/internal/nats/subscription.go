@@ -9,16 +9,16 @@ import (
 
 	"github.com/gstones/moke-kit/mq/common"
 	"github.com/gstones/moke-kit/mq/internal/qerrors"
-	"github.com/gstones/moke-kit/mq/logic"
+	"github.com/gstones/moke-kit/mq/miface"
 )
 
 type Subscription struct {
 	topic       string
 	mutex       sync.Mutex
 	nSub        *nats.Subscription
-	handler     logic.SubResponseHandler
-	decoder     logic.Decoder
-	vPtrFactory logic.ValuePtrFactory
+	handler     miface.SubResponseHandler
+	decoder     miface.Decoder
+	vPtrFactory miface.ValuePtrFactory
 }
 
 func NewSubscription(
@@ -26,9 +26,9 @@ func NewSubscription(
 	conn *nats.Conn,
 	deliverySemantics common.DeliverySemantics,
 	queue string,
-	handler logic.SubResponseHandler,
-	decoder logic.Decoder,
-	vPtrFactory logic.ValuePtrFactory,
+	handler miface.SubResponseHandler,
+	decoder miface.Decoder,
+	vPtrFactory miface.ValuePtrFactory,
 ) (*Subscription, error) {
 	sub := &Subscription{
 		topic:       topic,
