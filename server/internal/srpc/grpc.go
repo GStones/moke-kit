@@ -16,19 +16,19 @@ type GrpcServer struct {
 	listener net.Listener
 }
 
-func (s *GrpcServer) StartServing(_ context.Context) error {
-	s.logger.Info(
+func (gs *GrpcServer) StartServing(_ context.Context) error {
+	gs.logger.Info(
 		"grpc start serving ",
-		zap.String("network", s.listener.Addr().Network()),
-		zap.String("address", s.listener.Addr().String()),
+		zap.String("network", gs.listener.Addr().Network()),
+		zap.String("address", gs.listener.Addr().String()),
 	)
 
 	go func() {
-		if err := s.server.Serve(s.listener); err != nil && !errors.Is(err, grpc.ErrServerStopped) {
-			s.logger.Error(
+		if err := gs.server.Serve(gs.listener); err != nil && !errors.Is(err, grpc.ErrServerStopped) {
+			gs.logger.Error(
 				"failed to serve grpc",
-				zap.String("network", s.listener.Addr().Network()),
-				zap.String("address", s.listener.Addr().String()),
+				zap.String("network", gs.listener.Addr().Network()),
+				zap.String("address", gs.listener.Addr().String()),
 				zap.Error(err),
 			)
 		}
@@ -36,13 +36,13 @@ func (s *GrpcServer) StartServing(_ context.Context) error {
 	return nil
 }
 
-func (s *GrpcServer) StopServing(_ context.Context) error {
-	s.server.GracefulStop()
+func (gs *GrpcServer) StopServing(_ context.Context) error {
+	gs.server.GracefulStop()
 	return nil
 }
 
-func (s *GrpcServer) GrpcServer() *grpc.Server {
-	return s.server
+func (gs *GrpcServer) GrpcServer() *grpc.Server {
+	return gs.server
 }
 
 type TestGrpcServer struct {

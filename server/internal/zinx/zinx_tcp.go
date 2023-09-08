@@ -12,18 +12,18 @@ type ZinxServer struct {
 	server ziface.IServer
 }
 
-func (s *ZinxServer) ZinxServer() ziface.IServer {
-	return s.server
+func (zs *ZinxServer) ZinxServer() ziface.IServer {
+	return zs.server
 }
 
-func (s *ZinxServer) StartServing(_ context.Context) error {
+func (zs *ZinxServer) StartServing(_ context.Context) error {
 	go func() {
-		s.server.Serve()
+		zs.server.Serve()
 	}()
 	return nil
 }
 
-func (s *ZinxServer) StopServing(_ context.Context) error {
-	s.server.Stop()
+func (zs *ZinxServer) StopServing(_ context.Context) error {
+	zs.server.Stop()
 	return nil
 }

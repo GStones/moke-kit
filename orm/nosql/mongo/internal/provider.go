@@ -14,12 +14,12 @@ type DriverProvider struct {
 	logger  *zap.Logger
 }
 
-func (d *DriverProvider) Shutdown() error {
-	return d.mClient.Disconnect(context.Background())
+func (dp *DriverProvider) Shutdown() error {
+	return dp.mClient.Disconnect(context.Background())
 }
 
-func (d *DriverProvider) OpenDbDriver(name string) (diface.ICollection, error) {
-	db := d.mClient.Database(name)
+func (dp *DriverProvider) OpenDbDriver(name string) (diface.ICollection, error) {
+	db := dp.mClient.Database(name)
 	if s, err := NewCollectionDriver(db); err != nil {
 		return nil, err
 	} else {
