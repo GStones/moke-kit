@@ -24,9 +24,11 @@ import (
 	"github.com/gstones/moke-kit/server/siface"
 )
 
+type UID string
+
 const (
-	TokenContextKey = "bearer"
-	UidContextKey   = "uid"
+	TokenContextKey     = "bearer"
+	UIDContextKey   UID = "uid"
 )
 
 func authFunc(authClient siface.IAuth) auth.AuthFunc {
@@ -37,11 +39,10 @@ func authFunc(authClient siface.IAuth) auth.AuthFunc {
 			if uid, err := authClient.Auth(token); err != nil {
 				return nil, err
 			} else {
-				return context.WithValue(ctx, UidContextKey, uid), nil
+				return context.WithValue(ctx, UIDContextKey, uid), nil
 			}
-		} else {
-			return ctx, nil
 		}
+		return ctx, nil
 	}
 }
 

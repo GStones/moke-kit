@@ -52,7 +52,7 @@ func (cm *ConnectionMux) WSListener() (listener net.Listener, err error) {
 	return
 }
 
-func (cm *ConnectionMux) HttpListener() (listener net.Listener, err error) {
+func (cm *ConnectionMux) HTTPListener() (listener net.Listener, err error) {
 	if cm.mux == nil {
 		err = errors.New("connection mux is not serving")
 	} else {
@@ -62,7 +62,7 @@ func (cm *ConnectionMux) HttpListener() (listener net.Listener, err error) {
 	return
 }
 
-func (cm *ConnectionMux) TcpListener() (listener net.Listener, err error) {
+func (cm *ConnectionMux) TCPListener() (listener net.Listener, err error) {
 	if cm.mux == nil {
 		err = errors.New("connection mux is not serving")
 	} else {

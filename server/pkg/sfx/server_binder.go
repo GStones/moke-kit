@@ -99,7 +99,7 @@ func (sb *ServiceBinder) bindGatewayServices(
 	if len(sb.GatewayServices) == 0 {
 		return nil, nil
 	}
-	if hLis, e := sb.ConnectionMux.HttpListener(); e != nil {
+	if hLis, e := sb.ConnectionMux.HTTPListener(); e != nil {
 		err = e
 	} else if gatewayServer, err := srpc.NewGatewayServer(
 		l,

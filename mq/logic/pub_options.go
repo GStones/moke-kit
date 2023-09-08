@@ -41,8 +41,8 @@ func WithBytes(data []byte) PubOption {
 	}
 }
 
-// WithJson Use WithJson to set the PubOptions' Data field with a JSON object
-func WithJson(data any) PubOption {
+// WithJSON Use WithJSON to set the PubOptions' Data field with a JSON object
+func WithJSON(data any) PubOption {
 	return func(o *PubOptions) (err error) {
 		if len(o.Data) != 0 {
 			return qerrors.ErrDataAlreadySet
