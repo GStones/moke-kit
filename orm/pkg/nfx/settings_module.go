@@ -9,19 +9,19 @@ import (
 type SettingsParams struct {
 	fx.In
 
-	NoSqlUser      string `name:"NoSqlUser"`
-	NoSqlPassword  string `name:"NoSqlPassword"`
-	NosqlUrl       string `name:"NosqlUrl"`
-	MemoryStoreUrl string `name:"MemoryStoreUrl"`
+	DocumentURL   string `name:"DocumentURL"`
+	RedisURL      string `name:"RedisURL"`
+	RedisUser     string `name:"RedisUser"`
+	RedisPassword string `name:"RedisPassword"`
 }
 
 type SettingsResult struct {
 	fx.Out
 
-	NoSqlUser      string `name:"NoSqlUser" envconfig:"NOSQL_USERNAME"`
-	NoSqlPassword  string `name:"NoSqlPassword" envconfig:"NOSQL_PASSWORD"`
-	NoSqlUrl       string `name:"NosqlUrl" envconfig:"NOSQL_URL" default:"mongodb://localhost:27017"`
-	MemoryStoreUrl string `name:"MemoryStoreUrl" envconfig:"MEMORY_STORE_URL"`
+	DocumentURL   string `name:"DocumentURL" envconfig:"DOCUMENT_URL" default:"mongodb://localhost:27017"`
+	RedisURL      string `name:"RedisURL" envconfig:"REDIS_URL" default:"localhost:6379" `
+	RedisUser     string `name:"RedisUser" envconfig:"REDIS_USER"`
+	RedisPassword string `name:"RedisPassword" envconfig:"REDIS_PASSWORD"`
 }
 
 func (sr *SettingsResult) LoadFromEnv() (err error) {

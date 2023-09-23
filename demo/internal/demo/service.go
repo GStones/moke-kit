@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/aceld/zinx/ziface"
+	"github.com/go-redis/redis"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
@@ -133,12 +134,14 @@ func NewService(
 	coll diface.ICollection,
 	mq miface.MessageQueue,
 	gdb *gorm.DB,
+	redis *redis.Client,
 ) (result *Service, err error) {
 	handler := handlers.NewDemo(
 		logger,
 		db_nosql.OpenDatabase(logger, coll),
 		mq,
 		gdb,
+		redis,
 	)
 
 	result = &Service{
@@ -155,11 +158,18 @@ var GrpcModule = fx.Provide(
 		setting dfx.SettingsParams,
 		mqParams qfx.MessageQueueParams,
 		gParams nfx.GormParams,
+		redisClient nfx.RedisParams,
 
 	) (out sfx.GrpcServiceResult, err error) {
 		if coll, err := dProvider.DriverProvider.OpenDbDriver(setting.DbName); err != nil {
 			return out, err
-		} else if s, err := NewService(l, coll, mqParams.MessageQueue, gParams.GormDB); err != nil {
+		} else if s, err := NewService(
+			l,
+			coll,
+			mqParams.MessageQueue,
+			gParams.GormDB,
+			redisClient.Redis,
+		); err != nil {
 			return out, err
 		} else {
 			out.GrpcService = s
@@ -175,10 +185,17 @@ var GatewayModule = fx.Provide(
 		setting dfx.SettingsParams,
 		mqParams qfx.MessageQueueParams,
 		gParams nfx.GormParams,
+		redisClient nfx.RedisParams,
 	) (out sfx.GatewayServiceResult, err error) {
 		if coll, err := dProvider.DriverProvider.OpenDbDriver(setting.DbName); err != nil {
 			return out, err
-		} else if s, err := NewService(l, coll, mqParams.MessageQueue, gParams.GormDB); err != nil {
+		} else if s, err := NewService(
+			l,
+			coll,
+			mqParams.MessageQueue,
+			gParams.GormDB,
+			redisClient.Redis,
+		); err != nil {
 			return out, err
 		} else {
 			out.GatewayService = s
@@ -194,10 +211,17 @@ var ZinxModule = fx.Provide(
 		setting dfx.SettingsParams,
 		mqParams qfx.MessageQueueParams,
 		gParams nfx.GormParams,
+		redisClient nfx.RedisParams,
 	) (out sfx.ZinxServiceResult, err error) {
 		if coll, err := dProvider.DriverProvider.OpenDbDriver(setting.DbName); err != nil {
 			return out, err
-		} else if s, err := NewService(l, coll, mqParams.MessageQueue, gParams.GormDB); err != nil {
+		} else if s, err := NewService(
+			l,
+			coll,
+			mqParams.MessageQueue,
+			gParams.GormDB,
+			redisClient.Redis,
+		); err != nil {
 			return out, err
 		} else {
 			out.ZinxService = s

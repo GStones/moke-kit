@@ -2,7 +2,6 @@ package nfx
 
 import (
 	"context"
-	"net/url"
 
 	goredis "github.com/go-redis/redis"
 	"go.uber.org/fx"
@@ -30,31 +29,19 @@ func (rr *RedisResult) Execute(
 	l *zap.Logger,
 	n SettingsParams,
 ) (err error) {
-	if n.MemoryStoreUrl != "" {
-		if u, e := url.Parse(n.MemoryStoreUrl); e != nil {
-			err = e
-		} else {
-			switch u.Scheme {
-			case "redis":
-				password, set := u.User.Password()
-				if !set {
-					password = n.NoSqlPassword
-				}
-				l.Info("Connecting to redis", zap.String("host", u.Host))
-				rr.Redis = goredis.NewClient(&goredis.Options{
-					Addr:     u.Host,
-					Password: password,
-					DB:       0,
-				})
-				rr.Cache = goredis.NewClient(&goredis.Options{
-					Addr:     u.Host,
-					Password: password,
-					DB:       1,
-				})
-			default:
-				return nerrors.ErrInvalidNosqlURL
-			}
-		}
+	if n.RedisURL != "" {
+		l.Info("Connecting to redis", zap.String("host", n.RedisURL))
+		rr.Redis = goredis.NewClient(&goredis.Options{
+			Addr:     n.RedisURL,
+			Password: n.RedisPassword,
+			DB:       0,
+		})
+		rr.Cache = goredis.NewClient(&goredis.Options{
+			Addr:     n.RedisURL,
+			Password: n.RedisPassword,
+			DB:       1,
+		})
+
 	} else {
 		return nerrors.ErrMissingNosqlURL
 	}
@@ -64,6 +51,7 @@ func (rr *RedisResult) Execute(
 			OnStop: func(ctx context.Context) error {
 				rr.Redis.Close()
 				return rr.Cache.Close()
+
 			},
 		})
 	}
