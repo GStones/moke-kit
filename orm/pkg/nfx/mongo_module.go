@@ -30,10 +30,10 @@ func (mr *MongoResult) NewDocument(
 	l *zap.Logger,
 	n SettingsParams,
 ) (err error) {
-	if n.DocumentUrl == "" {
+	if n.DocumentURL == "" {
 		return nil
 	}
-	if u, e := url.Parse(n.DocumentUrl); e != nil {
+	if u, e := url.Parse(n.DocumentURL); e != nil {
 		err = e
 	} else if u.Scheme == "mongodb" {
 		username := u.User.Username()

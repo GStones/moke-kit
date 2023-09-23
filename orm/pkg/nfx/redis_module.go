@@ -29,15 +29,15 @@ func (rr *RedisResult) Execute(
 	l *zap.Logger,
 	n SettingsParams,
 ) (err error) {
-	if n.RedisUrl != "" {
-		l.Info("Connecting to redis", zap.String("host", n.RedisUrl))
+	if n.RedisURL != "" {
+		l.Info("Connecting to redis", zap.String("host", n.RedisURL))
 		rr.Redis = goredis.NewClient(&goredis.Options{
-			Addr:     n.RedisUrl,
+			Addr:     n.RedisURL,
 			Password: n.RedisPassword,
 			DB:       0,
 		})
 		rr.Cache = goredis.NewClient(&goredis.Options{
-			Addr:     n.RedisUrl,
+			Addr:     n.RedisURL,
 			Password: n.RedisPassword,
 			DB:       1,
 		})

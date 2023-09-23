@@ -18,7 +18,7 @@ type SettingsParams struct {
 type SettingsResult struct {
 	fx.Out
 
-	DocumentURL   string `name:"DocumentURL" envconfig:"NOSQL_URL" default:"mongodb://localhost:27017"`
+	DocumentURL   string `name:"DocumentURL" envconfig:"DOCUMENT_URL" default:"mongodb://localhost:27017"`
 	RedisURL      string `name:"RedisURL" envconfig:"REDIS_URL" default:"localhost:6379" `
 	RedisUser     string `name:"RedisUser" envconfig:"REDIS_USER"`
 	RedisPassword string `name:"RedisPassword" envconfig:"REDIS_PASSWORD"`
