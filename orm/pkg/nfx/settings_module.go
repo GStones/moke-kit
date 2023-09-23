@@ -9,8 +9,8 @@ import (
 type SettingsParams struct {
 	fx.In
 
-	DocumentUrl   string `name:"DocumentUrl"`
-	RedisUrl      string `name:"RedisUrl"`
+	DocumentURL   string `name:"DocumentURL"`
+	RedisURL      string `name:"RedisURL"`
 	RedisUser     string `name:"RedisUser"`
 	RedisPassword string `name:"RedisPassword"`
 }
@@ -18,8 +18,8 @@ type SettingsParams struct {
 type SettingsResult struct {
 	fx.Out
 
-	DocumentUrl   string `name:"DocumentUrl" envconfig:"NOSQL_URL" default:"mongodb://localhost:27017"`
-	RedisUrl      string `name:"RedisUrl" envconfig:"REDIS_URL" default:"localhost:6379" `
+	DocumentURL   string `name:"DocumentURL" envconfig:"NOSQL_URL" default:"mongodb://localhost:27017"`
+	RedisURL      string `name:"RedisURL" envconfig:"REDIS_URL" default:"localhost:6379" `
 	RedisUser     string `name:"RedisUser" envconfig:"REDIS_USER"`
 	RedisPassword string `name:"RedisPassword" envconfig:"REDIS_PASSWORD"`
 }
