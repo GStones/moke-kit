@@ -30,20 +30,20 @@ func (mr *MongoResult) NewDocument(
 	l *zap.Logger,
 	n SettingsParams,
 ) (err error) {
-	if n.NosqlUrl == "" {
+	if n.DocumentUrl == "" {
 		return nil
 	}
-	if u, e := url.Parse(n.NosqlUrl); e != nil {
+	if u, e := url.Parse(n.DocumentUrl); e != nil {
 		err = e
 	} else if u.Scheme == "mongodb" {
 		username := u.User.Username()
 		if username == "" {
-			username = n.NoSqlUser
+			username = n.RedisUser
 		}
 
 		password, set := u.User.Password()
 		if !set {
-			password = n.NoSqlPassword
+			password = n.RedisPassword
 		}
 		conn := fmt.Sprintf("mongodb://%s", u.Host)
 		l.Info("Connect to mongodb", zap.String("url", conn))

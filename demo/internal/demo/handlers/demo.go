@@ -2,7 +2,9 @@ package handlers
 
 import (
 	"context"
+	"time"
 
+	"github.com/go-redis/redis"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
@@ -17,6 +19,7 @@ type Demo struct {
 	nosqlDb db_nosql.Database
 	mq      miface.MessageQueue
 	gormDb  *gorm.DB
+	redis   *redis.Client
 }
 
 func NewDemo(
@@ -24,12 +27,14 @@ func NewDemo(
 	database db_nosql.Database,
 	mq miface.MessageQueue,
 	gormDb *gorm.DB,
+	redis *redis.Client,
 ) *Demo {
 	return &Demo{
 		logger:  logger,
 		nosqlDb: database,
 		mq:      mq,
 		gormDb:  gormDb,
+		redis:   redis,
 	}
 }
 
@@ -48,7 +53,7 @@ func (d *Demo) Hi(uid, message string) error {
 	if err := db_sql.FirstOrCreate(d.gormDb, uid, message); err != nil {
 		return err
 	}
-
+	d.redis.Set("demo", message, time.Minute)
 	// mq publish
 	if err := d.mq.Publish(
 		common.NatsHeader.CreateTopic("demo"),

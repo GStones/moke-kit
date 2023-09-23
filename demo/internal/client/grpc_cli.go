@@ -72,7 +72,6 @@ func (p *DemoGrpc) sayHi(c *ishell.Context) {
 }
 
 func (p *DemoGrpc) watch(c *ishell.Context) {
-
 	c.ShowPrompt(false)
 	defer c.ShowPrompt(true)
 

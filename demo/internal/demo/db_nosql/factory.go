@@ -45,5 +45,4 @@ func (db *Database) LoadOrCreateDemo(id string) (*demo.Dao, error) {
 	} else {
 		return dm, nil
 	}
-	return nil, nil
 }
