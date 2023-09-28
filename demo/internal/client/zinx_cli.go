@@ -12,7 +12,7 @@ import (
 	"github.com/abiosoft/ishell"
 
 	pb "github.com/gstones/moke-kit/demo/api/gen/demo/api"
-	"github.com/gstones/moke-kit/utility/cshell"
+	"github.com/gstones/moke-kit/logging/slogger"
 )
 
 type DemoZinx struct {
@@ -58,8 +58,8 @@ func (dz *DemoZinx) sayHi(c *ishell.Context) {
 	c.ShowPrompt(false)
 	defer c.ShowPrompt(true)
 
-	cshell.Info(c, "Enter say hi message...")
-	msg := cshell.ReadLine(c, "message: ")
+	slogger.Info(c, "Enter say hi message...")
+	msg := slogger.ReadLine(c, "message: ")
 
 	req := &pb.HiRequest{
 		Message: msg,
@@ -67,7 +67,7 @@ func (dz *DemoZinx) sayHi(c *ishell.Context) {
 	}
 	data, err := proto.Marshal(req)
 	if err != nil {
-		cshell.Warn(c, err)
+		slogger.Warn(c, err)
 		return
 	}
 	dp := zpack.NewDataPack()
@@ -82,8 +82,8 @@ func (dz *DemoZinx) watch(c *ishell.Context) {
 	c.ShowPrompt(false)
 	defer c.ShowPrompt(true)
 
-	cshell.Info(c, "Enter watch topic...")
-	topic := cshell.ReadLine(c, "topic: ")
+	slogger.Info(c, "Enter watch topic...")
+	topic := slogger.ReadLine(c, "topic: ")
 
 	req := &pb.WatchRequest{
 		Topic: topic,
@@ -91,7 +91,7 @@ func (dz *DemoZinx) watch(c *ishell.Context) {
 	}
 	data, err := proto.Marshal(req)
 	if err != nil {
-		cshell.Warn(c, err)
+		slogger.Warn(c, err)
 		return
 	}
 	dp := zpack.NewDataPack()
@@ -109,26 +109,26 @@ func watchResponse(c *ishell.Context, conn net.Conn) {
 		for {
 			id, data, err := unPackResponse(dp, conn)
 			if err != nil {
-				cshell.Warn(c, err)
+				slogger.Warn(c, err)
 				return
 			}
 			if id == 1 {
 				resp := &pb.HiResponse{}
 				err := proto.Unmarshal(data, resp)
 				if err != nil {
-					cshell.Warn(c, err)
+					slogger.Warn(c, err)
 					return
 				}
-				cshell.Infof(c, "response: %s \r\n", resp.String())
+				slogger.Infof(c, "response: %s \r\n", resp.String())
 				continue
 			} else if id == 2 {
 				resp := &pb.WatchResponse{}
 				err := proto.Unmarshal(data, resp)
 				if err != nil {
-					cshell.Warn(c, err)
+					slogger.Warn(c, err)
 					return
 				}
-				cshell.Infof(c, "watching:%d %s \r\n", id, resp.String())
+				slogger.Infof(c, "watching:%d %s \r\n", id, resp.String())
 				continue
 			}
 		}
