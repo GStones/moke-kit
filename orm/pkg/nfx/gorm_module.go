@@ -61,6 +61,8 @@ func (mr *GormResult) NewDocument(
 	return
 }
 
+// GormModule is the module for gorm driver
+// https://github.com/go-gorm/gorm
 var GormModule = fx.Provide(
 	func(
 		lc fx.Lifecycle,

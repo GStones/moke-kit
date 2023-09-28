@@ -6,7 +6,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/gstones/moke-kit/utility/uconfig"
+	"github.com/gstones/moke-kit/utility"
 
 	"go.uber.org/fx"
 )
@@ -50,7 +50,7 @@ func (ar *AppResult) LoadFromExecutable() (err error) {
 }
 
 func (ar *AppResult) LoadFromEnv() (err error) {
-	err = uconfig.Load(ar)
+	err = utility.Load(ar)
 	return
 }
 

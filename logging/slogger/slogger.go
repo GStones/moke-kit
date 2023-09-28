@@ -1,4 +1,4 @@
-package cshell
+package slogger
 
 import (
 	"os"

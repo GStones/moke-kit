@@ -10,7 +10,7 @@ import (
 	"google.golang.org/grpc/metadata"
 
 	pb "github.com/gstones/moke-kit/demo/api/gen/demo/api"
-	"github.com/gstones/moke-kit/utility/cshell"
+	"github.com/gstones/moke-kit/logging/slogger"
 )
 
 type DemoGrpc struct {
@@ -56,8 +56,8 @@ func (p *DemoGrpc) sayHi(c *ishell.Context) {
 	c.ShowPrompt(false)
 	defer c.ShowPrompt(true)
 
-	cshell.Info(c, "Enter say hi message...")
-	msg := cshell.ReadLine(c, "message: ")
+	slogger.Info(c, "Enter say hi message...")
+	msg := slogger.ReadLine(c, "message: ")
 
 	md := metadata.Pairs("authorization", fmt.Sprintf("%s %v", "bearer", "test"))
 	ctx := mm.MD(md).ToOutgoing(context.Background())
@@ -65,9 +65,9 @@ func (p *DemoGrpc) sayHi(c *ishell.Context) {
 		Uid:     "10000",
 		Message: msg,
 	}); err != nil {
-		cshell.Warn(c, err)
+		slogger.Warn(c, err)
 	} else {
-		cshell.Infof(c, "Response: %s", response.Message)
+		slogger.Infof(c, "Response: %s", response.Message)
 	}
 }
 
@@ -75,22 +75,22 @@ func (p *DemoGrpc) watch(c *ishell.Context) {
 	c.ShowPrompt(false)
 	defer c.ShowPrompt(true)
 
-	cshell.Info(c, "Enter watch topic...")
-	topic := cshell.ReadLine(c, "topic: ")
+	slogger.Info(c, "Enter watch topic...")
+	topic := slogger.ReadLine(c, "topic: ")
 
 	md := metadata.Pairs("authorization", fmt.Sprintf("%s %v", "bearer", "test"))
 	ctx := mm.MD(md).ToOutgoing(context.Background())
 	if stream, err := p.client.Watch(ctx, &pb.WatchRequest{
 		Topic: topic,
 	}); err != nil {
-		cshell.Warn(c, err)
+		slogger.Warn(c, err)
 	} else {
 		for {
 			if response, err := stream.Recv(); err != nil {
-				cshell.Warn(c, err)
+				slogger.Warn(c, err)
 				break
 			} else {
-				cshell.Infof(c, "Response: %s \r\n", response.Message)
+				slogger.Infof(c, "Response: %s \r\n", response.Message)
 			}
 		}
 	}

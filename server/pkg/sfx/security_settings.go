@@ -3,7 +3,7 @@ package sfx
 import (
 	"go.uber.org/fx"
 
-	"github.com/gstones/moke-kit/utility/uconfig"
+	"github.com/gstones/moke-kit/utility"
 )
 
 type SecuritySettingsParams struct {
@@ -23,7 +23,7 @@ type SecuritySettingsResult struct {
 }
 
 func (g *SecuritySettingsResult) LoadFromEnv() (err error) {
-	err = uconfig.Load(g)
+	err = utility.Load(g)
 	return
 }
 

@@ -5,16 +5,16 @@ import (
 
 	"github.com/abiosoft/ishell"
 
-	"github.com/gstones/moke-kit/utility/cshell"
-	"github.com/gstones/moke-kit/utility/ugrpc"
+	"github.com/gstones/moke-kit/logging/slogger"
+	"github.com/gstones/moke-kit/utility"
 )
 
 func RunGrpc(url string) {
 	sh := ishell.New()
-	cshell.Info(sh, "interactive demo connect to "+url)
+	slogger.Info(sh, "interactive demo connect to "+url)
 
-	if conn, err := ugrpc.DialWithOptions(url, false); err != nil {
-		cshell.Die(sh, err)
+	if conn, err := utility.DialWithOptions(url, false); err != nil {
+		slogger.Die(sh, err)
 	} else {
 		demoGrpc := NewDemoGrpc(conn)
 		sh.AddCmd(demoGrpc.GetCmd())
@@ -25,7 +25,7 @@ func RunGrpc(url string) {
 			}
 			if count == 1 {
 				conn.Close()
-				cshell.Done(c, "interrupted, press again to exit")
+				slogger.Done(c, "interrupted, press again to exit")
 			}
 		})
 	}
@@ -34,9 +34,9 @@ func RunGrpc(url string) {
 
 func RunZinx(url string) {
 	sh := ishell.New()
-	cshell.Info(sh, "interactive demo zinx connect to "+url)
+	slogger.Info(sh, "interactive demo zinx connect to "+url)
 	if conn, err := net.Dial("tcp", url); err != nil {
-		cshell.Die(sh, err)
+		slogger.Die(sh, err)
 	} else {
 		demoZinx := NewZinxDemo(conn)
 		sh.AddCmd(demoZinx.GetCmd())
@@ -47,7 +47,7 @@ func RunZinx(url string) {
 			}
 			if count == 1 {
 				conn.Close()
-				cshell.Done(c, "interrupted, press again to exit")
+				slogger.Done(c, "interrupted, press again to exit")
 			}
 		})
 	}

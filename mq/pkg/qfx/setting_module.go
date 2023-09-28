@@ -3,7 +3,7 @@ package qfx
 import (
 	"go.uber.org/fx"
 
-	"github.com/gstones/moke-kit/utility/uconfig"
+	"github.com/gstones/moke-kit/utility"
 )
 
 type SettingsParams struct {
@@ -19,7 +19,7 @@ type SettingsResult struct {
 }
 
 func (ar *SettingsResult) LoadFromEnv() (err error) {
-	err = uconfig.Load(ar)
+	err = utility.Load(ar)
 	return
 }
 

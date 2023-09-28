@@ -59,6 +59,8 @@ func (rr *RedisResult) Execute(
 	return
 }
 
+// RedisModule is the module for redis driver
+// github.com/go-redis/redis
 var RedisModule = fx.Provide(
 	func(
 		lc fx.Lifecycle,

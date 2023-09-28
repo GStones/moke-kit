@@ -1,4 +1,4 @@
-package uconfig
+package utility
 
 import (
 	"errors"

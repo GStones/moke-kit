@@ -3,7 +3,7 @@ package nfx
 import (
 	"go.uber.org/fx"
 
-	"github.com/gstones/moke-kit/utility/uconfig"
+	"github.com/gstones/moke-kit/utility"
 )
 
 type SettingsParams struct {
@@ -25,7 +25,7 @@ type SettingsResult struct {
 }
 
 func (sr *SettingsResult) LoadFromEnv() (err error) {
-	err = uconfig.Load(sr)
+	err = utility.Load(sr)
 	return
 }
 

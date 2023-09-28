@@ -1,4 +1,4 @@
-package ugrpc
+package utility
 
 import (
 	"context"
