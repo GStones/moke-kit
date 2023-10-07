@@ -5,6 +5,7 @@ import (
 
 	"go.uber.org/fx"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 type LogType string
@@ -36,7 +37,9 @@ func NewLogger(config Config) (logger *zap.Logger, err error) {
 	case LogTypeNone:
 		logger = zap.NewNop()
 	case LogTypeDevelopment:
-		logger, err = zap.NewDevelopment(zap.AddStacktrace(zap.FatalLevel))
+		config := zap.NewDevelopmentConfig()
+		config.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
+		logger, err = config.Build(zap.AddStacktrace(zap.FatalLevel))
 	case LogTypeProduction:
 		logger, err = zap.NewProduction(zap.AddStacktrace(zap.FatalLevel))
 	}
