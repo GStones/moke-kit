@@ -92,6 +92,7 @@ func fieldsFromCtx(ctx context.Context) logging.Fields {
 func addInterceptorOptions(
 	logger *zap.Logger,
 	authClient siface.IAuth,
+	deployments utility.Deployments,
 	opts ...grpc.ServerOption,
 ) []grpc.ServerOption {
 	srvMetrics := grpcprom.NewServerMetrics(
@@ -121,21 +122,22 @@ func addInterceptorOptions(
 
 	//TODO: add rate limit interceptor here
 	//https: //github.com/grpc-ecosystem/go-grpc-middleware#server
-	//TODO: add external auth interceptor here
-	//https://github.com/grpc/proposal/blob/master/A43-grpc-authorization-api.md
 	ui := []grpc.UnaryServerInterceptor{
 		otelgrpc.UnaryServerInterceptor(),
 		srvMetrics.UnaryServerInterceptor(grpcprom.WithExemplarFromContext(exemplarFromContext)),
 		logging.UnaryServerInterceptor(interceptorLogger(logger), logging.WithFieldsFromContext(fieldsFromCtx)),
 		selector.UnaryServerInterceptor(auth.UnaryServerInterceptor(authFunc(authClient)), selector.MatchFunc(allButLogin)),
-		recovery.UnaryServerInterceptor(recovery.WithRecoveryHandler(grpcPanicRecoveryHandler)),
 	}
 	si := []grpc.StreamServerInterceptor{
 		otelgrpc.StreamServerInterceptor(),
 		srvMetrics.StreamServerInterceptor(grpcprom.WithExemplarFromContext(exemplarFromContext)),
 		logging.StreamServerInterceptor(interceptorLogger(logger), logging.WithFieldsFromContext(fieldsFromCtx)),
 		selector.StreamServerInterceptor(auth.StreamServerInterceptor(authFunc(authClient)), selector.MatchFunc(allButLogin)),
-		recovery.StreamServerInterceptor(recovery.WithRecoveryHandler(grpcPanicRecoveryHandler)),
+	}
+
+	if deployments == utility.DeploymentsProd {
+		ui = append(ui, recovery.UnaryServerInterceptor(recovery.WithRecoveryHandler(grpcPanicRecoveryHandler)))
+		si = append(si, recovery.StreamServerInterceptor(recovery.WithRecoveryHandler(grpcPanicRecoveryHandler)))
 	}
 
 	interceptorOpts := []grpc.ServerOption{

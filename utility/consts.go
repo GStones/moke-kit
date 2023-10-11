@@ -10,6 +10,10 @@ const (
 	DeploymentsProd  Deployments = "prod"
 )
 
+func (d Deployments) String() string {
+	return string(d)
+}
+
 func ParseDeployments(value string) Deployments {
 	switch Deployments(value) {
 	case DeploymentsLocal:

@@ -19,7 +19,11 @@ func NewZinxServer(
 	logger *zap.Logger,
 	zinxTcpPort int32,
 	zinxWsPost int32,
+	name string,
+	version string,
 ) (result siface.IZinxServer, err error) {
+	zconf.GlobalObject.Name = name
+	zconf.GlobalObject.Version = version
 	zconf.GlobalObject.LogIsolationLevel = 3
 	zconf.GlobalObject.WsPort = int(zinxWsPost)
 	zconf.GlobalObject.TCPPort = int(zinxTcpPort)
