@@ -1,46 +1,21 @@
 package logging
 
 import (
-	"fmt"
-
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+
+	"github.com/gstones/moke-kit/fxmain/pkg/mfx"
+	"github.com/gstones/moke-kit/utility"
 )
 
-type LogType string
-
-const (
-	LogTypeUndefined   LogType = ""
-	LogTypeNone        LogType = "none"
-	LogTypeDevelopment LogType = "dev"
-	LogTypeProduction  LogType = "prod"
-)
-
-func ParseLogType(value string) LogType {
-	switch LogType(value) {
-	case LogTypeUndefined:
-		return LogTypeDevelopment
-	case LogTypeNone:
-		return LogTypeNone
-	case LogTypeDevelopment:
-		return LogTypeDevelopment
-	case LogTypeProduction:
-		return LogTypeProduction
-	default:
-		panic(fmt.Errorf(`"%s" is an unknown log type`, value))
-	}
-}
-
-func NewLogger(config Config) (logger *zap.Logger, err error) {
-	switch ParseLogType(config.Type) {
-	case LogTypeNone:
-		logger = zap.NewNop()
-	case LogTypeDevelopment:
+func NewLogger(deployment string) (logger *zap.Logger, err error) {
+	switch utility.ParseDeployments(deployment) {
+	case utility.DeploymentsLocal, utility.DeploymentsDev:
 		config := zap.NewDevelopmentConfig()
 		config.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
 		logger, err = config.Build(zap.AddStacktrace(zap.FatalLevel))
-	case LogTypeProduction:
+	case utility.DeploymentsProd:
 		logger, err = zap.NewProduction(zap.AddStacktrace(zap.FatalLevel))
 	}
 	if logger != nil {
@@ -50,6 +25,8 @@ func NewLogger(config Config) (logger *zap.Logger, err error) {
 }
 
 var Module = fx.Provide(
-	LoadConfig,
-	NewLogger,
+	func(params mfx.AppParams) (logger *zap.Logger, err error) {
+		logger, err = NewLogger(params.Deployment)
+		return
+	},
 )
