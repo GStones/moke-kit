@@ -22,3 +22,8 @@ func ParseDeployments(value string) Deployments {
 		panic(fmt.Errorf(`"%s" is an unknown deployments`, value))
 	}
 }
+
+const (
+	TokenContextKey = "bearer"
+	UIDContextKey   = "uid"
+)

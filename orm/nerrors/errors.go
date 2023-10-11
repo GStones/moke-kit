@@ -32,7 +32,3 @@ var (
 	ErrInvalidScanValue    = errors.New("ErrInvalidScanValue")
 	ErrInternal            = errors.New("ErrInternal")
 )
-
-func IsNotFound(err error) bool {
-	return err == ErrKeyNotFound
-}

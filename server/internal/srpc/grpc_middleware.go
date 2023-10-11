@@ -22,24 +22,18 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/gstones/moke-kit/server/siface"
-)
-
-type UID string
-
-const (
-	TokenContextKey     = "bearer"
-	UIDContextKey   UID = "uid"
+	"github.com/gstones/moke-kit/utility"
 )
 
 func authFunc(authClient siface.IAuth) auth.AuthFunc {
 	return func(ctx context.Context) (context.Context, error) {
-		if token, err := auth.AuthFromMD(ctx, TokenContextKey); err != nil {
+		if token, err := auth.AuthFromMD(ctx, utility.TokenContextKey); err != nil {
 			return nil, err
 		} else if authClient != nil {
 			if uid, err := authClient.Auth(token); err != nil {
 				return nil, err
 			} else {
-				return context.WithValue(ctx, UIDContextKey, uid), nil
+				return context.WithValue(ctx, utility.UIDContextKey, uid), nil
 			}
 		}
 		return ctx, nil
