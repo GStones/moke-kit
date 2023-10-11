@@ -10,6 +10,8 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+
+	"github.com/gstones/moke-kit/utility"
 )
 
 type GatewayServer struct {
@@ -112,7 +114,7 @@ func withLogger(h http.Handler) http.Handler {
 
 func Matcher(key string) (string, bool) {
 	switch key {
-	case TokenContextKey:
+	case utility.TokenContextKey:
 		return key, true
 	default:
 		return runtime.DefaultHeaderMatcher(key)
