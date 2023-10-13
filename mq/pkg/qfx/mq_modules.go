@@ -7,6 +7,7 @@ import (
 	"github.com/gstones/moke-kit/mq/common"
 	"github.com/gstones/moke-kit/mq/internal"
 	"github.com/gstones/moke-kit/mq/miface"
+	"github.com/gstones/moke-kit/utility"
 )
 
 type MessageQueueParams struct {
@@ -30,23 +31,22 @@ type MQImplementations struct {
 	LocalMQ miface.MessageQueue `name:"LocalMQ" optional:"true"`
 }
 
-func (g *MessageQueueResult) Execute(s mfx.AppParams, i MQImplementations) (err error) {
-	common.SetNamespace(s.Deployment)
-
-	// If run in TestMode, all Subscribe() and Publish() requests will be run through
-	// the local:// mq implementation regardless of their chosen mq protocol
-	if s.AppTestMode {
-		g.MessageQueue = internal.NewMessageQueue(i.LocalMQ, i.LocalMQ, i.LocalMQ, i.LocalMQ)
-	} else {
-		g.MessageQueue = internal.NewMessageQueue(i.KafkaMQ, i.NatsMQ, i.NsqMQ, i.LocalMQ)
-	}
+func (g *MessageQueueResult) Execute(deploy utility.Deployments, i MQImplementations) (err error) {
+	common.SetNamespace(deploy.String())
+	//if deploy == utility.DeploymentsLocal {
+	//	g.MessageQueue = internal.NewMessageQueue(i.LocalMQ, i.LocalMQ, i.LocalMQ, i.LocalMQ)
+	//} else {
+	//	g.MessageQueue = internal.NewMessageQueue(i.KafkaMQ, i.NatsMQ, i.NsqMQ, i.LocalMQ)
+	//}
+	g.MessageQueue = internal.NewMessageQueue(i.KafkaMQ, i.NatsMQ, i.NsqMQ, i.LocalMQ)
 
 	return nil
 }
 
 var MqModule = fx.Provide(
-	func(s mfx.AppParams, i MQImplementations) (out MessageQueueResult, err error) {
-		err = out.Execute(s, i)
+	func(ap mfx.AppParams, i MQImplementations) (out MessageQueueResult, err error) {
+		deployment := utility.ParseDeployments(ap.Deployment)
+		err = out.Execute(deployment, i)
 		return
 	},
 )

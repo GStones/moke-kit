@@ -14,21 +14,19 @@ import (
 type AppParams struct {
 	fx.In
 
-	AppName     string `name:"AppName"`
-	AppId       string `name:"AppId"`
-	Deployment  string `name:"Deployment"`
-	AppTestMode bool   `name:"AppTestMode"`
-	Version     string `name:"Version"`
+	AppName    string `name:"AppName"`
+	AppId      string `name:"AppId"`
+	Deployment string `name:"Deployment"`
+	Version    string `name:"Version"`
 }
 
 type AppResult struct {
 	fx.Out
 
-	AppName     string `name:"AppName" envconfig:"APP_NAME" default:"fxapp" ignored:"true" `
-	AppId       string `name:"AppId" envconfig:"APP_ID" default:"app_id"`
-	Deployment  string `name:"Deployment" envconfig:"DEPLOYMENT" default:"local"`
-	AppTestMode bool   `name:"AppTestMode" ignored:"true"`
-	Version     string `name:"Version" default:"unknown"`
+	AppName    string `name:"AppName" envconfig:"APP_NAME" default:"app" ignored:"true" `
+	AppId      string `name:"AppId" envconfig:"APP_ID" default:"app_id"`
+	Deployment string `name:"Deployment" envconfig:"DEPLOYMENT" default:"local"`
+	Version    string `name:"Version" default:"0.0.0"`
 }
 
 func (ar *AppResult) LoadConstant(value string) error {

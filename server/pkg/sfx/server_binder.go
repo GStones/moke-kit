@@ -17,7 +17,11 @@ type BinderFunc func(*zap.Logger) ([]LifecycleHook, error)
 
 type ServiceBinder struct {
 	fx.In
-	// auth service
+	AppName    string `name:"AppName"`
+	AppId      string `name:"AppId"`
+	Deployment string `name:"Deployment"`
+	Version    string `name:"Version"`
+
 	AuthService   siface.IAuth          `name:"AuthService" optional:"true"`
 	ConnectionMux siface.IConnectionMux `name:"ConnectionMux"`
 	ZinxTcpPort   int32                 `name:"ZinxTcpPort"`
@@ -45,8 +49,7 @@ func (sb *ServiceBinder) Execute(l *zap.Logger, lc fx.Lifecycle) error {
 	return nil
 }
 
-func (sb *ServiceBinder) bindGrpcServices(
-	l *zap.Logger) (hooks []LifecycleHook, err error) {
+func (sb *ServiceBinder) bindGrpcServices(l *zap.Logger) (hooks []LifecycleHook, err error) {
 	if len(sb.GrpcServices) == 0 {
 		return nil, nil
 	}
@@ -56,6 +59,7 @@ func (sb *ServiceBinder) bindGrpcServices(
 		l,
 		listener,
 		sb.AuthService,
+		sb.Deployment,
 	); e != nil {
 		err = e
 	} else {
@@ -80,6 +84,8 @@ func (sb *ServiceBinder) bindZinxServices(
 		l,
 		sb.ZinxTcpPort,
 		sb.ZinxWSPort,
+		sb.AppName,
+		sb.Version,
 	); err != nil {
 		return nil, err
 	} else {

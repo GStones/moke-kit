@@ -1,7 +1,6 @@
 package nfx
 
 import (
-	"context"
 	"net/url"
 
 	mongo2 "go.mongodb.org/mongo-driver/mongo"
@@ -31,7 +30,6 @@ func (dsr *DocumentStoreResult) NewDocument(
 	mClient *mongo2.Client,
 	connect string,
 	deployment string,
-
 ) (err error) {
 	key.SetNamespace(deployment)
 
@@ -55,14 +53,6 @@ func (dsr *DocumentStoreResult) NewDocument(
 		}
 	} else {
 		return nerrors.ErrMissingNosqlURL
-	}
-
-	if dsr.DriverProvider != nil {
-		lc.Append(fx.Hook{
-			OnStop: func(ctx context.Context) error {
-				return dsr.DriverProvider.Shutdown()
-			},
-		})
 	}
 	return
 }
