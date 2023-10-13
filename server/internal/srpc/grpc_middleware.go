@@ -51,6 +51,10 @@ func interceptorLogger(l *zap.Logger) logging.Logger {
 
 			switch v := value.(type) {
 			case string:
+				k := key.(string)
+				if k == "grpc.error" {
+					lvl = logging.LevelError
+				}
 				f = append(f, zap.String(key.(string), v))
 			case int:
 				f = append(f, zap.Int(key.(string), v))
