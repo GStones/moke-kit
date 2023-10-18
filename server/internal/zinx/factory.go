@@ -7,6 +7,7 @@ import (
 	"github.com/aceld/zinx/znet"
 	"go.uber.org/zap"
 
+	"github.com/gstones/moke-kit/server/internal/zinx/interceptors"
 	"github.com/gstones/moke-kit/server/siface"
 )
 
@@ -37,6 +38,8 @@ func NewZinxServer(
 		return nil, errors.New("please set wsPort or tcpPort")
 	}
 	sio := znet.NewServer()
+	sio.AddInterceptor(interceptors.NewLoggerInterceptor(logger.With(zap.String("service", name))))
+	//sio.AddInterceptor(interceptors.NewRecoverInterceptor(logger.With(zap.String("service", name))))
 	result = &ZinxServer{
 		logger: logger,
 		server: sio,
