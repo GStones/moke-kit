@@ -27,7 +27,7 @@ import (
 
 func authFunc(authClient siface.IAuth) auth.AuthFunc {
 	return func(ctx context.Context) (context.Context, error) {
-		if token, err := auth.AuthFromMD(ctx, utility.TokenContextKey); err != nil {
+		if token, err := auth.AuthFromMD(ctx, string(utility.TokenContextKey)); err != nil {
 			return nil, err
 		} else if authClient != nil {
 			if uid, err := authClient.Auth(token); err != nil {

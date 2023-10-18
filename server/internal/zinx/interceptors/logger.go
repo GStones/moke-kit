@@ -1,7 +1,7 @@
 package interceptors
 
 import (
-	"github.com/aceld/zinx/ziface"
+	"github.com/gstones/zinx/ziface"
 	"go.uber.org/zap"
 )
 

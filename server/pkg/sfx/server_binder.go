@@ -86,6 +86,7 @@ func (sb *ServiceBinder) bindZinxServices(
 		sb.ZinxWSPort,
 		sb.AppName,
 		sb.Version,
+		sb.Deployment,
 	); err != nil {
 		return nil, err
 	} else {

@@ -4,8 +4,8 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/aceld/zinx/ziface"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"github.com/gstones/zinx/ziface"
 	"google.golang.org/grpc"
 )
 
