@@ -3,7 +3,7 @@ package zinx
 import (
 	"context"
 
-	"github.com/aceld/zinx/ziface"
+	"github.com/gstones/zinx/ziface"
 	"go.uber.org/zap"
 )
 

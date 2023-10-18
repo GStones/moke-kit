@@ -114,7 +114,7 @@ func withLogger(h http.Handler) http.Handler {
 
 func Matcher(key string) (string, bool) {
 	switch key {
-	case utility.TokenContextKey:
+	case string(utility.TokenContextKey):
 		return key, true
 	default:
 		return runtime.DefaultHeaderMatcher(key)
