@@ -1,4 +1,4 @@
-package nfx
+package ofx
 
 import (
 	"net/url"

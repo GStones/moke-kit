@@ -107,6 +107,7 @@ func (d *DocumentBase) Save() error {
 	}
 	d.version = version
 	d.cache.DeleteCache(d.Key)
+	return nil
 }
 
 func (d *DocumentBase) doUpdate(f func() bool, u func() error) error {

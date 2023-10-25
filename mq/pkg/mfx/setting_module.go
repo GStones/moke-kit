@@ -1,4 +1,4 @@
-package qfx
+package mfx
 
 import (
 	"go.uber.org/fx"

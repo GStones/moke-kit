@@ -1,4 +1,4 @@
-package nfx
+package ofx
 
 import (
 	"go.uber.org/fx"
