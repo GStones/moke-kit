@@ -15,9 +15,9 @@ import (
 	"github.com/gstones/moke-kit/demo/internal/demo/handlers"
 	"github.com/gstones/moke-kit/demo/pkg/dfx"
 	"github.com/gstones/moke-kit/mq/miface"
-	"github.com/gstones/moke-kit/mq/pkg/qfx"
+	"github.com/gstones/moke-kit/mq/pkg/mfx"
 	"github.com/gstones/moke-kit/orm/nosql/diface"
-	"github.com/gstones/moke-kit/orm/pkg/nfx"
+	"github.com/gstones/moke-kit/orm/pkg/ofx"
 	"github.com/gstones/moke-kit/server/pkg/sfx"
 	"github.com/gstones/moke-kit/server/siface"
 )
@@ -154,11 +154,11 @@ func NewService(
 var GrpcModule = fx.Provide(
 	func(
 		l *zap.Logger,
-		dProvider nfx.DocumentStoreParams,
+		dProvider ofx.DocumentStoreParams,
 		setting dfx.SettingsParams,
-		mqParams qfx.MessageQueueParams,
-		gParams nfx.GormParams,
-		redisClient nfx.RedisParams,
+		mqParams mfx.MessageQueueParams,
+		gParams ofx.GormParams,
+		redisClient ofx.RedisParams,
 
 	) (out sfx.GrpcServiceResult, err error) {
 		if coll, err := dProvider.DriverProvider.OpenDbDriver(setting.DbName); err != nil {
@@ -181,11 +181,11 @@ var GrpcModule = fx.Provide(
 var GatewayModule = fx.Provide(
 	func(
 		l *zap.Logger,
-		dProvider nfx.DocumentStoreParams,
+		dProvider ofx.DocumentStoreParams,
 		setting dfx.SettingsParams,
-		mqParams qfx.MessageQueueParams,
-		gParams nfx.GormParams,
-		redisClient nfx.RedisParams,
+		mqParams mfx.MessageQueueParams,
+		gParams ofx.GormParams,
+		redisClient ofx.RedisParams,
 	) (out sfx.GatewayServiceResult, err error) {
 		if coll, err := dProvider.DriverProvider.OpenDbDriver(setting.DbName); err != nil {
 			return out, err
@@ -207,11 +207,11 @@ var GatewayModule = fx.Provide(
 var ZinxModule = fx.Provide(
 	func(
 		l *zap.Logger,
-		dProvider nfx.DocumentStoreParams,
+		dProvider ofx.DocumentStoreParams,
 		setting dfx.SettingsParams,
-		mqParams qfx.MessageQueueParams,
-		gParams nfx.GormParams,
-		redisClient nfx.RedisParams,
+		mqParams mfx.MessageQueueParams,
+		gParams ofx.GormParams,
+		redisClient ofx.RedisParams,
 	) (out sfx.ZinxServiceResult, err error) {
 		if coll, err := dProvider.DriverProvider.OpenDbDriver(setting.DbName); err != nil {
 			return out, err

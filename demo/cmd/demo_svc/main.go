@@ -4,7 +4,7 @@ import (
 	"github.com/gstones/moke-kit/demo/internal/demo"
 	"github.com/gstones/moke-kit/demo/pkg/dfx"
 	"github.com/gstones/moke-kit/fxmain"
-	"github.com/gstones/moke-kit/mq/pkg/qfx"
+	"github.com/gstones/moke-kit/mq/pkg/mfx"
 )
 
 func main() {
@@ -14,7 +14,7 @@ func main() {
 		//(you can customize it as gorm support db adapter)
 		dfx.SqliteDriverModule,
 		// nats message queue
-		qfx.NatsModule,
+		mfx.NatsModule,
 		// auth function(optional)
 		demo.AuthModule,
 		// grpc server

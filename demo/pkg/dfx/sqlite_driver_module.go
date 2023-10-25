@@ -5,14 +5,14 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/driver/sqlite"
 
-	"github.com/gstones/moke-kit/orm/pkg/nfx"
+	"github.com/gstones/moke-kit/orm/pkg/ofx"
 )
 
 var SqliteDriverModule = fx.Provide(
 	func(
 		l *zap.Logger,
 		s SettingsParams,
-	) (out nfx.GormDriverResult, err error) {
+	) (out ofx.GormDriverResult, err error) {
 		out.Dialector = sqlite.Open(s.GormDns)
 		return out, nil
 	},

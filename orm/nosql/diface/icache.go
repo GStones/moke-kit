@@ -4,8 +4,8 @@ import (
 	"github.com/gstones/moke-kit/orm/nosql/key"
 )
 
-// IDocumentCache provides a cache for Document objects.
-type IDocumentCache interface {
+// ICache provides a cache for Document objects.
+type ICache interface {
 	// GetCache Get retrieves a Document from the cache.
 	GetCache(key key.Key, doc any) bool
 	// SetCache Set sets a Document in the cache.
@@ -16,8 +16,8 @@ type IDocumentCache interface {
 type defaultDocumentCache struct {
 }
 
-// DefaultDocumentCache returns a new IDocumentCache.
-func DefaultDocumentCache() IDocumentCache {
+// DefaultDocumentCache returns a new ICache.
+func DefaultDocumentCache() ICache {
 	return &defaultDocumentCache{}
 }
 
