@@ -51,11 +51,9 @@ func (rr *RedisResult) Execute(
 			OnStop: func(ctx context.Context) error {
 				rr.Redis.Close()
 				return rr.Cache.Close()
-
 			},
 		})
 	}
-
 	return
 }
 

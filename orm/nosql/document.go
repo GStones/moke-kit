@@ -2,7 +2,6 @@ package nosql
 
 import (
 	"math/rand"
-	"reflect"
 	"time"
 
 	"github.com/gstones/moke-kit/orm/nerrors"
@@ -14,16 +13,14 @@ import (
 const MaxRetries = 5
 
 type DocumentBase struct {
-	Key  key.Key
-	Name string
+	Key key.Key
 
-	clear    func()
-	dataType reflect.Type
-	data     any
-	version  noptions.Version
+	clear   func()
+	data    any
+	version noptions.Version
 
 	DocumentStore diface.ICollection
-	cache         diface.IDocumentCache
+	cache         diface.ICache
 }
 
 // Init performs an in-place initialization of a DocumentBase.
@@ -34,7 +31,6 @@ func (d *DocumentBase) Init(
 	key key.Key,
 ) {
 	d.clear = clear
-	d.dataType = reflect.TypeOf(data)
 	d.data = data
 	d.DocumentStore = store
 	d.Key = key
@@ -46,7 +42,7 @@ func (d *DocumentBase) InitWithCache(
 	clear func(),
 	store diface.ICollection,
 	key key.Key,
-	cache diface.IDocumentCache,
+	cache diface.ICache,
 ) {
 	d.Init(data, clear, store, key)
 	d.cache = cache
@@ -70,73 +66,48 @@ func (d *DocumentBase) Clear() {
 }
 
 // Create creates this DocumentBase if it doesn't already exist.
-func (d *DocumentBase) Create() (err error) {
-	d.version, err = d.DocumentStore.Set(
+func (d *DocumentBase) Create() error {
+	if version, err := d.DocumentStore.Set(
 		d.Key,
 		noptions.WithSource(d.data),
-	)
-	return
-}
-
-// CreateExpiry creates this DocumentBase with an expiration value, if it doesn't already exist.
-func (d *DocumentBase) CreateExpiry(expiry time.Duration) (err error) {
-	d.version, err = d.DocumentStore.Set(
-		d.Key,
-		noptions.WithSource(d.data),
-		noptions.WithTTL(expiry),
-	)
-	return
+	); err != nil {
+		return err
+	} else {
+		d.version = version
+		return nil
+	}
 }
 
 // Load loads this DocumentBase from its store if it exists.
-func (d *DocumentBase) Load() (err error) {
+func (d *DocumentBase) Load() error {
 	d.clear()
 	if ok := d.cache.GetCache(d.Key, d.data); !ok {
-		if d.version, err = d.DocumentStore.Get(
+		if version, err := d.DocumentStore.Get(
 			d.Key,
 			noptions.WithDestination(d.data),
 		); err != nil {
 			return err
 		} else {
+			d.version = version
 			d.cache.SetCache(d.Key, d.data)
 		}
 	}
-	return
-}
-
-// LoadAndTouch loads this DocumentBase from its store if it exists while
-// simultaneously updating any Expiry setting.
-func (d *DocumentBase) LoadAndTouch(expiry time.Duration) (err error) {
-	d.clear()
-
-	d.version, err = d.DocumentStore.Get(
-		d.Key,
-		noptions.WithDestination(d.data),
-		noptions.WithTTL(expiry),
-	)
-	return
+	return nil
 }
 
 // Save saves this DocumentBase to the database if it's based on the latest version that Couchbase knows about.
-func (d *DocumentBase) Save() (err error) {
-	d.version, err = d.DocumentStore.Set(
+func (d *DocumentBase) Save() error {
+	if version, err := d.DocumentStore.Set(
 		d.Key,
 		noptions.WithSource(d.data),
 		noptions.WithVersion(d.version),
-	)
-	return
-}
-
-// SaveExpiry saves this DocumentBase to the database, with a new expiration value,
-// if it's based on the latest version that Couchbase knows about.
-func (d *DocumentBase) SaveExpiry(expiry time.Duration) (err error) {
-	d.version, err = d.DocumentStore.Set(
-		d.Key,
-		noptions.WithSource(d.data),
-		noptions.WithVersion(d.version),
-		noptions.WithTTL(expiry),
-	)
-	return
+	); err != nil {
+		return err
+	} else {
+		d.version = version
+		d.cache.DeleteCache(d.Key)
+		return nil
+	}
 }
 
 func (d *DocumentBase) doUpdate(f func() bool, u func() error) error {
@@ -165,13 +136,6 @@ func (d *DocumentBase) Update(f func() bool) error {
 	}); err != nil {
 		return err
 	} else {
-		d.cache.DeleteCache(d.Key)
 		return nil
 	}
-}
-
-func (d *DocumentBase) UpdateExpiry(f func() bool, expiry time.Duration) error {
-	return d.doUpdate(f, func() error {
-		return d.SaveExpiry(expiry)
-	})
 }
