@@ -20,6 +20,7 @@ type RedisCacheResult struct {
 	RedisCache diface.ICache `name:"RedisCache"`
 }
 
+// Execute initializes the RedisCacheResult.
 func (c *RedisCacheResult) Execute(
 	l *zap.Logger,
 	rParams RedisParams,

@@ -49,7 +49,7 @@ func (rr *RedisResult) Execute(
 	if rr.Redis != nil {
 		lc.Append(fx.Hook{
 			OnStop: func(ctx context.Context) error {
-				rr.Redis.Close()
+				_ = rr.Redis.Close()
 				return rr.Cache.Close()
 			},
 		})

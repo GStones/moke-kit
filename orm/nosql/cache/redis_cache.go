@@ -12,31 +12,36 @@ import (
 )
 
 var (
+	// ExpireRangeMin is the minimum expire time
 	ExpireRangeMin = 40 * time.Minute
+	// ExpireRangeMax is the maximum expire time
 	ExpireRangeMax = 60 * time.Minute
 )
 
+// RedisCache is a redis cache
 type RedisCache struct {
 	logger *zap.Logger
 	*redis.Client
 }
 
+// CreateRedisCache creates a redis cache
 func CreateRedisCache(logger *zap.Logger, client *redis.Client) *RedisCache {
 	return &RedisCache{logger, client}
 }
 
+// GetCache gets cache
 func (c *RedisCache) GetCache(key key.Key, doc any) bool {
 	if res := c.Get(key.String()); res.Err() != nil {
 		return false
 	} else {
 		if err := json.Unmarshal([]byte(res.Val()), &doc); err != nil {
 			return false
-		} else {
-			return true
 		}
+		return true
 	}
 }
 
+// SetCache sets cache
 func (c *RedisCache) SetCache(key key.Key, doc any) {
 	if data, err := json.Marshal(doc); err != nil {
 		return
@@ -48,6 +53,7 @@ func (c *RedisCache) SetCache(key key.Key, doc any) {
 	}
 }
 
+// DeleteCache deletes cache
 func (c *RedisCache) DeleteCache(key key.Key) {
 	if res := c.Del(key.String()); res.Err() != nil {
 		return

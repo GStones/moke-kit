@@ -67,15 +67,15 @@ func (d *DocumentBase) Clear() {
 
 // Create creates this DocumentBase if it doesn't already exist.
 func (d *DocumentBase) Create() error {
-	if version, err := d.DocumentStore.Set(
+	version, err := d.DocumentStore.Set(
 		d.Key,
 		noptions.WithSource(d.data),
-	); err != nil {
+	)
+	if err != nil {
 		return err
-	} else {
-		d.version = version
-		return nil
 	}
+	d.version = version
+	return nil
 }
 
 // Load loads this DocumentBase from its store if it exists.
@@ -97,17 +97,16 @@ func (d *DocumentBase) Load() error {
 
 // Save saves this DocumentBase to the database if it's based on the latest version that Couchbase knows about.
 func (d *DocumentBase) Save() error {
-	if version, err := d.DocumentStore.Set(
+	version, err := d.DocumentStore.Set(
 		d.Key,
 		noptions.WithSource(d.data),
 		noptions.WithVersion(d.version),
-	); err != nil {
+	)
+	if err != nil {
 		return err
-	} else {
-		d.version = version
-		d.cache.DeleteCache(d.Key)
-		return nil
 	}
+	d.version = version
+	d.cache.DeleteCache(d.Key)
 }
 
 func (d *DocumentBase) doUpdate(f func() bool, u func() error) error {
