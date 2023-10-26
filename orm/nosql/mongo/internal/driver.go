@@ -80,6 +80,44 @@ func (dd *DatabaseDriver) Get(key key.Key, opts ...noptions.Option) (noptions.Ve
 	}
 }
 
+// Delete delete a document by a key
+func (dd *DatabaseDriver) Delete(key key.Key) error {
+	coll := dd.database.Collection(key.Prefix())
+	filter := bson.M{"_id": key.String()}
+	if _, err := coll.DeleteOne(context.Background(), filter); err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nerrors.ErrNotFound
+		}
+		return err
+	}
+	return nil
+}
+
+// Incr increments a document from the nosql store. (tips: can not be used for document,because the version)
+func (dd *DatabaseDriver) Incr(key key.Key, field string, amount int32) (int64, error) {
+	coll := dd.database.Collection(key.Prefix())
+	filter := bson.M{"_id": key.String()}
+	update := bson.M{"$inc": bson.M{field: amount}}
+	opt := options.FindOneAndUpdate()
+	opt.SetUpsert(true)
+	res := coll.FindOneAndUpdate(context.Background(), filter, update, opt)
+	if res.Err() != nil {
+		if errors.Is(res.Err(), mongo.ErrNoDocuments) {
+			return 0, nerrors.ErrNotFound
+		}
+		return 0, res.Err()
+	}
+	bRaw := &bson.Raw{}
+	if err := res.Decode(bRaw); err != nil {
+		return 0, err
+	}
+	var value int64
+	if err := bRaw.Lookup(field).Unmarshal(&value); err != nil {
+		return 0, err
+	}
+	return value, nil
+}
+
 func NewCollectionDriver(database *mongo.Database) (*DatabaseDriver, error) {
 	return &DatabaseDriver{
 		database: database,

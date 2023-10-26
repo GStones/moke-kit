@@ -25,4 +25,10 @@ type ICollection interface {
 	// Get loads an existing nosql from the nosql store and returns its cas.  If no such nosql exists then
 	// this function fails.  Use WithTTL to update the nosql's expiration time.
 	Get(key key.Key, opts ...noptions.Option) (noptions.Version, error)
+
+	// Delete deletes a nosql from the nosql store.  If no such nosql exists then this function fails.
+	Delete(key key.Key) error
+
+	// Incr increments a nosql from the nosql store. (tips: can not be used for document,because the version)
+	Incr(key key.Key, field string, amount int32) (int64, error)
 }
