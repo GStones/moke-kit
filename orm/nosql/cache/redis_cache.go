@@ -1,11 +1,11 @@
 package cache
 
 import (
-	"encoding/json"
+	"context"
 	"time"
 
 	"github.com/duke-git/lancet/v2/random"
-	"github.com/go-redis/redis"
+	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 
 	"github.com/gstones/moke-kit/orm/nosql/key"
@@ -31,31 +31,23 @@ func CreateRedisCache(logger *zap.Logger, client *redis.Client) *RedisCache {
 
 // GetCache gets cache
 func (c *RedisCache) GetCache(key key.Key, doc any) bool {
-	if res := c.Get(key.String()); res.Err() != nil {
+	if err := c.Get(context.Background(), key.String()).Scan(&doc); err != nil {
 		return false
-	} else {
-		if err := json.Unmarshal([]byte(res.Val()), &doc); err != nil {
-			return false
-		}
-		return true
 	}
+	return true
 }
 
 // SetCache sets cache
 func (c *RedisCache) SetCache(key key.Key, doc any) {
-	if data, err := json.Marshal(doc); err != nil {
+	expire := random.RandInt(int(ExpireRangeMin), int(ExpireRangeMax))
+	if res := c.Set(context.Background(), key.String(), doc, time.Duration(expire)); res.Err() != nil {
 		return
-	} else {
-		expire := random.RandInt(int(ExpireRangeMin), int(ExpireRangeMax))
-		if res := c.Set(key.String(), data, time.Duration(expire)); res.Err() != nil {
-			return
-		}
 	}
 }
 
 // DeleteCache deletes cache
 func (c *RedisCache) DeleteCache(key key.Key) {
-	if res := c.Del(key.String()); res.Err() != nil {
+	if res := c.Del(context.Background(), key.String()); res.Err() != nil {
 		return
 	}
 }

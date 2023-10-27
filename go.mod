@@ -4,16 +4,18 @@ go 1.21
 
 require (
 	github.com/abiosoft/ishell v2.0.0+incompatible
-	github.com/go-redis/redis v6.15.9+incompatible
+	github.com/duke-git/lancet/v2 v2.2.7
 	github.com/google/uuid v1.3.1
 	github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus v1.0.0
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.0.1
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.18.0
+	github.com/gstones/zinx v0.0.0-20231018115511-41958d6807f4
 	github.com/hashicorp/vault/api v1.10.0
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/nats-io/nats.go v1.31.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.17.0
+	github.com/redis/go-redis/v9 v9.2.1
 	github.com/soheilhy/cmux v0.1.5
 	github.com/spf13/cobra v1.7.0
 	go.mongodb.org/mongo-driver v1.12.1
@@ -37,7 +39,7 @@ require (
 	github.com/chzyer/logex v1.1.10 // indirect
 	github.com/chzyer/test v0.0.0-20180213035817-a1ea475d72b1 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
-	github.com/duke-git/lancet/v2 v2.2.7 // indirect
+	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/fatih/color v1.15.0 // indirect
 	github.com/flynn-archive/go-shlex v0.0.0-20150515145356-3f9db97f8568 // indirect
 	github.com/go-jose/go-jose/v3 v3.0.0 // indirect
@@ -47,7 +49,6 @@ require (
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
-	github.com/gstones/zinx v0.0.0-20231018115511-41958d6807f4 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/hashicorp/go-hclog v1.5.0 // indirect
@@ -73,8 +74,6 @@ require (
 	github.com/montanaflynn/stats v0.7.1 // indirect
 	github.com/nats-io/nkeys v0.4.5 // indirect
 	github.com/nats-io/nuid v1.0.1 // indirect
-	github.com/onsi/ginkgo v1.16.5 // indirect
-	github.com/onsi/gomega v1.27.10 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/prometheus/client_model v0.5.0 // indirect
 	github.com/prometheus/common v0.44.0 // indirect
@@ -103,5 +102,3 @@ require (
 	google.golang.org/genproto v0.0.0-20231016165738-49dd2c1f3d0b // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20231016165738-49dd2c1f3d0b // indirect
 )
-
-//replace github.com/gstones/zinx => ../zinx

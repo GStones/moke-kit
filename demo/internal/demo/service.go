@@ -3,8 +3,8 @@ package demo
 import (
 	"context"
 
-	"github.com/go-redis/redis"
 	"github.com/gstones/zinx/ziface"
+	"github.com/redis/go-redis/v9"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
