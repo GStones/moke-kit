@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/go-redis/redis"
+	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
@@ -53,7 +53,7 @@ func (d *Demo) Hi(uid, message string) error {
 	if err := db_sql.FirstOrCreate(d.gormDb, uid, message); err != nil {
 		return err
 	}
-	d.redis.Set("demo", message, time.Minute)
+	d.redis.Set(context.Background(), "demo", message, time.Minute)
 	// mq publish
 	if err := d.mq.Publish(
 		common.NatsHeader.CreateTopic("demo"),

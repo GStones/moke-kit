@@ -3,7 +3,8 @@ package ofx
 import (
 	"context"
 
-	goredis "github.com/go-redis/redis"
+	goredis "github.com/redis/go-redis/v9"
+
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 
@@ -58,7 +59,7 @@ func (rr *RedisResult) Execute(
 }
 
 // RedisModule is the module for redis driver
-// github.com/go-redis/redis
+// github.com/redis/go-redis/v9
 var RedisModule = fx.Provide(
 	func(
 		lc fx.Lifecycle,
