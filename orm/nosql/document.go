@@ -89,6 +89,7 @@ func (d *DocumentBase) Load() error {
 			return err
 		} else {
 			d.version = version
+			d.cache.SetCache(d.Key, d.data)
 		}
 	}
 	return nil
