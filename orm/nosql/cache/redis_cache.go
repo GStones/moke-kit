@@ -2,6 +2,7 @@ package cache
 
 import (
 	"context"
+	"encoding/json"
 	"time"
 
 	"github.com/duke-git/lancet/v2/random"
@@ -31,8 +32,14 @@ func CreateRedisCache(logger *zap.Logger, client *redis.Client) *RedisCache {
 
 // GetCache gets cache
 func (c *RedisCache) GetCache(key key.Key, doc any) bool {
-	if err := c.Get(context.Background(), key.String()).Scan(&doc); err != nil {
+	if res := c.Get(context.Background(), key.String()); res.Err() != nil {
 		return false
+	} else {
+		if data, err := res.Bytes(); err != nil {
+			return false
+		} else if err := json.Unmarshal(data, doc); err != nil {
+			return false
+		}
 	}
 	return true
 }
@@ -40,7 +47,9 @@ func (c *RedisCache) GetCache(key key.Key, doc any) bool {
 // SetCache sets cache
 func (c *RedisCache) SetCache(key key.Key, doc any) {
 	expire := random.RandInt(int(ExpireRangeMin), int(ExpireRangeMax))
-	if res := c.Set(context.Background(), key.String(), doc, time.Duration(expire)); res.Err() != nil {
+	if data, err := json.Marshal(doc); err != nil {
+		return
+	} else if res := c.Set(context.Background(), key.String(), data, time.Duration(expire)); res.Err() != nil {
 		return
 	}
 }
