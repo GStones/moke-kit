@@ -34,12 +34,10 @@ func CreateRedisCache(logger *zap.Logger, client *redis.Client) *RedisCache {
 func (c *RedisCache) GetCache(key key.Key, doc any) bool {
 	if res := c.Get(context.Background(), key.String()); res.Err() != nil {
 		return false
-	} else {
-		if data, err := res.Bytes(); err != nil {
-			return false
-		} else if err := json.Unmarshal(data, doc); err != nil {
-			return false
-		}
+	} else if data, err := res.Bytes(); err != nil {
+		return false
+	} else if err := json.Unmarshal(data, doc); err != nil {
+		return false
 	}
 	return true
 }
