@@ -4,13 +4,8 @@ on:
   push:
     branches:
       - master
-      - release-*
     tags:
       - 'v*.*.*'
-  pull_request:
-    types:
-      - labeled
-
 jobs:
   goreleaser:
     runs-on: ubuntu-latest
