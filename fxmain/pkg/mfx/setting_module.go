@@ -1,11 +1,6 @@
 package mfx
 
 import (
-	"os"
-	"path/filepath"
-	"runtime"
-	"strings"
-
 	"github.com/gstones/moke-kit/utility"
 
 	"go.uber.org/fx"
@@ -34,19 +29,6 @@ func (ar *AppResult) LoadConstant(value string) error {
 	return nil
 }
 
-func (ar *AppResult) LoadFromExecutable() (err error) {
-	if exeName, e := os.Executable(); e != nil {
-		err = e
-	} else {
-		exeName = filepath.Base(exeName)
-		if runtime.GOOS == "windows" && strings.HasSuffix(exeName, ".exe") {
-			exeName = exeName[:len(exeName)-4]
-		}
-		ar.AppName = exeName
-	}
-	return
-}
-
 func (ar *AppResult) LoadFromEnv() (err error) {
 	err = utility.Load(ar)
 	return
@@ -54,10 +36,6 @@ func (ar *AppResult) LoadFromEnv() (err error) {
 
 var SettingModule = fx.Provide(
 	func() (out AppResult, err error) {
-		err = out.LoadFromExecutable()
-		if err != nil {
-			return
-		}
 		err = out.LoadFromEnv()
 		return
 	},
