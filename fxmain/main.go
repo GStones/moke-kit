@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	_ "go.uber.org/automaxprocs"
+
 	"github.com/gstones/moke-kit/fxmain/internal"
 	"github.com/gstones/moke-kit/fxmain/pkg/module"
 
