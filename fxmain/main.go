@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	_ "go.uber.org/automaxprocs"
+	_ "go.uber.org/automaxprocs" // Automatically set GOMAXPROCS:https://github.com/uber-go/automaxprocs
 
 	"github.com/gstones/moke-kit/fxmain/internal"
 	"github.com/gstones/moke-kit/fxmain/pkg/module"

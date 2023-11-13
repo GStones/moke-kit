@@ -127,13 +127,11 @@ func addInterceptorOptions(
 	//TODO: add rate limit interceptor here
 	//https: //github.com/grpc-ecosystem/go-grpc-middleware#server
 	ui := []grpc.UnaryServerInterceptor{
-		otelgrpc.UnaryServerInterceptor(),
 		srvMetrics.UnaryServerInterceptor(grpcprom.WithExemplarFromContext(exemplarFromContext)),
 		logging.UnaryServerInterceptor(interceptorLogger(logger), logging.WithFieldsFromContext(fieldsFromCtx)),
 		selector.UnaryServerInterceptor(auth.UnaryServerInterceptor(authFunc(authClient)), selector.MatchFunc(allButLogin)),
 	}
 	si := []grpc.StreamServerInterceptor{
-		otelgrpc.StreamServerInterceptor(),
 		srvMetrics.StreamServerInterceptor(grpcprom.WithExemplarFromContext(exemplarFromContext)),
 		logging.StreamServerInterceptor(interceptorLogger(logger), logging.WithFieldsFromContext(fieldsFromCtx)),
 		selector.StreamServerInterceptor(auth.StreamServerInterceptor(authFunc(authClient)), selector.MatchFunc(allButLogin)),
@@ -153,6 +151,9 @@ func addInterceptorOptions(
 		opts = interceptorOpts
 	} else {
 		opts = append(opts, interceptorOpts...)
+		opt := grpc.StatsHandler(otelgrpc.NewServerHandler())
+		opts = append(opts, opt)
 	}
+
 	return opts
 }
