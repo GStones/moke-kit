@@ -22,6 +22,7 @@ type ServiceBinder struct {
 	Deployment string `name:"Deployment"`
 	Version    string `name:"Version"`
 
+	Timeout       int32                 `name:"Timeout"`
 	AuthService   siface.IAuth          `name:"AuthService" optional:"true"`
 	ConnectionMux siface.IConnectionMux `name:"ConnectionMux"`
 	ZinxTcpPort   int32                 `name:"ZinxTcpPort"`
@@ -87,6 +88,7 @@ func (sb *ServiceBinder) bindZinxServices(
 		sb.AppName,
 		sb.Version,
 		sb.Deployment,
+		sb.Timeout,
 	); err != nil {
 		return nil, err
 	} else {

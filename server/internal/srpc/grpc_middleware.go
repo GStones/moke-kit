@@ -151,6 +151,7 @@ func addInterceptorOptions(
 		opts = interceptorOpts
 	} else {
 		opts = append(opts, interceptorOpts...)
+		// add OpenTelemetry what is OpenTelemetry? https://www.datadoghq.com/knowledge-center/opentelemetry/
 		opt := grpc.StatsHandler(otelgrpc.NewServerHandler())
 		opts = append(opts, opt)
 	}
