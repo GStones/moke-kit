@@ -24,13 +24,15 @@ func NewZinxServer(
 	name string,
 	version string,
 	deployment string,
+	timeout int32,
 ) (result siface.IZinxServer, err error) {
 	deploy := utility.ParseDeployments(deployment)
 	zconf.GlobalObject.Name = name
 	zconf.GlobalObject.Version = version
-	zconf.GlobalObject.LogIsolationLevel = 2
+	zconf.GlobalObject.LogIsolationLevel = 1
 	zconf.GlobalObject.WsPort = int(zinxWsPost)
 	zconf.GlobalObject.TCPPort = int(zinxTcpPort)
+	zconf.GlobalObject.HeartbeatMax = int(timeout)
 	if zinxTcpPort != 0 && zinxWsPost != 0 {
 		zconf.GlobalObject.Mode = ""
 	} else if zinxWsPost != 0 {

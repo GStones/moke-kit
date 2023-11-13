@@ -9,7 +9,7 @@ require (
 	github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus v1.0.0
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.0.1
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.18.0
-	github.com/gstones/zinx v0.0.0-20231018115511-41958d6807f4
+	github.com/gstones/zinx v0.1.0
 	github.com/hashicorp/vault/api v1.10.0
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/nats-io/nats.go v1.31.0
