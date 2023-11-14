@@ -22,6 +22,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/gstones/moke-kit/server/internal/common"
 	"github.com/gstones/moke-kit/server/siface"
 	"github.com/gstones/moke-kit/utility"
 )
@@ -125,7 +126,7 @@ func addInterceptorOptions(
 		}
 		return nil
 	}
-	rl := rate.CreateRateLimiter(int(rateLimit))
+	rl := common.CreateRateLimiter(int(rateLimit))
 	ui := []grpc.UnaryServerInterceptor{
 		ratelimit.UnaryServerInterceptor(rl),
 		srvMetrics.UnaryServerInterceptor(grpcprom.WithExemplarFromContext(exemplarFromContext)),
