@@ -15,10 +15,11 @@ func NewGrpcServer(
 	listener net.Listener,
 	auth siface.IAuth,
 	deployment string,
+	rateLimit int32,
 	opts ...grpc.ServerOption,
 ) (result siface.IGrpcServer, err error) {
 	deploy := utility.ParseDeployments(deployment)
-	opts = addInterceptorOptions(logger, auth, deploy, opts...)
+	opts = addInterceptorOptions(logger, auth, deploy, rateLimit, opts...)
 	result = &GrpcServer{
 		logger:   logger,
 		listener: listener,
