@@ -1,4 +1,4 @@
-package rate
+package common
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 	"go.uber.org/ratelimit"
 )
 
+// RateLimiter rate limit
 type RateLimiter struct {
 	limiter ratelimit.Limiter
 }

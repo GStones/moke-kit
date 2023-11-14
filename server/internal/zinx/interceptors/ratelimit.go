@@ -3,8 +3,6 @@ package interceptors
 import (
 	"github.com/gstones/zinx/ziface"
 	"go.uber.org/zap"
-
-	"github.com/gstones/moke-kit/server/internal/rate"
 )
 
 // RateLimitInterceptor 流控拦截器
