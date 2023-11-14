@@ -21,6 +21,7 @@ type ServiceBinder struct {
 	AppId      string `name:"AppId"`
 	Deployment string `name:"Deployment"`
 	Version    string `name:"Version"`
+	RateLimit  int32  `name:"RateLimit"`
 
 	Timeout       int32                 `name:"Timeout"`
 	AuthService   siface.IAuth          `name:"AuthService" optional:"true"`
@@ -61,6 +62,7 @@ func (sb *ServiceBinder) bindGrpcServices(l *zap.Logger) (hooks []LifecycleHook,
 		listener,
 		sb.AuthService,
 		sb.Deployment,
+		sb.RateLimit,
 	); e != nil {
 		err = e
 	} else {
@@ -89,6 +91,7 @@ func (sb *ServiceBinder) bindZinxServices(
 		sb.Version,
 		sb.Deployment,
 		sb.Timeout,
+		sb.RateLimit,
 	); err != nil {
 		return nil, err
 	} else {

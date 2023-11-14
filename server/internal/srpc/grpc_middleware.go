@@ -10,6 +10,7 @@ import (
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/auth"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/ratelimit"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/recovery"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/selector"
 	"github.com/prometheus/client_golang/prometheus"
@@ -21,6 +22,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/gstones/moke-kit/server/internal/common"
 	"github.com/gstones/moke-kit/server/siface"
 	"github.com/gstones/moke-kit/utility"
 )
@@ -97,6 +99,7 @@ func addInterceptorOptions(
 	logger *zap.Logger,
 	authClient siface.IAuth,
 	deployments utility.Deployments,
+	rateLimit int32,
 	opts ...grpc.ServerOption,
 ) []grpc.ServerOption {
 	srvMetrics := grpcprom.NewServerMetrics(
@@ -123,15 +126,15 @@ func addInterceptorOptions(
 		}
 		return nil
 	}
-
-	//TODO: add rate limit interceptor here
-	//https: //github.com/grpc-ecosystem/go-grpc-middleware#server
+	rl := common.CreateRateLimiter(int(rateLimit))
 	ui := []grpc.UnaryServerInterceptor{
+		ratelimit.UnaryServerInterceptor(rl),
 		srvMetrics.UnaryServerInterceptor(grpcprom.WithExemplarFromContext(exemplarFromContext)),
 		logging.UnaryServerInterceptor(interceptorLogger(logger), logging.WithFieldsFromContext(fieldsFromCtx)),
 		selector.UnaryServerInterceptor(auth.UnaryServerInterceptor(authFunc(authClient)), selector.MatchFunc(allButLogin)),
 	}
 	si := []grpc.StreamServerInterceptor{
+		ratelimit.StreamServerInterceptor(rl),
 		srvMetrics.StreamServerInterceptor(grpcprom.WithExemplarFromContext(exemplarFromContext)),
 		logging.StreamServerInterceptor(interceptorLogger(logger), logging.WithFieldsFromContext(fieldsFromCtx)),
 		selector.StreamServerInterceptor(auth.StreamServerInterceptor(authFunc(authClient)), selector.MatchFunc(allButLogin)),

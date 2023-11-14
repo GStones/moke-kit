@@ -25,6 +25,7 @@ func NewZinxServer(
 	version string,
 	deployment string,
 	timeout int32,
+	rateLimit int32,
 ) (result siface.IZinxServer, err error) {
 	deploy := utility.ParseDeployments(deployment)
 	zconf.GlobalObject.Name = name
@@ -42,12 +43,13 @@ func NewZinxServer(
 	} else {
 		return nil, errors.New("please set wsPort or tcpPort")
 	}
+	l := logger.With(zap.String("service", name))
 	s := znet.NewServer()
 	if deploy == utility.DeploymentsProd {
-		s.AddInterceptor(interceptors.NewRecoverInterceptor(logger.With(zap.String("service", name))))
-	} else {
-		s.AddInterceptor(interceptors.NewLoggerInterceptor(logger.With(zap.String("service", name))))
+		s.AddInterceptor(interceptors.NewRecoverInterceptor(l))
 	}
+	s.AddInterceptor(interceptors.NewLoggerInterceptor(l))
+	s.AddInterceptor(interceptors.NewRateLimitInterceptor(l, rateLimit))
 	result = &ZinxServer{
 		logger: logger,
 		server: s,
