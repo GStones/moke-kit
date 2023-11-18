@@ -16,7 +16,6 @@ func DialWithOptions(target string, secure bool) (cConn *grpc.ClientConn, err er
 		//TODO add secure
 		//opts = append(opts, grpc.WithTransportCredentials(utils.GetClientCreds()))
 	} else {
-		grpc.WithResolvers()
 		opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), Timeout)
