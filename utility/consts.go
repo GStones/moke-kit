@@ -14,6 +14,10 @@ func (d Deployments) String() string {
 	return string(d)
 }
 
+func (d Deployments) IsProd() bool {
+	return d == DeploymentsProd
+}
+
 func ParseDeployments(value string) Deployments {
 	switch Deployments(value) {
 	case DeploymentsLocal:

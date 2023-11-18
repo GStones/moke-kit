@@ -48,7 +48,6 @@ func NewZinxServer(
 	if deploy == utility.DeploymentsProd {
 		s.AddInterceptor(interceptors.NewRecoverInterceptor(l))
 	}
-	s.AddInterceptor(interceptors.NewLoggerInterceptor(l))
 	s.AddInterceptor(interceptors.NewRateLimitInterceptor(l, rateLimit))
 	result = &ZinxServer{
 		logger: logger,

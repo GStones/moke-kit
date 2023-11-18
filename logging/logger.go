@@ -14,9 +14,9 @@ func NewLogger(deployment string) (logger *zap.Logger, err error) {
 	case utility.DeploymentsLocal, utility.DeploymentsDev:
 		config := zap.NewDevelopmentConfig()
 		config.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
-		logger, err = config.Build(zap.AddStacktrace(zap.FatalLevel))
+		logger, err = config.Build(zap.AddStacktrace(zap.ErrorLevel))
 	case utility.DeploymentsProd:
-		logger, err = zap.NewProduction(zap.AddStacktrace(zap.FatalLevel))
+		logger, err = zap.NewProduction(zap.AddStacktrace(zap.PanicLevel))
 	}
 	if logger != nil {
 		logger.Info("log opened")
