@@ -22,7 +22,7 @@ type SettingsResult struct {
 
 	Port        int32 `name:"Port"  envconfig:"PORT" default:"8081"`
 	ZinxTcpPort int32 `name:"ZinxTcpPort" envconfig:"ZINX_TCP_PORT" default:"8888"`
-	ZinxWSPort  int32 `name:"ZinxWSPort" envconfig:"ZINX_WS_PORT" default:"8889"`
+	ZinxWSPort  int32 `name:"ZinxWSPort" envconfig:"ZINX_WS_PORT" default:""`
 	Timeout     int32 `name:"Timeout" envconfig:"TIMEOUT" default:"10"`        // connection heartbeat timeout
 	RateLimit   int32 `name:"RateLimit" envconfig:"RATE_LIMIT" default:"1000"` // rate limit per second
 }
