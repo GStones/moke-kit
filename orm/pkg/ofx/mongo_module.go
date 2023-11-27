@@ -54,6 +54,7 @@ func (mr *MongoResult) NewDocument(
 			},
 		})
 	} else {
+		l.Error("Invalid mongodb url", zap.String("url", n.DocumentURL))
 		return nerrors.ErrInvalidNosqlURL
 	}
 	return

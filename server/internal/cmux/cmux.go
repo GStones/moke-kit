@@ -72,7 +72,7 @@ func (cm *ConnectionMux) TCPListener() (listener net.Listener, err error) {
 }
 
 func (cm *ConnectionMux) init() error {
-	if listener, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", cm.port)); err != nil {
+	if listener, err := net.Listen("tcp", fmt.Sprintf(":%d", cm.port)); err != nil {
 		return err
 	} else {
 		if cm.tlsConfig != nil {
