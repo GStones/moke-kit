@@ -146,6 +146,7 @@ func addInterceptorOptions(
 	}
 
 	interceptorOpts := []grpc.ServerOption{
+		grpc.MaxConcurrentStreams(0),
 		grpc.ChainStreamInterceptor(si...),
 		grpc.ChainUnaryInterceptor(ui...),
 	}
