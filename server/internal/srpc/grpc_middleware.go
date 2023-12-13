@@ -84,8 +84,9 @@ func interceptorLogger(l *zap.Logger) logging.Logger {
 	})
 }
 
-func allButLogin(_ context.Context, callMeta interceptors.CallMeta) bool {
-	return !strings.Contains(callMeta.FullMethod(), "Auth")
+func allBut(_ context.Context, callMeta interceptors.CallMeta) bool {
+	return !strings.Contains(callMeta.Service, "Private") &&
+		!strings.Contains(callMeta.FullMethod(), "Auth")
 }
 
 func fieldsFromCtx(ctx context.Context) logging.Fields {
@@ -131,13 +132,13 @@ func addInterceptorOptions(
 		ratelimit.UnaryServerInterceptor(rl),
 		srvMetrics.UnaryServerInterceptor(grpcprom.WithExemplarFromContext(exemplarFromContext)),
 		logging.UnaryServerInterceptor(interceptorLogger(logger), logging.WithFieldsFromContext(fieldsFromCtx)),
-		selector.UnaryServerInterceptor(auth.UnaryServerInterceptor(authFunc(authClient)), selector.MatchFunc(allButLogin)),
+		selector.UnaryServerInterceptor(auth.UnaryServerInterceptor(authFunc(authClient)), selector.MatchFunc(allBut)),
 	}
 	si := []grpc.StreamServerInterceptor{
 		ratelimit.StreamServerInterceptor(rl),
 		srvMetrics.StreamServerInterceptor(grpcprom.WithExemplarFromContext(exemplarFromContext)),
 		logging.StreamServerInterceptor(interceptorLogger(logger), logging.WithFieldsFromContext(fieldsFromCtx)),
-		selector.StreamServerInterceptor(auth.StreamServerInterceptor(authFunc(authClient)), selector.MatchFunc(allButLogin)),
+		selector.StreamServerInterceptor(auth.StreamServerInterceptor(authFunc(authClient)), selector.MatchFunc(allBut)),
 	}
 
 	if deployments == utility.DeploymentsProd {
