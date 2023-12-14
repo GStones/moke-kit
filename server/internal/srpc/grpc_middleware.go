@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"runtime/debug"
-	"strings"
 
 	grpcprom "github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
@@ -84,16 +83,19 @@ func interceptorLogger(l *zap.Logger) logging.Logger {
 	})
 }
 
-func allBut(_ context.Context, callMeta interceptors.CallMeta) bool {
-	return !strings.Contains(callMeta.Service, "Private") &&
-		!strings.Contains(callMeta.FullMethod(), "Auth")
+func allBut(_ context.Context, _ interceptors.CallMeta) bool {
+	return true
 }
 
 func fieldsFromCtx(ctx context.Context) logging.Fields {
+	fields := logging.Fields{}
 	if span := trace.SpanContextFromContext(ctx); span.IsSampled() {
-		return logging.Fields{"traceID", span.TraceID().String()}
+		fields = append(fields, "traceID", span.TraceID().String())
 	}
-	return nil
+	if v, ok := ctx.Value(utility.WithOutAuthTag).(bool); ok {
+		fields = append(fields, utility.WithOutAuthTag, v)
+	}
+	return fields
 }
 
 func addInterceptorOptions(
@@ -130,15 +132,15 @@ func addInterceptorOptions(
 	rl := common.CreateRateLimiter(int(rateLimit))
 	ui := []grpc.UnaryServerInterceptor{
 		ratelimit.UnaryServerInterceptor(rl),
+		selector.UnaryServerInterceptor(auth.UnaryServerInterceptor(authFunc(authClient)), selector.MatchFunc(allBut)),
 		srvMetrics.UnaryServerInterceptor(grpcprom.WithExemplarFromContext(exemplarFromContext)),
 		logging.UnaryServerInterceptor(interceptorLogger(logger), logging.WithFieldsFromContext(fieldsFromCtx)),
-		selector.UnaryServerInterceptor(auth.UnaryServerInterceptor(authFunc(authClient)), selector.MatchFunc(allBut)),
 	}
 	si := []grpc.StreamServerInterceptor{
 		ratelimit.StreamServerInterceptor(rl),
+		selector.StreamServerInterceptor(auth.StreamServerInterceptor(authFunc(authClient)), selector.MatchFunc(allBut)),
 		srvMetrics.StreamServerInterceptor(grpcprom.WithExemplarFromContext(exemplarFromContext)),
 		logging.StreamServerInterceptor(interceptorLogger(logger), logging.WithFieldsFromContext(fieldsFromCtx)),
-		selector.StreamServerInterceptor(auth.StreamServerInterceptor(authFunc(authClient)), selector.MatchFunc(allBut)),
 	}
 
 	if deployments == utility.DeploymentsProd {
