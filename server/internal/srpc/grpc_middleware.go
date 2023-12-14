@@ -92,8 +92,8 @@ func fieldsFromCtx(ctx context.Context) logging.Fields {
 	if span := trace.SpanContextFromContext(ctx); span.IsSampled() {
 		fields = append(fields, "traceID", span.TraceID().String())
 	}
-	if v, ok := ctx.Value(utility.WithOutAuthTag).(bool); ok {
-		fields = append(fields, utility.WithOutAuthTag, v)
+	if v, ok := ctx.Value(utility.WithOutTag).(bool); ok {
+		fields = append(fields, utility.WithOutTag.String(), v)
 	}
 	return fields
 }
