@@ -10,16 +10,16 @@ import (
 )
 
 func NewLogger(deployment string) (logger *zap.Logger, err error) {
-	switch utility.ParseDeployments(deployment) {
-	case utility.DeploymentsLocal, utility.DeploymentsDev:
+	if utility.ParseDeployments(deployment).IsProd() {
+		if logger, err = zap.NewProduction(zap.AddStacktrace(zap.PanicLevel)); err != nil {
+			return nil, err
+		}
+	} else {
 		config := zap.NewDevelopmentConfig()
 		config.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
-		logger, err = config.Build(zap.AddStacktrace(zap.ErrorLevel))
-	case utility.DeploymentsProd:
-		logger, err = zap.NewProduction(zap.AddStacktrace(zap.PanicLevel))
-	}
-	if logger != nil {
-		logger.Info("log opened")
+		if logger, err = config.Build(zap.AddStacktrace(zap.ErrorLevel)); err != nil {
+			return nil, err
+		}
 	}
 	return
 }

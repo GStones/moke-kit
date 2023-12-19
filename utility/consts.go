@@ -1,7 +1,5 @@
 package utility
 
-import "fmt"
-
 type Deployments string
 
 const (
@@ -27,6 +25,6 @@ func ParseDeployments(value string) Deployments {
 	case DeploymentsProd:
 		return DeploymentsProd
 	default:
-		panic(fmt.Errorf(`"%s" is an unknown deployments`, value))
+		return Deployments(value)
 	}
 }
