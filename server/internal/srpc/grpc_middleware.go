@@ -143,7 +143,7 @@ func addInterceptorOptions(
 		logging.StreamServerInterceptor(interceptorLogger(logger), logging.WithFieldsFromContext(fieldsFromCtx)),
 	}
 
-	if deployments == utility.DeploymentsProd {
+	if deployments.IsProd() {
 		ui = append(ui, recovery.UnaryServerInterceptor(recovery.WithRecoveryHandler(grpcPanicRecoveryHandler)))
 		si = append(si, recovery.StreamServerInterceptor(recovery.WithRecoveryHandler(grpcPanicRecoveryHandler)))
 	}
