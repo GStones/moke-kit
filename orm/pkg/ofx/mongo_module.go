@@ -30,21 +30,14 @@ func (mr *MongoResult) NewDocument(
 	l *zap.Logger,
 	n SettingsParams,
 ) (err error) {
-	if n.DocumentURL == "" {
+	if n.DatabaseURL == "" {
 		return nil
 	}
-	if u, e := url.Parse(n.DocumentURL); e != nil {
+	if u, e := url.Parse(n.DatabaseURL); e != nil {
 		err = e
 	} else if u.Scheme == "mongodb" {
 		username := u.User.Username()
-		if username == "" {
-			username = n.RedisUser
-		}
-
-		password, set := u.User.Password()
-		if !set {
-			password = n.RedisPassword
-		}
+		password, _ := u.User.Password()
 		conn := fmt.Sprintf("mongodb://%s", u.Host)
 		l.Info("Connect to mongodb", zap.String("url", conn))
 		mr.MongoClient, err = mongo.NewMongoClient(conn, username, password)
@@ -54,7 +47,7 @@ func (mr *MongoResult) NewDocument(
 			},
 		})
 	} else {
-		l.Error("Invalid mongodb url", zap.String("url", n.DocumentURL))
+		l.Error("Invalid mongodb url", zap.String("url", n.DatabaseURL))
 		return nerrors.ErrInvalidNosqlURL
 	}
 	return

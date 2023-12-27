@@ -2,6 +2,7 @@ package ofx
 
 import (
 	"context"
+	"net/url"
 
 	goredis "github.com/redis/go-redis/v9"
 
@@ -29,23 +30,31 @@ func (rr *RedisResult) Execute(
 	lc fx.Lifecycle,
 	l *zap.Logger,
 	n SettingsParams,
-) (err error) {
-	if n.RedisURL != "" {
-		l.Info("Connecting to redis", zap.String("host", n.RedisURL))
+) error {
+	if n.CacheURL == "" {
+		return nil
+	} else if u, e := url.Parse(n.CacheURL); e != nil {
+		return e
+	} else if u.Scheme != "redis" {
+		l.Error("Invalid redis url", zap.String("url", n.CacheURL))
+		return nerrors.ErrInvalidNosqlURL
+	} else {
+		username := u.User.Username()
+		password, _ := u.User.Password()
 		rr.Redis = goredis.NewClient(&goredis.Options{
-			Addr:     n.RedisURL,
-			Password: n.RedisPassword,
+			Addr:     u.Host,
+			Username: username,
+			Password: password,
 			DB:       0,
 		})
 		rr.Cache = goredis.NewClient(&goredis.Options{
-			Addr:     n.RedisURL,
-			Password: n.RedisPassword,
+			Addr:     u.Host,
+			Username: username,
+			Password: password,
 			DB:       1,
 		})
-
-	} else {
-		return nerrors.ErrMissingNosqlURL
 	}
+	l.Info("Connecting to redis", zap.String("host", n.CacheURL))
 
 	if rr.Redis != nil {
 		lc.Append(fx.Hook{
@@ -55,7 +64,7 @@ func (rr *RedisResult) Execute(
 			},
 		})
 	}
-	return
+	return nil
 }
 
 // RedisModule is the module for redis driver
