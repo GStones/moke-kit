@@ -68,7 +68,7 @@ var DocumentStoreModule = fx.Provide(
 	) (dOut DocumentStoreResult, err error) {
 		err = dOut.NewDocument(
 			lc, l, mp.MongoClient,
-			sp.DocumentURL, as.Deployment,
+			sp.DatabaseURL, as.Deployment,
 		)
 		return
 	},
