@@ -37,7 +37,13 @@ func (mr *MongoResult) NewDocument(
 		err = e
 	} else if u.Scheme == "mongodb" {
 		username := u.User.Username()
+		if n.DatabaseUser != "" {
+			username = n.DatabaseUser
+		}
 		password, _ := u.User.Password()
+		if n.DatabasePassword != "" {
+			password = n.DatabasePassword
+		}
 		conn := fmt.Sprintf("mongodb://%s", u.Host)
 		l.Info("Connect to mongodb", zap.String("url", conn))
 		mr.MongoClient, err = mongo.NewMongoClient(conn, username, password)

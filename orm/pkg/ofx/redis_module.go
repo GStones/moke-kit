@@ -40,7 +40,13 @@ func (rr *RedisResult) Execute(
 		return nerrors.ErrInvalidNosqlURL
 	} else {
 		username := u.User.Username()
+		if n.CacheUser != "" {
+			username = n.CacheUser
+		}
 		password, _ := u.User.Password()
+		if n.CachePassword != "" {
+			password = n.CachePassword
+		}
 		rr.Redis = goredis.NewClient(&goredis.Options{
 			Addr:     u.Host,
 			Username: username,
