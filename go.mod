@@ -34,6 +34,7 @@ require (
 )
 
 require (
+	agones.dev/agones v1.37.0 // indirect
 	github.com/abiosoft/readline v0.0.0-20180607040430-155bce2042db // indirect
 	github.com/benbjohnson/clock v1.3.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
