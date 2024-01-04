@@ -39,11 +39,11 @@ func CreateDefault() (siface.IAgones, error) {
 // https://agones.dev/site/docs/guides/client-sdks/local/
 var AgonesModule = fx.Provide(
 	func(l *zap.Logger) (out AgonesResult, err error) {
-		if a, err := CreateAgones(); err != nil {
+		a, err := CreateAgones()
+		if err != nil {
 			return out, err
-		} else {
-			out.Agones = a
 		}
+		out.Agones = a
 		return
 	},
 )
@@ -51,10 +51,10 @@ var AgonesModule = fx.Provide(
 // AgonesDefaultModule is a fx module that provides an empty Agones sdk
 var AgonesDefaultModule = fx.Provide(
 	func(l *zap.Logger) (out AgonesResult, err error) {
-		if a, err := CreateDefault(); err != nil {
+		a, err := CreateDefault()
+		if err != nil {
 			return out, err
-		} else {
-			out.Agones = a
 		}
+		out.Agones = a
 		return
 	})
