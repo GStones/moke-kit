@@ -15,10 +15,9 @@ func (app *App) Run() error {
 	if err := app.Start(ctx); err != nil {
 		app.Stop(ctx)
 		return err
-	} else {
-		<-app.Done()
-		return nil
 	}
+	<-app.Done()
+	return nil
 }
 
 func NewApp(opts ...fx.Option) *App {
