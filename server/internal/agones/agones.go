@@ -26,15 +26,14 @@ func (a *Agones) Init() error {
 }
 
 func (a *Agones) health() {
-	tick := time.Tick(TickDuration)
+	tick := time.NewTicker(TickDuration)
 	for {
-		select {
-		case <-tick:
-			if err := a.sdk.Health(); err != nil {
-				continue
-			}
+		<-tick.C
+		if err := a.sdk.Health(); err != nil {
+			continue
 		}
 	}
+
 }
 
 func (a *Agones) Ready() error {
