@@ -9,7 +9,7 @@ import (
 type GrpcServiceParams struct {
 	fx.In
 
-	GrpcService siface.IGrpcService `group:"GrpcService"`
+	GrpcServices []siface.IGrpcService `group:"GrpcService"`
 }
 
 type GrpcServiceResult struct {
@@ -21,7 +21,7 @@ type GrpcServiceResult struct {
 type ZinxServiceParams struct {
 	fx.In
 
-	ZinxService siface.IZinxService `group:"ZinxService"`
+	ZinxServices []siface.IZinxService `group:"ZinxService"`
 }
 
 type ZinxServiceResult struct {
@@ -33,7 +33,7 @@ type ZinxServiceResult struct {
 type GatewayServiceParams struct {
 	fx.In
 
-	GatewayService siface.IGatewayService `group:"GatewayService"`
+	GatewayServices []siface.IGatewayService `group:"GatewayService"`
 }
 
 type GatewayServiceResult struct {
