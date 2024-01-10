@@ -3,10 +3,12 @@
 [![Go Reference](https://pkg.go.dev/badge/github.com/GStones/moke-kit.svg)](https://pkg.go.dev/github.com/GStones/moke-kit)
 [![Release](https://img.shields.io/github/v/release/gstones/moke-kit.svg?style=flat-square)](https://github.com/GStones/moke-kit)
 
-A dependency framework structure kit based on uber/fx, which provides dependency injection of various components, as well as initialization of various components, and lifecycle management of various components.
+## What is moke-kit?
+moke-kit is a toolkit for building a [Domain-Driven Hexagon](https://github.com/Sairyss/domain-driven-hexagon) microservices in Go.
 
-## Warning
-The current framework is still in the development stage and cannot be used in a production environment
+## Diagram
+
+![moke-kit](./assets/moke-kit-diagram.drawio.png)
 
 ## Features
 * [x] [Dependency injection](https://www.wikiwand.com/en/Dependency_injection) service/module
@@ -32,8 +34,8 @@ The current framework is still in the development stage and cannot be used in a 
     * [x] [Cache Aside Pattern](https://blog.cdemi.io/design-patterns-cache-aside-pattern/)
 
 ## Getting started
- * [Introduction](https://github.com/GStones/moke-kit/wiki/Introduction)
  * [Demo](./demo)
+
 
 
 
