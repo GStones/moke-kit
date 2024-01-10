@@ -7,7 +7,7 @@ import (
 )
 
 var Module = fx.Module("server",
-	sfx.ConnectionMuxModule,
 	sfx.SecuritySettingsModule,
 	sfx.SettingsModule,
+	sfx.ConnectionMuxModule,
 )

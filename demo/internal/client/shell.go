@@ -13,7 +13,7 @@ func RunGrpc(url string) {
 	sh := ishell.New()
 	slogger.Info(sh, "interactive demo connect to "+url)
 
-	if conn, err := utility.DialWithOptions(url, false); err != nil {
+	if conn, err := utility.DialInsecure(url); err != nil {
 		slogger.Die(sh, err)
 	} else {
 		demoGrpc := NewDemoGrpc(conn)
