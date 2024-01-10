@@ -26,6 +26,8 @@ func NewZinxServer(
 	deployment string,
 	timeout int32,
 	rateLimit int32,
+	serverCert string,
+	serverKey string,
 ) (result siface.IZinxServer, err error) {
 	deploy := utility.ParseDeployments(deployment)
 	zconf.GlobalObject.Name = name
@@ -34,6 +36,9 @@ func NewZinxServer(
 	zconf.GlobalObject.WsPort = int(zinxWsPost)
 	zconf.GlobalObject.TCPPort = int(zinxTcpPort)
 	zconf.GlobalObject.HeartbeatMax = int(timeout)
+	zconf.GlobalObject.CertFile = serverCert
+	zconf.GlobalObject.PrivateKeyFile = serverKey
+
 	if zinxTcpPort != 0 && zinxWsPost != 0 {
 		zconf.GlobalObject.Mode = ""
 	} else if zinxWsPost != 0 {

@@ -7,6 +7,7 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 
+	"github.com/gstones/moke-kit/fxmain/pkg/mfx"
 	"github.com/gstones/moke-kit/server/internal/srpc"
 	"github.com/gstones/moke-kit/server/internal/zinx"
 	"github.com/gstones/moke-kit/server/siface"
@@ -17,22 +18,16 @@ type BinderFunc func(*zap.Logger) ([]LifecycleHook, error)
 
 type ServiceBinder struct {
 	fx.In
+	mfx.AppParams // app settings params
 
-	AppName    string `name:"AppName"`
-	AppId      string `name:"AppId"`
-	Deployment string `name:"Deployment"`
-	Version    string `name:"Version"`
-	RateLimit  int32  `name:"RateLimit"`
+	SettingsParams         // server settings
+	SecuritySettingsParams // server security settings
 
-	Timeout       int32                 `name:"Timeout"`
-	AuthService   siface.IAuth          `name:"AuthService" optional:"true"`
-	ConnectionMux siface.IConnectionMux `name:"ConnectionMux"`
-	ZinxTcpPort   int32                 `name:"ZinxTcpPort"`
-	ZinxWSPort    int32                 `name:"ZinxWSPort"`
-
-	GrpcServices    []siface.IGrpcService    `group:"GrpcService"`
-	GatewayServices []siface.IGatewayService `group:"GatewayService"`
-	ZinxServices    []siface.IZinxService    `group:"ZinxService"`
+	ConnectionMuxParams  // connection mux params
+	GrpcServiceParams    //all grpc service injected
+	ZinxServiceParams    // all zinx service injected
+	GatewayServiceParams // all gateway service injected
+	AuthServiceParams    // grpc rpc auth middleware injected
 }
 
 func (sb *ServiceBinder) Execute(l *zap.Logger, lc fx.Lifecycle) error {
@@ -84,6 +79,10 @@ func (sb *ServiceBinder) bindZinxServices(
 	if len(sb.ZinxServices) == 0 {
 		return nil, nil
 	}
+	cert, key := "", ""
+	if sb.Secure {
+		cert, key = sb.ServerCert, sb.ServerKey
+	}
 	if zinxServer, err := zinx.NewZinxServer(
 		l,
 		sb.ZinxTcpPort,
@@ -93,6 +92,8 @@ func (sb *ServiceBinder) bindZinxServices(
 		sb.Deployment,
 		sb.Timeout,
 		sb.RateLimit,
+		cert,
+		key,
 	); err != nil {
 		return nil, err
 	} else {
