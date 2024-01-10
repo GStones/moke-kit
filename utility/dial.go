@@ -13,8 +13,10 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
+// Timeout grpc dial timeout
 const Timeout = 2 * time.Second
 
+// DialInsecure dial insecure grpc
 func DialInsecure(target string) (cConn *grpc.ClientConn, err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), Timeout)
 	defer cancel()
@@ -25,6 +27,7 @@ func DialInsecure(target string) (cConn *grpc.ClientConn, err error) {
 	return conn, nil
 }
 
+// DialWithSecurity dial grpc with security
 func DialWithSecurity(target string, clientCert, clientKey, serverName, serverCa string) (cConn *grpc.ClientConn, err error) {
 	var opts []grpc.DialOption
 	cert, err := tls.LoadX509KeyPair(clientCert, clientKey)

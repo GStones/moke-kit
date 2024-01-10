@@ -23,7 +23,7 @@ func NewTlsConnectionMux(
 	tlsKey string,
 	clientsCA string,
 ) (result *ConnectionMux, err error) {
-	if config, e := makeTlsConfig(tlsCert, tlsKey, clientsCA); e != nil {
+	if config, e := makeTLSConfig(tlsCert, tlsKey, clientsCA); e != nil {
 		err = e
 	} else {
 		result = &ConnectionMux{

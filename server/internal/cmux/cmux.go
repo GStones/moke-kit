@@ -111,7 +111,7 @@ func (cm *ConnectionMux) StopServing(_ context.Context) error {
 	return nil
 }
 
-func makeTlsConfig(tlsCert, tlsKey string, clientCa string) (*tls.Config, error) {
+func makeTLSConfig(tlsCert, tlsKey string, clientCa string) (*tls.Config, error) {
 	if cert, err := tls.LoadX509KeyPair(tlsCert, tlsKey); err != nil {
 		return nil, err
 	} else if caBytes, err := os.ReadFile(clientCa); err != nil {
