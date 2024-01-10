@@ -17,6 +17,7 @@ type BinderFunc func(*zap.Logger) ([]LifecycleHook, error)
 
 type ServiceBinder struct {
 	fx.In
+
 	AppName    string `name:"AppName"`
 	AppId      string `name:"AppId"`
 	Deployment string `name:"Deployment"`

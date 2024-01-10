@@ -3,9 +3,10 @@ package cmux
 import (
 	"context"
 	"crypto/tls"
-	"encoding/base64"
+	"crypto/x509"
 	"fmt"
 	"net"
+	"os"
 
 	"github.com/pkg/errors"
 	"github.com/soheilhy/cmux"
@@ -110,17 +111,23 @@ func (cm *ConnectionMux) StopServing(_ context.Context) error {
 	return nil
 }
 
-func makeTlsConfig(tlsCert, tlsKey string) (config *tls.Config, err error) {
-	sCert, _ := base64.StdEncoding.DecodeString(tlsCert)
-	sKey, _ := base64.StdEncoding.DecodeString(tlsKey)
-
-	if certificate, e := tls.X509KeyPair(sCert, sKey); e != nil {
-		err = e
+func makeTLSConfig(tlsCert, tlsKey string, clientCa string) (*tls.Config, error) {
+	if cert, err := tls.LoadX509KeyPair(tlsCert, tlsKey); err != nil {
+		return nil, err
+	} else if caBytes, err := os.ReadFile(clientCa); err != nil {
+		return nil, err
 	} else {
-		config = &tls.Config{
-			Certificates: []tls.Certificate{certificate},
+		ca := x509.NewCertPool()
+		if ok := ca.AppendCertsFromPEM(caBytes); !ok {
+			return nil, fmt.Errorf("failed to parse %v ", clientCa)
 		}
+
+		tlsConfig := &tls.Config{
+			ClientAuth:   tls.RequireAndVerifyClientCert,
+			Certificates: []tls.Certificate{cert},
+			ClientCAs:    ca,
+		}
+		return tlsConfig, nil
 	}
 
-	return
 }
