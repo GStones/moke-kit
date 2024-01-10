@@ -9,7 +9,7 @@ import (
 type AuthServiceParams struct {
 	fx.In
 
-	AuthService siface.IAuth `name:"AuthService"`
+	AuthService siface.IAuth `name:"AuthService" optional:"true"`
 }
 
 type AuthServiceResult struct {
