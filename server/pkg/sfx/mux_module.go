@@ -8,6 +8,9 @@ import (
 	"github.com/gstones/moke-kit/server/siface"
 )
 
+// ConnectionMux module:listen and serve same port for different protocols
+// github.com/soheilhy/cmux
+
 type ConnectionMuxParams struct {
 	fx.In
 	ConnectionMux siface.IConnectionMux `name:"ConnectionMux"`
