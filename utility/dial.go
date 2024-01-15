@@ -28,7 +28,10 @@ func DialInsecure(target string) (cConn *grpc.ClientConn, err error) {
 }
 
 // DialWithSecurity dial grpc with security
-func DialWithSecurity(target string, clientCert, clientKey, serverName, serverCa string) (cConn *grpc.ClientConn, err error) {
+func DialWithSecurity(
+	target string,
+	clientCert, clientKey, serverName, serverCa string,
+) (cConn *grpc.ClientConn, err error) {
 	var opts []grpc.DialOption
 	cert, err := tls.LoadX509KeyPair(clientCert, clientKey)
 	if err != nil {
@@ -43,9 +46,13 @@ func DialWithSecurity(target string, clientCert, clientKey, serverName, serverCa
 		return nil, fmt.Errorf("failed to parse %q", serverCa)
 	}
 	tlsConfig := &tls.Config{
-		ServerName:   serverName,
 		Certificates: []tls.Certificate{cert},
-		RootCAs:      ca,
+	}
+	if serverName != "" {
+		tlsConfig.ServerName = serverName
+	}
+	if serverCa != "" {
+		tlsConfig.RootCAs = ca
 	}
 	opts = append(opts, grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)))
 	ctx, cancel := context.WithTimeout(context.Background(), Timeout)

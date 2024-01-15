@@ -16,6 +16,8 @@ import (
 type LifecycleHook = func(lc fx.Lifecycle)
 type BinderFunc func(*zap.Logger) ([]LifecycleHook, error)
 
+// ServiceBinder bind all registers services(http/grpc/tcp/udp/websocket) to server
+
 type ServiceBinder struct {
 	fx.In
 	mfx.AppParams // app settings params
@@ -24,9 +26,9 @@ type ServiceBinder struct {
 	SecuritySettingsParams // server security settings
 
 	ConnectionMuxParams  // connection mux params
-	GrpcServiceParams    //all grpc service injected
-	ZinxServiceParams    // all zinx service injected
-	GatewayServiceParams // all gateway service injected
+	GrpcServiceParams    //all grpc service injected (grpc)
+	ZinxServiceParams    // all zinx service injected (tcp/udp/websocket)
+	GatewayServiceParams // all gateway service injected (http)
 	AuthServiceParams    // grpc rpc auth middleware injected
 }
 

@@ -6,6 +6,8 @@ import (
 	"github.com/gstones/moke-kit/server/siface"
 )
 
+// All service fx struct
+
 type GrpcServiceParams struct {
 	fx.In
 

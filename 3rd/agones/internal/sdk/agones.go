@@ -1,4 +1,4 @@
-package agones
+package sdk
 
 import (
 	"time"

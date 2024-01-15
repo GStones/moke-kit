@@ -6,6 +6,8 @@ import (
 	"github.com/gstones/moke-kit/server/siface"
 )
 
+// Auth module
+
 type AuthServiceParams struct {
 	fx.In
 
