@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"agones.dev/agones/pkg/sdk"
+	agone "agones.dev/agones/sdks/go"
 )
 
 type Mock struct {
@@ -43,4 +44,12 @@ func (d *Mock) SetAnnotation(_, _ string) error {
 
 func (d *Mock) GameServer() (*sdk.GameServer, error) {
 	return nil, nil
+}
+
+func (d *Mock) WatchGameServer(_ agone.GameServerCallback) error {
+	return nil
+}
+
+func (d *Mock) Alpha() *agone.Alpha {
+	return nil
 }

@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"agones.dev/agones/pkg/sdk"
+	agone "agones.dev/agones/sdks/go"
 )
 
 type IAgones interface {
@@ -16,4 +17,6 @@ type IAgones interface {
 	SetLabel(key, value string) error
 	SetAnnotation(key, value string) error
 	GameServer() (*sdk.GameServer, error)
+	WatchGameServer(_ agone.GameServerCallback) error
+	Alpha() *agone.Alpha
 }

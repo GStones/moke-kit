@@ -67,3 +67,14 @@ func (a *Agones) SetAnnotation(key, value string) error {
 func (a *Agones) GameServer() (*sdk.GameServer, error) {
 	return a.sdk.GameServer()
 }
+
+func (a *Agones) WatchGameServer(cb agone.GameServerCallback) error {
+	if err := a.sdk.WatchGameServer(cb); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (a *Agones) Alpha() *agone.Alpha {
+	return a.sdk.Alpha()
+}
