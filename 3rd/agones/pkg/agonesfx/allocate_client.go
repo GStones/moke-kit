@@ -29,7 +29,7 @@ type AllocateResult struct {
 // https://agones.dev/site/docs/advanced/allocator-service/#client-certificate
 func NewAllocateClient(sSetting AllocateSettingsParams) (allocation.AllocationServiceClient, error) {
 	if conn, err := utility.DialWithSecurity(
-		sSetting.AllocateUrl,
+		sSetting.AllocateServiceUrl,
 		sSetting.ClientCert,
 		sSetting.ClientKey,
 		"",
@@ -41,8 +41,8 @@ func NewAllocateClient(sSetting AllocateSettingsParams) (allocation.AllocationSe
 	}
 }
 
-func NewAllocateClientMock() (allocation.AllocationServiceClient, error) {
-	return &allocate.MockAllocationServiceClient{}, nil
+func NewAllocateClientMock(url string) (allocation.AllocationServiceClient, error) {
+	return &allocate.MockAllocationServiceClient{URL: url}, nil
 }
 
 // AllocateClientModule is a fx module that provides an AllocateClient
@@ -58,7 +58,7 @@ var AllocateClientModule = fx.Provide(
 				out.AllocateClient = cli
 			}
 		} else {
-			if cli, e := NewAllocateClientMock(); err != nil {
+			if cli, e := NewAllocateClientMock(sSetting.MockAllocateUrl); err != nil {
 				err = e
 			} else {
 				out.AllocateClient = cli
