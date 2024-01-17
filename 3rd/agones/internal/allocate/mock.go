@@ -24,18 +24,20 @@ func (m *MockAllocationServiceClient) Allocate(
 		return nil, fmt.Errorf("mock allocation service client url is empty")
 	}
 	hosts := strings.Split(m.URL, ":")
-	if len(hosts) != 2 {
-		return nil, fmt.Errorf("mock allocation service client url:%v is invalid", m.URL)
+	port := int32(443)
+	if len(hosts) == 2 {
+		p, err := strconv.ParseInt(hosts[1], 10, 32)
+		if err != nil {
+			return nil, fmt.Errorf("mock allocation service client url:%v is invalid", m.URL)
+		}
+		port = int32(p)
 	}
-	port, err := strconv.Atoi(hosts[1])
-	if err != nil {
-		return nil, fmt.Errorf("mock allocation service client url:%v is invalid", m.URL)
-	}
+
 	res := &allocation.AllocationResponse{
 		Address: hosts[0],
 		Ports: []*allocation.AllocationResponse_GameServerStatusPort{
 			{
-				Port: int32(port),
+				Port: port,
 			},
 		},
 	}
