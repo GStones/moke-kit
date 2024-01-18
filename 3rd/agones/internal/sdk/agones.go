@@ -7,9 +7,6 @@ import (
 	agone "agones.dev/agones/sdks/go"
 )
 
-// TickDuration is the duration between health checks
-const TickDuration = 2 * time.Second
-
 // Agones is a wrapper around the agones sdk
 type Agones struct {
 	sdk *agone.SDK
@@ -21,19 +18,7 @@ func (a *Agones) Init() error {
 		return err
 	}
 	a.sdk = s
-	go a.health()
 	return nil
-}
-
-func (a *Agones) health() {
-	tick := time.NewTicker(TickDuration)
-	for {
-		<-tick.C
-		if err := a.sdk.Health(); err != nil {
-			continue
-		}
-	}
-
 }
 
 func (a *Agones) Ready() error {
