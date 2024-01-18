@@ -5,7 +5,6 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/gstones/moke-kit/3rd/agones/internal/sdk"
-	"github.com/gstones/moke-kit/fxmain/pkg/mfx"
 	"github.com/gstones/moke-kit/server/siface"
 	"github.com/gstones/moke-kit/utility"
 )
@@ -48,9 +47,9 @@ func CreateMock() (siface.IAgones, error) {
 var AgonesSDKModule = fx.Provide(
 	func(
 		l *zap.Logger,
-		appSetting mfx.AppParams,
+		aSetting AgonesSettingsParams,
 	) (out SDKResult, err error) {
-		if deploy := utility.ParseDeployments(appSetting.Deployment); deploy.IsProd() {
+		if deploy := utility.ParseDeployments(aSetting.AgonesDeployment); deploy.IsProd() {
 			a, err := CreateAgones()
 			if err != nil {
 				return out, err
