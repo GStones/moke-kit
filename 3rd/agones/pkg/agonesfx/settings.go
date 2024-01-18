@@ -41,7 +41,7 @@ func (g *AgonesSettingsResult) LoadFromEnv() (err error) {
 	return
 }
 
-var AllocateSettingsModule = fx.Provide(
+var SettingsModule = fx.Provide(
 	func() (out AgonesSettingsResult, err error) {
 		err = out.LoadFromEnv()
 		return

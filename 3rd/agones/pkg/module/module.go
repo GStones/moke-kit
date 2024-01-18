@@ -7,11 +7,11 @@ import (
 )
 
 var AgonesSDKModule = fx.Module("agonesSDk",
-	agonesfx.AllocateSettingsModule,
+	agonesfx.SettingsModule,
 	agonesfx.AgonesSDKModule,
 )
 
 var AgonesAllocateClientModule = fx.Module("agonesAllocateClient",
-	agonesfx.AllocateSettingsModule,
+	agonesfx.SettingsModule,
 	agonesfx.AllocateClientModule,
 )
