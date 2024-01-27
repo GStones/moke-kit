@@ -5,6 +5,8 @@ import (
 
 	"agones.dev/agones/pkg/sdk"
 	agone "agones.dev/agones/sdks/go"
+
+	"github.com/gstones/moke-kit/3rd/agones/aiface"
 )
 
 // Agones is a wrapper around the agones sdk
@@ -60,6 +62,6 @@ func (a *Agones) WatchGameServer(cb agone.GameServerCallback) error {
 	return nil
 }
 
-func (a *Agones) Alpha() *agone.Alpha {
+func (a *Agones) Alpha() aiface.IAlpha {
 	return a.sdk.Alpha()
 }
