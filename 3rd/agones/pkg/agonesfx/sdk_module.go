@@ -4,8 +4,8 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 
+	"github.com/gstones/moke-kit/3rd/agones/aiface"
 	"github.com/gstones/moke-kit/3rd/agones/internal/sdk"
-	"github.com/gstones/moke-kit/server/siface"
 	"github.com/gstones/moke-kit/utility"
 )
 
@@ -15,17 +15,17 @@ import (
 type SDKParams struct {
 	fx.In
 
-	SDK siface.IAgones `name:"AgonesSDK" `
+	SDK aiface.IAgones `name:"AgonesSDK" `
 }
 
 type SDKResult struct {
 	fx.Out
 
-	SDK siface.IAgones `name:"AgonesSDK" `
+	SDK aiface.IAgones `name:"AgonesSDK" `
 }
 
 // CreateAgones deploy local agones sdk server
-func CreateAgones() (siface.IAgones, error) {
+func CreateAgones() (aiface.IAgones, error) {
 	a := &sdk.Agones{}
 	if err := a.Init(); err != nil {
 		return nil, err
@@ -35,7 +35,7 @@ func CreateAgones() (siface.IAgones, error) {
 
 // CreateMock create an empty agones sdk,it will not do anything
 // This is used for local/debugging
-func CreateMock() (siface.IAgones, error) {
+func CreateMock() (aiface.IAgones, error) {
 	a := &sdk.Mock{}
 	if err := a.Init(); err != nil {
 		return nil, err

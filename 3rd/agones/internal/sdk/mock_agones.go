@@ -5,6 +5,8 @@ import (
 
 	"agones.dev/agones/pkg/sdk"
 	agone "agones.dev/agones/sdks/go"
+
+	"github.com/gstones/moke-kit/3rd/agones/aiface"
 )
 
 type Mock struct {
@@ -50,6 +52,6 @@ func (d *Mock) WatchGameServer(_ agone.GameServerCallback) error {
 	return nil
 }
 
-func (d *Mock) Alpha() *agone.Alpha {
-	return nil
+func (d *Mock) Alpha() aiface.IAlpha {
+	return &MockAlpha{}
 }
