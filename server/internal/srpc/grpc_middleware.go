@@ -49,13 +49,8 @@ func interceptorLogger(l *zap.Logger) logging.Logger {
 		for i := 0; i < len(fields); i += 2 {
 			key := fields[i]
 			value := fields[i+1]
-
 			switch v := value.(type) {
 			case string:
-				k := key.(string)
-				if k == "grpc.error" {
-					lvl = logging.LevelError
-				}
 				f = append(f, zap.String(key.(string), v))
 			case int:
 				f = append(f, zap.Int(key.(string), v))
@@ -91,6 +86,9 @@ func fieldsFromCtx(ctx context.Context) logging.Fields {
 	fields := logging.Fields{}
 	if span := trace.SpanContextFromContext(ctx); span.IsSampled() {
 		fields = append(fields, "traceID", span.TraceID().String())
+	}
+	if v, ok := ctx.Value(utility.UIDContextKey).(string); ok {
+		fields = append(fields, utility.UIDContextKey.String(), v)
 	}
 	if v, ok := ctx.Value(utility.WithOutTag).(bool); ok {
 		fields = append(fields, utility.WithOutTag.String(), v)
@@ -134,13 +132,34 @@ func addInterceptorOptions(
 		ratelimit.UnaryServerInterceptor(rl),
 		selector.UnaryServerInterceptor(auth.UnaryServerInterceptor(authFunc(authClient)), selector.MatchFunc(allBut)),
 		srvMetrics.UnaryServerInterceptor(grpcprom.WithExemplarFromContext(exemplarFromContext)),
-		logging.UnaryServerInterceptor(interceptorLogger(logger), logging.WithFieldsFromContext(fieldsFromCtx)),
+		logging.UnaryServerInterceptor(
+			interceptorLogger(logger),
+			logging.WithDisableLoggingFields(
+				logging.ComponentFieldKey,
+				logging.MethodTypeFieldKey,
+				logging.SystemTag[0],
+				"custom-field-should-be-ignored",
+			),
+			logging.WithLevels(logging.DefaultServerCodeToLevel),
+			logging.WithFieldsFromContext(fieldsFromCtx),
+			logging.WithLogOnEvents(logging.PayloadReceived, logging.PayloadSent),
+		),
 	}
 	si := []grpc.StreamServerInterceptor{
 		ratelimit.StreamServerInterceptor(rl),
 		selector.StreamServerInterceptor(auth.StreamServerInterceptor(authFunc(authClient)), selector.MatchFunc(allBut)),
 		srvMetrics.StreamServerInterceptor(grpcprom.WithExemplarFromContext(exemplarFromContext)),
-		logging.StreamServerInterceptor(interceptorLogger(logger), logging.WithFieldsFromContext(fieldsFromCtx)),
+		logging.StreamServerInterceptor(
+			interceptorLogger(logger),
+			logging.WithDisableLoggingFields(
+				logging.ComponentFieldKey,
+				logging.MethodTypeFieldKey,
+				logging.SystemTag[0],
+				"custom-field-should-be-ignored",
+			),
+			logging.WithLevels(logging.DefaultServerCodeToLevel),
+			logging.WithFieldsFromContext(fieldsFromCtx),
+		),
 	}
 
 	if deployments.IsProd() {
