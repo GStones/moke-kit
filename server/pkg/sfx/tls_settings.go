@@ -39,7 +39,7 @@ type SecuritySettingsResult struct {
 	ServerKey    string `name:"ServerKey" envconfig:"SERVER_KEY" default:"./configs/x509/server_key.pem"`
 	ServerName   string `name:"ServerName" envconfig:"SERVER_NAME" default:"localhost"`
 
-	TlsEnable bool `name:"TLSEnable" envonfig:"TLS_ENABLE" default:"false" `
+	TLSEnable bool `name:"TLSEnable" envconfig:"TLS_ENABLE" default:"false" `
 }
 
 func (g *SecuritySettingsResult) LoadFromEnv() (err error) {
