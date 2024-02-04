@@ -41,7 +41,7 @@ type SettingResult struct {
 	// ---------google store client setting --------
 	// You need to prepare a public key for your Android app's in app billing
 	// at https://console.developers.google.com.
-	PublicKey string `name:"googlePlayPublicKey" envconfig:"GOOGLE_PLAY_PUBLIC_KEY" default:"{}"`
+	PublicKey string `name:"googlePlayPublicKey" envconfig:"GOOGLE_PLAY_PUBLIC_KEY" default:""`
 }
 
 func (g *SettingResult) LoadFromEnv() (err error) {
