@@ -37,7 +37,7 @@ type SecuritySettingsResult struct {
 	ServerCACert string `name:"ServerCaCert" envconfig:"SERVER_CA_CERT" default:"./configs/x509/ca_cert.pem"`
 	ServerCert   string `name:"ServerCert" envconfig:"SERVER_CERT" default:"./configs/x509/server_cert.pem"`
 	ServerKey    string `name:"ServerKey" envconfig:"SERVER_KEY" default:"./configs/x509/server_key.pem"`
-	ServerName   string `name:"ServerName" envconfig:"SERVER_NAME" default:"localhost"`
+	ServerName   string `name:"ServerName" envconfig:"SERVER_NAME" default:""`
 
 	TLSEnable bool `name:"TLSEnable" envconfig:"TLS_ENABLE" default:"false" `
 }
