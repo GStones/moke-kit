@@ -1,4 +1,4 @@
-package applefx
+package iapfx
 
 import (
 	"go.uber.org/fx"
@@ -6,7 +6,8 @@ import (
 	"github.com/gstones/moke-kit/utility"
 )
 
-type AppleClientSettingParams struct {
+// SettingParams is a struct that holds the parameters for the IAP clients
+type SettingParams struct {
 	fx.In
 
 	// ---------apple client setting --------
@@ -27,7 +28,8 @@ type AppleClientSettingParams struct {
 	PublicKey string `name:"googlePlayPublicKey"`
 }
 
-type AppleClientSettingResult struct {
+// SettingResult is a struct that holds the results for the IAP clients
+type SettingResult struct {
 	fx.Out
 	// ---------apple client setting --------
 	KID        string `name:"appleKeyId"  envconfig:"APPLE_KEY_ID" default:""`
@@ -42,13 +44,14 @@ type AppleClientSettingResult struct {
 	PublicKey string `name:"googlePlayPublicKey" envconfig:"GOOGLE_PLAY_PUBLIC_KEY" default:""`
 }
 
-func (g *AppleClientSettingResult) LoadFromEnv() (err error) {
+func (g *SettingResult) LoadFromEnv() (err error) {
 	err = utility.Load(g)
 	return
 }
 
-var AppleClientSettingModule = fx.Provide(
-	func() (out AppleClientSettingResult, err error) {
+// SettingModule is a fx setting module that provides an IAPClient
+var SettingModule = fx.Provide(
+	func() (out SettingResult, err error) {
 		err = out.LoadFromEnv()
 		return
 	})

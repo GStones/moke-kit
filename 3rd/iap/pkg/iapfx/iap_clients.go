@@ -1,4 +1,4 @@
-package applefx
+package iapfx
 
 import (
 	"github.com/awa/go-iap/appstore/api"
@@ -7,22 +7,25 @@ import (
 	"go.uber.org/zap"
 )
 
-type AppleClientParams struct {
+// ClientsParams is a struct that holds the parameters for the IAP clients
+type ClientsParams struct {
 	fx.In
 
 	AppleClient  *api.StoreClient  `name:"appleClient"`
 	GoogleClient *playstore.Client `name:"googleClient"`
 }
 
-type AppleClientResult struct {
+// ClientsResult is a struct that holds the results for the IAP clients
+type ClientsResult struct {
 	fx.Out
 
 	AppleClient  *api.StoreClient  `name:"appleClient"`
 	GoogleClient *playstore.Client `name:"googleClient"`
 }
 
+// CreateAppleClient creates a new Apple client
 func CreateAppleClient(
-	sSetting AppleClientSettingParams,
+	sSetting SettingParams,
 ) (*api.StoreClient, error) {
 	c := &api.StoreConfig{
 		KeyContent: sSetting.PrivateKey, // Loads a .p8 certificate
@@ -34,8 +37,9 @@ func CreateAppleClient(
 	return api.NewStoreClient(c), nil
 }
 
+// CreateGoogleClient creates a new Google client
 func CreateGoogleClient(
-	sSetting AppleClientSettingParams,
+	sSetting SettingParams,
 ) (*playstore.Client, error) {
 	client, err := playstore.New([]byte(sSetting.PublicKey))
 	if err != nil {
@@ -44,13 +48,12 @@ func CreateGoogleClient(
 	return client, nil
 }
 
-// AppleClientModule is a fx module that provides an AppleClient
-// https://github.com/awa/go-iap
-var AppleClientModule = fx.Provide(
+// ClientsModule is a fx module that provides an IAPClient
+var ClientsModule = fx.Provide(
 	func(
 		logger *zap.Logger,
-		sSetting AppleClientSettingParams,
-	) (out AppleClientResult, err error) {
+		sSetting SettingParams,
+	) (out ClientsResult, err error) {
 		if aClient, err := CreateAppleClient(sSetting); err != nil {
 			logger.Error("CreateAppleClient", zap.Error(err))
 		} else {
