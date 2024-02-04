@@ -37,14 +37,6 @@ func DialWithSecurity(
 	if err != nil {
 		return nil, err
 	}
-	ca := x509.NewCertPool()
-	caBytes, err := os.ReadFile(serverCa)
-	if err != nil {
-		return nil, err
-	}
-	if ok := ca.AppendCertsFromPEM(caBytes); !ok {
-		return nil, fmt.Errorf("failed to parse %q", serverCa)
-	}
 	tlsConfig := &tls.Config{
 		Certificates: []tls.Certificate{cert},
 	}
@@ -52,6 +44,14 @@ func DialWithSecurity(
 		tlsConfig.ServerName = serverName
 	}
 	if serverCa != "" {
+		ca := x509.NewCertPool()
+		caBytes, err := os.ReadFile(serverCa)
+		if err != nil {
+			return nil, err
+		}
+		if ok := ca.AppendCertsFromPEM(caBytes); !ok {
+			return nil, fmt.Errorf("failed to parse %q", serverCa)
+		}
 		tlsConfig.RootCAs = ca
 	}
 	opts = append(opts, grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)))
