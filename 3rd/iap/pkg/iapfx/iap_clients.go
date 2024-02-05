@@ -54,14 +54,20 @@ var ClientsModule = fx.Provide(
 		logger *zap.Logger,
 		sSetting SettingParams,
 	) (out ClientsResult, err error) {
-		if aClient, err := CreateAppleClient(sSetting); err != nil {
-			logger.Error("CreateAppleClient", zap.Error(err))
+		if sSetting.PrivateKey == nil {
+
+		} else if aClient, err := CreateAppleClient(sSetting); err != nil {
+			logger.Error("Create apple client", zap.Error(err))
 		} else {
+			logger.Info("Create apple client success", zap.Bool("sandbox", sSetting.Sandbox))
 			out.AppleClient = aClient
 		}
-		if gClient, err := CreateGoogleClient(sSetting); err != nil {
-			logger.Error("CreateGoogleClient", zap.Error(err))
+		if sSetting.PublicKey == "" {
+
+		} else if gClient, err := CreateGoogleClient(sSetting); err != nil {
+			logger.Error("create google client", zap.Error(err))
 		} else {
+			logger.Info("create google client success")
 			out.GoogleClient = gClient
 		}
 		return
