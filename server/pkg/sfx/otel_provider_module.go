@@ -40,16 +40,6 @@ func (otel *OTelProviderResult) Execute() (err error) {
 	return
 }
 
-func (otel *OTelProviderParams) OnStart(_ context.Context) (err error) {
-	return
-}
-
-func (otel *OTelProviderParams) OnStop(_ context.Context) (err error) {
-	_ = otel.TracerProvider.Shutdown(context.Background())
-	_ = otel.MetricProvider.Shutdown(context.Background())
-	return
-}
-
 func initResource() *sdkresource.Resource {
 	extraResources, _ := sdkresource.New(
 		context.Background(),
