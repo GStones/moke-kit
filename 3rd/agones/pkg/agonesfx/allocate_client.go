@@ -5,6 +5,7 @@ import (
 	"go.uber.org/fx"
 
 	"github.com/gstones/moke-kit/3rd/agones/internal/allocate"
+	"github.com/gstones/moke-kit/server/tools"
 	"github.com/gstones/moke-kit/utility"
 )
 
@@ -27,7 +28,7 @@ type AllocateResult struct {
 // Agones need security settings(mTls) to connect to the allocator server.
 // https://agones.dev/site/docs/advanced/allocator-service/#client-certificate
 func NewAllocateClient(sSetting AgonesSettingsParams) (allocation.AllocationServiceClient, error) {
-	if conn, err := utility.DialWithSecurity(
+	if conn, err := tools.DialWithSecurity(
 		sSetting.AllocateServiceUrl,
 		sSetting.ClientCert,
 		sSetting.ClientKey,

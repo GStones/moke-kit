@@ -30,6 +30,7 @@ type ServiceBinder struct {
 	ZinxServiceParams    // all zinx service injected (tcp/udp/websocket)
 	GatewayServiceParams // all gateway service injected (http)
 	AuthServiceParams    // grpc rpc auth middleware injected
+	OTelProviderParams   // opentelemetry provider injected
 }
 
 func (sb *ServiceBinder) Execute(l *zap.Logger, lc fx.Lifecycle) error {
@@ -38,6 +39,7 @@ func (sb *ServiceBinder) Execute(l *zap.Logger, lc fx.Lifecycle) error {
 		sb.bindGrpcServices,
 		sb.bindGatewayServices,
 		sb.bindZinxServices,
+		sb.otelProvider,
 	); err != nil {
 		return err
 	} else {
@@ -47,6 +49,23 @@ func (sb *ServiceBinder) Execute(l *zap.Logger, lc fx.Lifecycle) error {
 		}
 	}
 	return nil
+}
+
+func (sb *ServiceBinder) otelProvider(logger *zap.Logger) ([]LifecycleHook, error) {
+	if sb.MetricProvider == nil && sb.TracerProvider == nil {
+		return nil, nil
+	}
+	logger.Info("register opentelemetry provider")
+	return []LifecycleHook{
+		func(lc fx.Lifecycle) {
+			lc.Append(fx.Hook{
+				OnStop: func(ctx context.Context) error {
+					_ = sb.TracerProvider.Shutdown(ctx)
+					return sb.MetricProvider.Shutdown(ctx)
+				},
+			})
+		},
+	}, nil
 }
 
 func (sb *ServiceBinder) bindGrpcServices(l *zap.Logger) (hooks []LifecycleHook, err error) {
@@ -132,7 +151,6 @@ func (sb *ServiceBinder) bindGatewayServices(
 		}
 		hooks = append(hooks, makeServerHook(gatewayServer))
 	}
-
 	return
 }
 

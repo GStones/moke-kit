@@ -6,6 +6,7 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 
+	"github.com/gstones/moke-kit/server/middlewares"
 	"github.com/gstones/moke-kit/server/siface"
 	"github.com/gstones/moke-kit/utility"
 )
@@ -19,7 +20,7 @@ func NewGrpcServer(
 	opts ...grpc.ServerOption,
 ) (result siface.IGrpcServer, err error) {
 	deploy := utility.ParseDeployments(deployment)
-	opts = addInterceptorOptions(logger, auth, deploy, rateLimit, opts...)
+	opts = middlewares.MakeServerOptions(logger, auth, deploy, rateLimit, opts...)
 	result = &GrpcServer{
 		logger:   logger,
 		listener: listener,

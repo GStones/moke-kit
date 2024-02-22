@@ -6,19 +6,19 @@ import (
 	"github.com/gstones/zinx/ziface"
 	"go.uber.org/zap"
 
-	"github.com/gstones/moke-kit/server/internal/common"
+	"github.com/gstones/moke-kit/server/middlewares"
 )
 
 // RateLimitInterceptor 流控拦截器
 type RateLimitInterceptor struct {
 	logger *zap.Logger
-	rl     *common.RateLimiter
+	rl     *middlewares.RateLimiter
 }
 
 func NewRateLimitInterceptor(logger *zap.Logger, rateLimit int32) *RateLimitInterceptor {
 	return &RateLimitInterceptor{
 		logger: logger,
-		rl:     common.CreateRateLimiter(int(rateLimit)),
+		rl:     middlewares.CreateRateLimiter(int(rateLimit)),
 	}
 }
 
