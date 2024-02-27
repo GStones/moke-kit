@@ -1,16 +1,15 @@
 package ofx
 
 import (
+	"context"
 	"net/url"
 
 	mongo2 "go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 
-	"github.com/gstones/moke-kit/fxmain/pkg/mfx"
 	"github.com/gstones/moke-kit/orm/nerrors"
 	"github.com/gstones/moke-kit/orm/nosql/diface"
-	"github.com/gstones/moke-kit/orm/nosql/key"
 	"github.com/gstones/moke-kit/orm/nosql/mongo"
 )
 
@@ -29,10 +28,7 @@ func (dsr *DocumentStoreResult) NewDocument(
 	l *zap.Logger,
 	mClient *mongo2.Client,
 	connect string,
-	deployment string,
 ) (err error) {
-	key.SetNamespace(deployment)
-
 	if mClient != nil {
 		dsr.DriverProvider = mongo.NewProvider(mClient, l)
 	}
@@ -50,6 +46,11 @@ func (dsr *DocumentStoreResult) NewDocument(
 			default:
 				return nerrors.ErrInvalidNosqlURL
 			}
+			lc.Append(fx.Hook{
+				OnStop: func(context.Context) error {
+					return dsr.DriverProvider.Shutdown()
+				},
+			})
 		}
 	} else {
 		return nerrors.ErrMissingNosqlURL
@@ -64,11 +65,10 @@ var DocumentStoreModule = fx.Provide(
 		l *zap.Logger,
 		mp MongoParams,
 		sp SettingsParams,
-		as mfx.AppParams,
 	) (dOut DocumentStoreResult, err error) {
 		err = dOut.NewDocument(
 			lc, l, mp.MongoClient,
-			sp.DatabaseURL, as.Deployment,
+			sp.DatabaseURL,
 		)
 		return
 	},
