@@ -38,12 +38,6 @@ func MakeServerOptions(
 		selector.UnaryServerInterceptor(auth.UnaryServerInterceptor(authFunc(authClient)), selector.MatchFunc(allBut)),
 		logging.UnaryServerInterceptor(
 			interceptorLogger(logger),
-			logging.WithDisableLoggingFields(
-				logging.ComponentFieldKey,
-				logging.MethodTypeFieldKey,
-				logging.SystemTag[0],
-				"custom-field-should-be-ignored",
-			),
 			logging.WithLevels(logging.DefaultServerCodeToLevel),
 			logging.WithFieldsFromContext(fieldsFromCtx),
 			logging.WithLogOnEvents(logging.PayloadReceived, logging.PayloadSent),
@@ -54,12 +48,6 @@ func MakeServerOptions(
 		selector.StreamServerInterceptor(auth.StreamServerInterceptor(authFunc(authClient)), selector.MatchFunc(allBut)),
 		logging.StreamServerInterceptor(
 			interceptorLogger(logger),
-			logging.WithDisableLoggingFields(
-				logging.ComponentFieldKey,
-				logging.MethodTypeFieldKey,
-				logging.SystemTag[0],
-				"custom-field-should-be-ignored",
-			),
 			logging.WithLevels(logging.DefaultServerCodeToLevel),
 			logging.WithFieldsFromContext(fieldsFromCtx),
 		),
@@ -90,12 +78,6 @@ func MakeClientOptions(
 		timeout.UnaryClientInterceptor(2 * time.Second),
 		logging.UnaryClientInterceptor(
 			interceptorLogger(logger),
-			logging.WithDisableLoggingFields(
-				logging.ComponentFieldKey,
-				logging.MethodTypeFieldKey,
-				logging.SystemTag[0],
-				"custom-field-should-be-ignored",
-			),
 			logging.WithLevels(logging.DefaultServerCodeToLevel),
 			logging.WithFieldsFromContext(fieldsFromCtx),
 			logging.WithLogOnEvents(logging.PayloadReceived, logging.PayloadSent),
@@ -105,12 +87,6 @@ func MakeClientOptions(
 	si := []grpc.StreamClientInterceptor{
 		logging.StreamClientInterceptor(
 			interceptorLogger(logger),
-			logging.WithDisableLoggingFields(
-				logging.ComponentFieldKey,
-				logging.MethodTypeFieldKey,
-				logging.SystemTag[0],
-				"custom-field-should-be-ignored",
-			),
 			logging.WithLevels(logging.DefaultServerCodeToLevel),
 			logging.WithFieldsFromContext(fieldsFromCtx),
 		),
