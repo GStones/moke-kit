@@ -6,14 +6,14 @@ import (
 	"github.com/abiosoft/ishell"
 
 	"github.com/gstones/moke-kit/logging/slogger"
-	"github.com/gstones/moke-kit/utility"
+	"github.com/gstones/moke-kit/server/tools"
 )
 
 func RunGrpc(url string) {
 	sh := ishell.New()
 	slogger.Info(sh, "interactive demo connect to "+url)
 
-	if conn, err := utility.DialInsecure(url); err != nil {
+	if conn, err := tools.DialInsecure(url); err != nil {
 		slogger.Die(sh, err)
 	} else {
 		demoGrpc := NewDemoGrpc(conn)

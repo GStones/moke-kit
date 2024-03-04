@@ -33,11 +33,6 @@ type MQImplementations struct {
 
 func (g *MessageQueueResult) Execute(deploy utility.Deployments, i MQImplementations) (err error) {
 	common.SetNamespace(deploy.String())
-	//if deploy == utility.DeploymentsLocal {
-	//	g.MessageQueue = internal.NewMessageQueue(i.LocalMQ, i.LocalMQ, i.LocalMQ, i.LocalMQ)
-	//} else {
-	//	g.MessageQueue = internal.NewMessageQueue(i.KafkaMQ, i.NatsMQ, i.NsqMQ, i.LocalMQ)
-	//}
 	g.MessageQueue = internal.NewMessageQueue(i.KafkaMQ, i.NatsMQ, i.NsqMQ, i.LocalMQ)
 
 	return nil

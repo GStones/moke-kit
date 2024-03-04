@@ -1,6 +1,7 @@
 package mfx
 
 import (
+	"github.com/gstones/moke-kit/orm/nosql/key"
 	"github.com/gstones/moke-kit/utility"
 
 	"go.uber.org/fx"
@@ -31,6 +32,7 @@ func (ar *AppResult) LoadConstant(value string) error {
 
 func (ar *AppResult) LoadFromEnv() (err error) {
 	err = utility.Load(ar)
+	key.SetNamespace(ar.Deployment)
 	return
 }
 

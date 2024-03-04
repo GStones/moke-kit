@@ -1,4 +1,4 @@
-package utility
+package tools
 
 import (
 	"context"
@@ -8,9 +8,12 @@ import (
 	"os"
 	"time"
 
+	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
+
+	"github.com/gstones/moke-kit/server/middlewares"
 )
 
 // Timeout grpc dial timeout
@@ -20,7 +23,10 @@ const Timeout = 2 * time.Second
 func DialInsecure(target string) (cConn *grpc.ClientConn, err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), Timeout)
 	defer cancel()
-	conn, err := grpc.DialContext(ctx, target, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	logger, _ := zap.NewDevelopment()
+	opts := middlewares.MakeClientOptions(logger)
+	opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.DialContext(ctx, target, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -32,7 +38,8 @@ func DialWithSecurity(
 	target string,
 	clientCert, clientKey, serverName, serverCa string,
 ) (cConn *grpc.ClientConn, err error) {
-	var opts []grpc.DialOption
+	logger, _ := zap.NewDevelopment()
+	opts := middlewares.MakeClientOptions(logger)
 	cert, err := tls.LoadX509KeyPair(clientCert, clientKey)
 	if err != nil {
 		return nil, err
@@ -54,7 +61,10 @@ func DialWithSecurity(
 		}
 		tlsConfig.RootCAs = ca
 	}
-	opts = append(opts, grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)))
+	opts = append(
+		opts,
+		grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)),
+	)
 	ctx, cancel := context.WithTimeout(context.Background(), Timeout)
 	defer cancel()
 	conn, err := grpc.DialContext(ctx, target, opts...)
