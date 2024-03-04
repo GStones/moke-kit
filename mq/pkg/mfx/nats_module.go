@@ -29,14 +29,3 @@ var NatsModule = fx.Provide(
 		return
 	},
 )
-
-// For CLI testing purposes
-func NewNatsMessageQueue(logger *zap.Logger, address string) (miface.MessageQueue, error) {
-	mq, err := nats.NewMessageQueue(logger, address)
-	if err != nil {
-		logger.Error("Nats message queue connect failure:",
-			zap.Error(err),
-			zap.String("address", address))
-	}
-	return mq, err
-}
