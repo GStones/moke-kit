@@ -29,7 +29,7 @@ type ClientsResult struct {
 func CreateAppleClient(
 	sSetting SettingParams,
 ) (*api.StoreClient, error) {
-	privateKey := make([]byte, 0)
+	var privateKey []byte
 	if data, err := os.ReadFile(sSetting.PrivateKeyPath); err != nil {
 		return nil, err
 	} else {
@@ -50,7 +50,7 @@ func CreateAppleClient(
 func CreateGoogleClient(
 	sSetting SettingParams,
 ) (*playstore.Client, error) {
-	publicKey := make([]byte, 0)
+	var publicKey []byte
 	if data, err := os.ReadFile(sSetting.PublicKeyPath); err != nil {
 		return nil, err
 	} else {
