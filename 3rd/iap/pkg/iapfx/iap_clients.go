@@ -70,7 +70,7 @@ var ClientsModule = fx.Provide(
 		logger *zap.Logger,
 		sSetting SettingParams,
 	) (out ClientsResult, err error) {
-		if sSetting.PrivateKeyPath == nil {
+		if sSetting.PrivateKeyPath == "" {
 
 		} else if aClient, err := CreateAppleClient(sSetting); err != nil {
 			logger.Error("Create apple client", zap.Error(err))
