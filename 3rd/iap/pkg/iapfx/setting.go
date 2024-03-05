@@ -34,14 +34,14 @@ type SettingResult struct {
 	// ---------apple client setting --------
 	KID            string `name:"appleKeyId"  envconfig:"APPLE_KEY_ID" default:""`
 	Issuer         string `name:"appleIssuer" envconfig:"APPLE_ISSUER" default:""`
-	PrivateKeyPath string `name:"applePrivateKey" envconfig:"APPLE_PRIVATE_KEY" default:"./configs/iap/apple"`
+	PrivateKeyPath string `name:"applePrivateKey" envconfig:"APPLE_PRIVATE_KEY" default:"./configs/iap/apple/private_key.p8"`
 	BID            string `name:"appleBundleId" envconfig:"APPLE_BUNDLE_ID" default:""`
 	Sandbox        bool   `name:"appleSandbox" envconfig:"APPLE_SANDBOX" default:"true"`
 
 	// ---------google store client setting --------
 	// You need to prepare a public key for your Android app's in app billing
 	// at https://console.developers.google.com.
-	PublicKeyPath string `name:"googlePlayPublicKey" envconfig:"GOOGLE_PLAY_PUBLIC_KEY" default:"./configs/iap/google"`
+	PublicKeyPath string `name:"googlePlayPublicKey" envconfig:"GOOGLE_PLAY_PUBLIC_KEY" default:"./configs/iap/google/public_key.pem"`
 }
 
 func (g *SettingResult) LoadFromEnv() (err error) {
