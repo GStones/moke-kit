@@ -16,7 +16,7 @@ type SettingParams struct {
 	// Issuer ID for the App Store Connect team
 	Issuer string `name:"appleIssuer"`
 	// The bytes of the PKCS#8 private key created on App Store Connect. Keep this key safe as you can only download it once.
-	PrivateKey []byte `name:"applePrivateKey"`
+	PrivateKeyPath string `name:"applePrivateKey"`
 	//  Application's bundle ID, e.g. com.example.testbundleid2021
 	BID string `name:"appleBundleId"`
 	// A boolean value that indicates whether the token is for the App Store Connect API sandbox environment
@@ -25,23 +25,23 @@ type SettingParams struct {
 	// ---------google store client setting --------
 	// You need to prepare a public key for your Android app's in app billing
 	// at https://console.developers.google.com.
-	PublicKey string `name:"googlePlayPublicKey"`
+	PublicKeyPath string `name:"googlePlayPublicKey"`
 }
 
 // SettingResult is a struct that holds the results for the IAP clients
 type SettingResult struct {
 	fx.Out
 	// ---------apple client setting --------
-	KID        string `name:"appleKeyId"  envconfig:"APPLE_KEY_ID" default:""`
-	Issuer     string `name:"appleIssuer" envconfig:"APPLE_ISSUER" default:""`
-	PrivateKey []byte `name:"applePrivateKey" envconfig:"APPLE_PRIVATE_KEY" default:""`
-	BID        string `name:"appleBundleId" envconfig:"APPLE_BUNDLE_ID" default:""`
-	Sandbox    bool   `name:"appleSandbox" envconfig:"APPLE_SANDBOX" default:"true"`
+	KID            string `name:"appleKeyId"  envconfig:"APPLE_KEY_ID" default:""`
+	Issuer         string `name:"appleIssuer" envconfig:"APPLE_ISSUER" default:""`
+	PrivateKeyPath string `name:"applePrivateKey" envconfig:"APPLE_PRIVATE_KEY" default:"./configs/iap/apple"`
+	BID            string `name:"appleBundleId" envconfig:"APPLE_BUNDLE_ID" default:""`
+	Sandbox        bool   `name:"appleSandbox" envconfig:"APPLE_SANDBOX" default:"true"`
 
 	// ---------google store client setting --------
 	// You need to prepare a public key for your Android app's in app billing
 	// at https://console.developers.google.com.
-	PublicKey string `name:"googlePlayPublicKey" envconfig:"GOOGLE_PLAY_PUBLIC_KEY" default:""`
+	PublicKeyPath string `name:"googlePlayPublicKey" envconfig:"GOOGLE_PLAY_PUBLIC_KEY" default:"./configs/iap/google"`
 }
 
 func (g *SettingResult) LoadFromEnv() (err error) {
