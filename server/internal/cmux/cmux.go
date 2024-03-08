@@ -132,6 +132,7 @@ func makeTLSConfig(tlsCert, tlsKey string, clientCa string) (*tls.Config, error)
 		if _, err := tools.Watch(logger, tlsCert, time.Second*10, func() {
 			c, err := tls.LoadX509KeyPair(tlsCert, tlsKey)
 			if err != nil {
+				logger.Error("service failed to load x509 key pair", zap.Error(err))
 				return
 			}
 			tlsCertValue.Store(c)
