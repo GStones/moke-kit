@@ -3,12 +3,18 @@ package cmux
 import (
 	"context"
 	"crypto/tls"
+	"crypto/x509"
 	"fmt"
 	"net"
+	"os"
+	"sync/atomic"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/soheilhy/cmux"
 	"go.uber.org/zap"
+
+	"github.com/gstones/moke-kit/server/tools"
 )
 
 var (
@@ -107,4 +113,44 @@ func (cm *ConnectionMux) StartServing(_ context.Context) error {
 func (cm *ConnectionMux) StopServing(_ context.Context) error {
 	cm.mux.Close()
 	return nil
+}
+
+func makeTLSConfig(tlsCert, tlsKey string, clientCa string) (*tls.Config, error) {
+	if cert, err := tls.LoadX509KeyPair(tlsCert, tlsKey); err != nil {
+		return nil, err
+	} else if caBytes, err := os.ReadFile(clientCa); err != nil {
+		return nil, err
+	} else {
+		ca := x509.NewCertPool()
+		if ok := ca.AppendCertsFromPEM(caBytes); !ok {
+			return nil, fmt.Errorf("failed to parse %v ", clientCa)
+		}
+
+		tlsCertValue := atomic.Value{}
+		tlsCertValue.Store(cert)
+		logger, _ := zap.NewDevelopment()
+		if _, err := tools.Watch(logger, tlsCert, time.Second*10, func() {
+			c, err := tls.LoadX509KeyPair(tlsCert, tlsKey)
+			if err != nil {
+				return
+			}
+			tlsCertValue.Store(c)
+		}); err != nil {
+			return nil, err
+		}
+		tlsConfig := &tls.Config{
+			ClientAuth: tls.RequireAndVerifyClientCert,
+			GetCertificate: func(info *tls.ClientHelloInfo) (*tls.Certificate, error) {
+				c := tlsCertValue.Load()
+				if c == nil {
+					return nil, fmt.Errorf("certificate not loaded")
+				}
+				res := c.(tls.Certificate)
+				return &res, nil
+			},
+			ClientCAs: ca,
+		}
+		return tlsConfig, nil
+	}
+
 }

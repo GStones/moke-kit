@@ -2,8 +2,6 @@ package cmux
 
 import (
 	"go.uber.org/zap"
-
-	"github.com/gstones/moke-kit/server/tools"
 )
 
 func NewConnectionMux(
@@ -25,7 +23,7 @@ func NewTlsConnectionMux(
 	tlsKey string,
 	clientsCA string,
 ) (result *ConnectionMux, err error) {
-	if config, e := tools.MakeTLSConfig(logger, tlsCert, tlsKey, clientsCA); e != nil {
+	if config, e := makeTLSConfig(tlsCert, tlsKey, clientsCA); e != nil {
 		err = e
 	} else {
 		result = &ConnectionMux{
