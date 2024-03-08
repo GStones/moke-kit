@@ -22,15 +22,15 @@ import (
 type OTelProviderParams struct {
 	fx.In
 
-	TracerProvider *sdktrace.TracerProvider `name:"TracerProvider"`
-	MetricProvider *sdkmetric.MeterProvider `name:"MetricProvider"`
+	TracerProvider *sdktrace.TracerProvider `name:"TracerProvider" optional:"true"`
+	MetricProvider *sdkmetric.MeterProvider `name:"MetricProvider" optional:"true"`
 }
 
 // OTelProviderResult OTelProviderModule provides OTel Tracer and Meter
 type OTelProviderResult struct {
 	fx.Out
 
-	TracerProvider *sdktrace.TracerProvider `name:"TracerProvider"`
+	TracerProvider *sdktrace.TracerProvider `name:"TracerProvider" `
 	MetricProvider *sdkmetric.MeterProvider `name:"MetricProvider"`
 }
 

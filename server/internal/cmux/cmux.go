@@ -7,10 +7,14 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"sync/atomic"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/soheilhy/cmux"
 	"go.uber.org/zap"
+
+	"github.com/gstones/moke-kit/server/tools"
 )
 
 var (
@@ -122,10 +126,30 @@ func makeTLSConfig(tlsCert, tlsKey string, clientCa string) (*tls.Config, error)
 			return nil, fmt.Errorf("failed to parse %v ", clientCa)
 		}
 
+		tlsCertValue := atomic.Value{}
+		tlsCertValue.Store(cert)
+		logger, _ := zap.NewDevelopment()
+		if _, err := tools.Watch(logger, tlsCert, time.Second*10, func() {
+			c, err := tls.LoadX509KeyPair(tlsCert, tlsKey)
+			if err != nil {
+				logger.Error("service failed to load x509 key pair", zap.Error(err))
+				return
+			}
+			tlsCertValue.Store(c)
+		}); err != nil {
+			return nil, err
+		}
 		tlsConfig := &tls.Config{
-			ClientAuth:   tls.RequireAndVerifyClientCert,
-			Certificates: []tls.Certificate{cert},
-			ClientCAs:    ca,
+			ClientAuth: tls.RequireAndVerifyClientCert,
+			GetCertificate: func(info *tls.ClientHelloInfo) (*tls.Certificate, error) {
+				c := tlsCertValue.Load()
+				if c == nil {
+					return nil, fmt.Errorf("certificate not loaded")
+				}
+				res := c.(tls.Certificate)
+				return &res, nil
+			},
+			ClientCAs: ca,
 		}
 		return tlsConfig, nil
 	}
