@@ -71,7 +71,7 @@ var ClientsModule = fx.Provide(
 		sSetting SettingParams,
 	) (out ClientsResult, err error) {
 		if sSetting.PrivateKeyPath == "" {
-
+			logger.Warn("Apple private key path is empty")
 		} else if aClient, err := CreateAppleClient(sSetting); err != nil {
 			logger.Error("Create apple client", zap.Error(err))
 		} else {
@@ -79,11 +79,11 @@ var ClientsModule = fx.Provide(
 			out.AppleClient = aClient
 		}
 		if sSetting.PublicKeyPath == "" {
-
+			logger.Warn("Google public key path is empty")
 		} else if gClient, err := CreateGoogleClient(sSetting); err != nil {
 			logger.Error("create google client", zap.Error(err))
 		} else {
-			logger.Info("create google client success")
+			logger.Info("Create google client success")
 			out.GoogleClient = gClient
 		}
 		return
