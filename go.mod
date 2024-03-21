@@ -10,7 +10,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.1.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.19.1
-	github.com/gstones/zinx v0.1.2
+	github.com/gstones/zinx v0.1.3-0.20240321032516-f1c78ab5d24a
 	github.com/hashicorp/vault/api v1.12.2
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/nats-io/nats.go v1.33.1
@@ -50,6 +50,7 @@ require (
 	github.com/fatih/color v1.16.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/flynn-archive/go-shlex v0.0.0-20150515145356-3f9db97f8568 // indirect
+	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/go-jose/go-jose/v3 v3.0.3 // indirect
 	github.com/go-logr/logr v1.4.1 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
