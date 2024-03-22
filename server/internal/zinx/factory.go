@@ -38,6 +38,7 @@ func NewZinxServer(
 	zconf.GlobalObject.HeartbeatMax = int(timeout)
 	zconf.GlobalObject.CertFile = serverCert
 	zconf.GlobalObject.PrivateKeyFile = serverKey
+	zconf.GlobalObject.WorkerPoolSize = 64
 
 	if zinxTcpPort != 0 && zinxWsPost != 0 {
 		zconf.GlobalObject.Mode = ""
