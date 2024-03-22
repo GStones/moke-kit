@@ -7,7 +7,6 @@ import (
 
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/test/bufconn"
 )
 
 type GrpcServer struct {
@@ -43,36 +42,4 @@ func (gs *GrpcServer) StopServing(_ context.Context) error {
 
 func (gs *GrpcServer) GrpcServer() *grpc.Server {
 	return gs.server
-}
-
-type TestGrpcServer struct {
-	logger   *zap.Logger
-	server   *grpc.Server
-	listener *bufconn.Listener
-	port     int32
-}
-
-func (s *TestGrpcServer) StartServing(_ context.Context) error {
-	s.logger.Info(
-		"test grpc start serving",
-		zap.String("network", s.listener.Addr().Network()),
-		zap.String("address", s.listener.Addr().String()),
-		zap.Int32("port", s.port),
-	)
-	go func() {
-		if err := s.server.Serve(s.listener); err != nil &&
-			!errors.Is(err, grpc.ErrServerStopped) {
-			panic(err)
-		}
-	}()
-	return nil
-}
-
-func (s *TestGrpcServer) StopServing(_ context.Context) error {
-	s.server.Stop()
-	return nil
-}
-
-func (s *TestGrpcServer) GrpcServer() *grpc.Server {
-	return s.server
 }

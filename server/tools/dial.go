@@ -41,7 +41,7 @@ func DialWithSecurity(
 ) (cConn *grpc.ClientConn, err error) {
 	logger, _ := zap.NewDevelopment()
 	opts := middlewares.MakeClientOptions(logger)
-	tlsConfig, err := maketls(logger, clientCert, clientKey, serverName, serverCa)
+	tlsConfig, err := makeTls(logger, clientCert, clientKey, serverName, serverCa)
 	if err != nil {
 		return nil, err
 	}
@@ -58,8 +58,7 @@ func DialWithSecurity(
 	return conn, nil
 }
 
-func maketls(logger *zap.Logger, clientCert, clientKey, serverName, serverCa string) (*tls.Config, error) {
-
+func makeTls(logger *zap.Logger, clientCert, clientKey, serverName, serverCa string) (*tls.Config, error) {
 	cert, err := tls.LoadX509KeyPair(clientCert, clientKey)
 	if err != nil {
 		return nil, err
@@ -99,52 +98,6 @@ func maketls(logger *zap.Logger, clientCert, clientKey, serverName, serverCa str
 			return nil, fmt.Errorf("failed to parse %q", serverCa)
 		}
 		tlsConfig.RootCAs = ca
-	}
-	return tlsConfig, nil
-}
-
-func MakeTLSConfig(logger *zap.Logger, cert, key string, ca string) (*tls.Config, error) {
-	tlsCert := atomic.Value{}
-	c, err := tls.LoadX509KeyPair(cert, key)
-	if err != nil {
-		return nil, err
-	}
-	tlsCert.Store(c)
-
-	if _, err := Watch(logger, cert, time.Second*10, func() {
-		c, err := tls.LoadX509KeyPair(cert, key)
-		if err != nil {
-			logger.Error("failed to load x509 key pair", zap.Error(err))
-			return
-		}
-		tlsCert.Store(c)
-	}); err != nil {
-		return nil, err
-	}
-
-	tlsConfig := &tls.Config{
-		ClientAuth: tls.RequireAndVerifyClientCert,
-		GetCertificate: func(info *tls.ClientHelloInfo) (*tls.Certificate, error) {
-			//logger.Debug("get certificate", zap.Any("server name", info))
-			c := tlsCert.Load()
-			if c == nil {
-				return nil, fmt.Errorf("certificate not loaded")
-			}
-			cert := c.(tls.Certificate)
-			return &cert, nil
-		},
-	}
-	if ca != "" {
-		caPool := x509.NewCertPool()
-		caBytes, err := os.ReadFile(ca)
-		if err != nil {
-			return nil, err
-		}
-		if ok := caPool.AppendCertsFromPEM(caBytes); !ok {
-			return nil, fmt.Errorf("failed to parse %q", ca)
-		}
-		tlsConfig.RootCAs = caPool
-		tlsConfig.ClientCAs = caPool
 	}
 	return tlsConfig, nil
 }

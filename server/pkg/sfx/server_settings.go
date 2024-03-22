@@ -16,6 +16,7 @@ type SettingsParams struct {
 	ZinxWSPort  int32 `name:"ZinxWSPort"`  // websocket port
 	Timeout     int32 `name:"Timeout"`     // tcp service heartbeat timeout
 	RateLimit   int32 `name:"RateLimit"`   // all server type rate limit per second
+	OtelEnable  bool  `name:"OtelEnable"`  // open telemetry enable
 }
 
 // SettingsResult loads from the environment and its members are injected into the tfx dependency graph.
@@ -27,6 +28,7 @@ type SettingsResult struct {
 	ZinxWSPort  int32 `name:"ZinxWSPort" envconfig:"ZINX_WS_PORT" default:""`
 	Timeout     int32 `name:"Timeout" envconfig:"TIMEOUT" default:"10"`
 	RateLimit   int32 `name:"RateLimit" envconfig:"RATE_LIMIT" default:"1000"`
+	OtelEnable  bool  `name:"OtelEnable" envconfig:"OTEL_ENABLE" default:"false"`
 }
 
 func (g *SettingsResult) LoadFromEnv() (err error) {

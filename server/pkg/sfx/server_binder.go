@@ -101,7 +101,7 @@ func (sb *ServiceBinder) bindZinxServices(
 		return nil, nil
 	}
 	cert, key := "", ""
-	if sb.TLSEnable {
+	if sb.TCPTlsEnable {
 		cert, key = sb.ServerCert, sb.ServerKey
 	}
 	if zinxServer, err := zinx.NewZinxServer(

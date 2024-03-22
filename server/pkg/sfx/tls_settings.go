@@ -22,7 +22,11 @@ type SecuritySettingsParams struct {
 	ServerKey    string `name:"ServerKey"`
 	ServerName   string `name:"ServerName"`
 
+	// if true, enable mTLS for grpc/http(cmux service) services
+	// Zero trust security model: all services must be mTLS enabled
 	TLSEnable bool `name:"TLSEnable"`
+	// if true, enable Tls for tcp services(zinx service)
+	TCPTlsEnable bool `name:"TCPTlsEnable"`
 }
 
 type SecuritySettingsResult struct {
@@ -39,7 +43,11 @@ type SecuritySettingsResult struct {
 	ServerKey    string `name:"ServerKey" envconfig:"SERVER_KEY" default:"./configs/tls-server/tls.key"`
 	ServerName   string `name:"ServerName" envconfig:"SERVER_NAME" default:""`
 
+	// if true, enable mTLS for grpc/http(cmux service) services
+	// Zero trust security model: all services must be mTLS enabled
 	TLSEnable bool `name:"TLSEnable" envconfig:"TLS_ENABLE" default:"false" `
+	// if true, enable Tls for tcp services(zinx service)
+	TcpTlsEnable bool `name:"TCPTlsEnable" envconfig:"TCP_TLS_ENABLE" default:"false"`
 }
 
 func (g *SecuritySettingsResult) LoadFromEnv() (err error) {

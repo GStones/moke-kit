@@ -23,6 +23,11 @@ type GatewayServer struct {
 }
 
 func (gs *GatewayServer) StartServing(_ context.Context) error {
+	gs.logger.Info(
+		"grpc gateway start serving",
+		zap.String("network", gs.listener.Addr().Network()),
+		zap.String("address", gs.listener.Addr().String()),
+	)
 	go func() {
 		if err := gs.server.Serve(gs.listener); err != nil {
 			if !strings.Contains(err.Error(), "Server closed") {
