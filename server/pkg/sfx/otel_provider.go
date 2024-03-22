@@ -34,7 +34,10 @@ type OTelProviderResult struct {
 	MetricProvider *sdkmetric.MeterProvider `name:"MetricProvider"`
 }
 
-func (otel *OTelProviderResult) Execute(appSetting mfx.AppParams) (err error) {
+func (otel *OTelProviderResult) Execute(appSetting mfx.AppParams, enable bool) (err error) {
+	if !enable {
+		return
+	}
 	otel.TracerProvider, err = initTracerProvider(appSetting)
 	if err != nil {
 		return
@@ -99,8 +102,9 @@ func initMeterProvider(appSetting mfx.AppParams) (*sdkmetric.MeterProvider, erro
 var OTelModule = fx.Provide(
 	func(
 		appSetting mfx.AppParams,
+		sSetting SettingsParams,
 	) (out OTelProviderResult, err error) {
-		err = out.Execute(appSetting)
+		err = out.Execute(appSetting, sSetting.OtelEnable)
 		return
 	},
 )

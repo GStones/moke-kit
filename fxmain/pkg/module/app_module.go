@@ -10,6 +10,9 @@ import (
 	server "github.com/gstones/moke-kit/server/pkg/module"
 )
 
+// AppModule is the main module of the application.
+// It includes some required modules like:
+// SettingModule, server.Module, nosql.Module, logging.Module, and mq.Module.
 var AppModule = fx.Module("app",
 	mfx.SettingModule,
 	server.Module,

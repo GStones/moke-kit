@@ -10,4 +10,5 @@ var Module = fx.Module("server",
 	sfx.SecuritySettingsModule,
 	sfx.SettingsModule,
 	sfx.ConnectionMuxModule,
+	sfx.OTelModule,
 )

@@ -25,20 +25,18 @@ type AppResult struct {
 	Version    string `name:"Version" default:"0.0.2"`
 }
 
-func (ar *AppResult) LoadConstant(value string) error {
-	ar.AppName = value
+func (ar *AppResult) loadFromEnv() error {
+	if err := utility.Load(ar); err != nil {
+		return err
+	}
+	key.SetNamespace(ar.Deployment)
 	return nil
 }
 
-func (ar *AppResult) LoadFromEnv() (err error) {
-	err = utility.Load(ar)
-	key.SetNamespace(ar.Deployment)
-	return
-}
-
+// SettingModule is a module that provides the application settings.
 var SettingModule = fx.Provide(
 	func() (out AppResult, err error) {
-		err = out.LoadFromEnv()
+		err = out.loadFromEnv()
 		return
 	},
 )
