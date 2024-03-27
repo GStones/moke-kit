@@ -37,7 +37,7 @@ func (dsr *DocumentStoreResult) NewDocument(
 			err = e
 		} else {
 			switch u.Scheme {
-			case "mongodb":
+			case "mongodb", "mongodb+srv":
 				dsr.DriverProvider = mongo.NewProvider(mClient, l)
 			case "test":
 				l.Info("Connect to test", zap.String("url", "test"))
