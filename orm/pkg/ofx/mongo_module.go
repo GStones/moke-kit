@@ -35,7 +35,7 @@ func (mr *MongoResult) NewDocument(
 	}
 	if u, e := url.Parse(n.DatabaseURL); e != nil {
 		err = e
-	} else if u.Scheme == "mongodb" {
+	} else if u.Scheme == "mongodb" || u.Scheme == "mongodb+srv" {
 		username := u.User.Username()
 		if n.DatabaseUser != "" {
 			username = n.DatabaseUser
