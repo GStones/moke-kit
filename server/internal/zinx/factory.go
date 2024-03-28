@@ -49,11 +49,8 @@ func NewZinxServer(
 	} else {
 		return nil, errors.New("please set wsPort or tcpPort")
 	}
-	l := logger.With(zap.String("service", name))
+	l := logger.With(zap.String("service", name), zap.Any("deployment", deploy))
 	s := znet.NewServer()
-	if deploy == utility.DeploymentsProd {
-		s.AddInterceptor(interceptors.NewRecoverInterceptor(l))
-	}
 	s.AddInterceptor(interceptors.NewRateLimitInterceptor(l, rateLimit))
 	result = &ZinxServer{
 		logger: logger,
