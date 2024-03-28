@@ -93,8 +93,7 @@ func (cm *ConnectionMux) StartServing(_ context.Context) error {
 		if err := cm.mux.Serve(); err != nil {
 			cm.logger.Error(
 				"failed to serve",
-				zap.String("network", cm.listener.Addr().Network()),
-				zap.String("address", cm.listener.Addr().String()),
+				zap.Any("listener", cm.listener),
 				zap.Error(err),
 			)
 		} else {
