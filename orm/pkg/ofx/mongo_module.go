@@ -44,7 +44,7 @@ func (mr *MongoResult) NewDocument(
 		}
 		cOptions.Auth.Password = n.DatabasePassword
 	}
-	l.Info("Connect to mongodb", zap.Strings("hosts", cOptions.Hosts))
+	l.Info("Connect to mongodb", zap.String("url", n.DatabaseURL))
 	mr.MongoClient, err = mongo.NewMongoClient(cOptions)
 	lc.Append(fx.Hook{
 		OnStop: func(ctx context.Context) error {
