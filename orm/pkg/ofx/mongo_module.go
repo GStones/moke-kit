@@ -32,13 +32,16 @@ func (mr *MongoResult) NewDocument(
 		return nil
 	}
 	cOptions := options.Client().ApplyURI(n.DatabaseURL)
+	if cOptions.Auth == nil {
+		cOptions.Auth = &options.Credential{}
+	}
 	if n.DatabaseUser != "" {
 		cOptions.Auth.Username = n.DatabaseUser
 	}
 	if n.DatabasePassword != "" {
-		cOptions.Auth.Password = n.DatabaseUser
+		cOptions.Auth.Password = n.DatabasePassword
 	}
-	l.Info("Connect to mongodb", zap.String("url", n.DatabaseURL))
+	l.Info("Connect to mongodb", zap.Strings("hosts", cOptions.Hosts))
 	mr.MongoClient, err = mongo.NewMongoClient(cOptions)
 	lc.Append(fx.Hook{
 		OnStop: func(ctx context.Context) error {
