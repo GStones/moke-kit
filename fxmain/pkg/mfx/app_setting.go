@@ -22,7 +22,7 @@ type AppResult struct {
 	AppName    string `name:"AppName" envconfig:"APP_NAME" default:"app"`
 	AppId      string `name:"AppId" envconfig:"APP_ID" default:"app"`
 	Deployment string `name:"Deployment" envconfig:"DEPLOYMENT" default:"local"`
-	Version    string `name:"Version" default:"0.0.2"`
+	Version    string `name:"Version" envconfig:"VERSION" default:"0.0.1"`
 }
 
 func (ar *AppResult) loadFromEnv() error {
