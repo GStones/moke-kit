@@ -31,9 +31,9 @@ type AgonesSettingsResult struct {
 	MockAllocateUrl string `name:"MockAllocateUrl" envconfig:"MOCK_ALLOCATE_URL" default:"localhost:8888"`
 	// allocate service url(only for prod deployment)
 	AllocateServiceUrl string `name:"AllocateServiceUrl" envconfig:"ALLOCATE_SERVICE_URL"  default:""`
-	ClientCert         string `name:"AllocateClientCert" envconfig:"ALLOCATE_CLIENT_CERT" default:"./configs/x509/agones/tls.crt"`
-	ClientKey          string `name:"AllocateClientKey" envconfig:"ALLOCATE_CLIENT_KEY" default:"./configs/x509/agones/tls.key"`
-	ServerCaCert       string `name:"AllocateServerCaCert" envconfig:"ALLOCATE_SERVER_CA_CERT" default:"./configs/x509/agones/ca.crt"`
+	ClientCert         string `name:"AllocateClientCert" envconfig:"ALLOCATE_CLIENT_CERT" default:"./configs/agones/tls.crt"`
+	ClientKey          string `name:"AllocateClientKey" envconfig:"ALLOCATE_CLIENT_KEY" default:"./configs/agones/tls.key"`
+	ServerCaCert       string `name:"AllocateServerCaCert" envconfig:"ALLOCATE_SERVER_CA_CERT" default:"./configs/agones/ca.crt"`
 }
 
 func (g *AgonesSettingsResult) LoadFromEnv() (err error) {
