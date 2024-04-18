@@ -10,7 +10,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.1.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.19.1
-	github.com/gstones/zinx v0.1.3-0.20240321032516-f1c78ab5d24a
+	github.com/gstones/zinx v0.1.3
 	github.com/hashicorp/vault/api v1.12.2
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/nats-io/nats.go v1.33.1
