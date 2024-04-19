@@ -7,30 +7,32 @@
 ## What is moke-kit?
 
 moke-kit is a toolkit for building a [Domain-Driven Hexagon](https://github.com/Sairyss/domain-driven-hexagon)
-microservices/monolithic in Go. You can develop as a monolithic service and deploy it as microservice. 
-Also like play with lego, you can assemble the service as you like.
+microservices/monolithic in Go. You can develop as a monolithic service and deploy it as a microservice.
+Just like building with LEGO, you can assemble the service as you like.
 
 ## Diagram
 
 ![moke-kit](./assets/moke-kit-diagram.drawio.png)
 
 ## Features
-* [Server](https://github.com/GStones/moke-kit/tree/main/server):
-    * [x] [gRPC](https://grpc.io/)
-    * [x] HTTP[[grpc-gateway](https://github.com/grpc-ecosystem/grpc-gateway)]
-    * [x] TCP [[zinx](https://github.com/aceld/zinx)]
-    * [x] Websocket [[zinx](https://github.com/aceld/zinx)]
+
+* [Server Types](https://github.com/GStones/moke-kit/tree/main/server):
+    * [gRPC](https://grpc.io/)
+    * HTTP[[grpc-gateway](https://github.com/grpc-ecosystem/grpc-gateway)]
+    * TCP [[zinx](https://github.com/aceld/zinx)]
+    * Websocket [[zinx](https://github.com/aceld/zinx)]
 * [MQ](https://github.com/GStones/moke-kit/tree/main/mq):
-    * [x] [nats](https://nats.io/)
+    * [nats](https://nats.io/)
 * [Orm](https://github.com/GStones/moke-kit/tree/main/orm):
-    * [x] [gorm](https://gorm.io/)
-    * [x] [mongodb](https://github.com/mongodb/mongo-go-driver)
+    * [gorm](https://gorm.io/)
+    * [mongodb](https://github.com/mongodb/mongo-go-driver)
 * [Cache](https://github.com/GStones/moke-kit/tree/main/orm/nosql/cache):
-    * [x] redis
-    * [x] [dragonfly](https://github.com/dragonflydb/dragonfly)
-* [Third-party](https://github.com/GStones/moke-kit/tree/main/3rd):
-    * [x] [IAP](https://github.com/awa/go-iap)
-    * [x] [Agones](https://agones.dev/site/)
+    * redis
+    * [dragonfly](https://github.com/dragonflydb/dragonfly)
+* [Third Party](https://github.com/GStones/moke-kit/tree/main/3rd):
+    * [IAP](https://github.com/awa/go-iap): Verifies the purchase receipt via AppStore, GooglePlayStore or Amazon
+      AppStore.
+    * [Agones](https://agones.dev/site/):  Host, Run and Scale dedicated game servers on Kubernetes.
 
 ## Getting started
 

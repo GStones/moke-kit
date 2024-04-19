@@ -2,13 +2,13 @@
 
 ## [Agones](https://agones.dev/site/):
 
-Host, Run and Scale dedicated game servers on Kubernetes
-
 ### Modules:
+
 * `AgonesSDKModule` : agones go sdk module [(see more)](https://agones.dev/site/docs/guides/client-sdks/)
 * `AgonesAllocateClientModule`: agones allocate grpc client module
 
 ### Environment Variables:
+
 | ENV                     | Description                                                                               | Default                  |
 |-------------------------|-------------------------------------------------------------------------------------------|--------------------------|
 | AGONES_DEPLOYMENT       | agones deployment (local/dev/prod)<br/> local/dev: will mock a url with MOCK_ALLOCATE_URL | local                    |
@@ -20,12 +20,12 @@ Host, Run and Scale dedicated game servers on Kubernetes
 
 ## [IAP](https://github.com/awa/go-iap):
 
-Verifies the purchase receipt via AppStore, GooglePlayStore or Amazon AppStore.
-
 ### Modules:
+
 * `IAPModule`: iap module
 
 ### Environment Variables:
+
 | ENV                    | Description                 | Default |
 |------------------------|-----------------------------|---------|
 | APPLE_KEY_ID           | apple key id                | ""      |
