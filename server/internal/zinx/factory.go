@@ -8,6 +8,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/gstones/moke-kit/server/internal/zinx/interceptors"
+	"github.com/gstones/moke-kit/server/pkg/sfx"
 	"github.com/gstones/moke-kit/server/siface"
 	"github.com/gstones/moke-kit/utility"
 )
@@ -19,32 +20,35 @@ const (
 
 func NewZinxServer(
 	logger *zap.Logger,
-	zinxTcpPort int32,
-	zinxWsPost int32,
+	serverSetting sfx.SettingsParams,
+	securitySetting sfx.SecuritySettingsParams,
 	name string,
 	version string,
 	deployment string,
-	timeout int32,
 	rateLimit int32,
-	serverCert string,
-	serverKey string,
 ) (result siface.IZinxServer, err error) {
 	deploy := utility.ParseDeployments(deployment)
 	zconf.GlobalObject.Name = name
 	zconf.GlobalObject.Version = version
-	zconf.GlobalObject.LogIsolationLevel = 1
-	zconf.GlobalObject.WsPort = int(zinxWsPost)
-	zconf.GlobalObject.TCPPort = int(zinxTcpPort)
-	zconf.GlobalObject.HeartbeatMax = int(timeout)
-	zconf.GlobalObject.CertFile = serverCert
-	zconf.GlobalObject.PrivateKeyFile = serverKey
-	zconf.GlobalObject.WorkerPoolSize = 64
+	zconf.GlobalObject.LogIsolationLevel = 2
+	zconf.GlobalObject.WsPort = int(serverSetting.ZinxWSPort)
+	zconf.GlobalObject.TCPPort = int(serverSetting.ZinxTcpPort)
+	zconf.GlobalObject.HeartbeatMax = int(serverSetting.Timeout)
+	zconf.GlobalObject.WorkerPoolSize = serverSetting.WorkerPoolSize
+	zconf.GlobalObject.MaxPacketSize = serverSetting.MaxPacketSize
+	zconf.GlobalObject.MaxWorkerTaskLen = serverSetting.MaxWorkerTaskLen
+	zconf.GlobalObject.MaxMsgChanLen = serverSetting.MaxMsgChanLen
 
-	if zinxTcpPort != 0 && zinxWsPost != 0 {
+	if securitySetting.TCPTlsEnable {
+		zconf.GlobalObject.CertFile = securitySetting.ServerCert
+		zconf.GlobalObject.PrivateKeyFile = securitySetting.ServerKey
+	}
+
+	if serverSetting.ZinxTcpPort != 0 && serverSetting.ZinxWSPort != 0 {
 		zconf.GlobalObject.Mode = ""
-	} else if zinxWsPost != 0 {
+	} else if serverSetting.ZinxWSPort != 0 {
 		zconf.GlobalObject.Mode = WsServerMod
-	} else if zinxTcpPort != 0 {
+	} else if serverSetting.ZinxTcpPort != 0 {
 		zconf.GlobalObject.Mode = TcpServerMod
 	} else {
 		return nil, errors.New("please set wsPort or tcpPort")

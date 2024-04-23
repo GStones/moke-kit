@@ -15,7 +15,7 @@ type AgonesSettingsParams struct {
 	// agones deployment (local/dev/prod)
 	AgonesDeployment string `name:"AgonesDeployment"`
 	// mock allocate url(only for non-prod deployment)
-	MockAllocateUrl string `name:"MockAllocateUrl"`
+	MockAllocateUrl []string `name:"MockAllocateUrl"`
 	// allocate service url(only for prod deployment)
 	AllocateServiceUrl string `name:"AllocateServiceUrl"`
 	ClientCert         string `name:"AllocateClientCert"`
@@ -28,7 +28,7 @@ type AgonesSettingsResult struct {
 	// agones deployment (local/dev/prod)
 	AgonesDeployment string `name:"AgonesDeployment" envconfig:"AGONES_DEPLOYMENT" default:"local"`
 	// mock allocate url(only for non-prod deployment)
-	MockAllocateUrl string `name:"MockAllocateUrl" envconfig:"MOCK_ALLOCATE_URL" default:"localhost:8888"`
+	MockAllocateUrl []string `name:"MockAllocateUrl" envconfig:"MOCK_ALLOCATE_URL" default:"localhost:8888"`
 	// allocate service url(only for prod deployment)
 	AllocateServiceUrl string `name:"AllocateServiceUrl" envconfig:"ALLOCATE_SERVICE_URL"  default:""`
 	ClientCert         string `name:"AllocateClientCert" envconfig:"ALLOCATE_CLIENT_CERT" default:"./configs/agones/tls.crt"`
