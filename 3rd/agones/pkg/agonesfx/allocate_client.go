@@ -41,6 +41,7 @@ func NewAllocateClient(sSetting AgonesSettingsParams) (allocation.AllocationServ
 	}
 }
 
+// NewAllocateClientMock creates a new AllocateClientMock, requires a mock hosts to random.
 func NewAllocateClientMock(url []string) (allocation.AllocationServiceClient, error) {
 	return allocate.CreateMockAllocationServiceClient(url), nil
 }

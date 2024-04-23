@@ -15,6 +15,7 @@ type MockAllocationServiceClient struct {
 	hosts []string
 }
 
+// CreateMockAllocationServiceClient creates a new MockAllocationServiceClient, requires a mock hosts to random allocate.
 func CreateMockAllocationServiceClient(hosts []string) *MockAllocationServiceClient {
 	return &MockAllocationServiceClient{hosts: hosts}
 }
