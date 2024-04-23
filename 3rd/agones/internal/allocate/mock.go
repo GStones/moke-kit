@@ -32,7 +32,7 @@ func (m *MockAllocationServiceClient) Allocate(
 	index := rand.Intn(len(m.hosts))
 	url := m.hosts[index]
 	hosts := strings.Split(url, ":")
-	if len(hosts) < 2 {
+	if len(hosts) != 2 {
 		return nil, fmt.Errorf("mock allocation service client url:%v is invalid", url)
 	}
 	p, err := strconv.ParseInt(hosts[1], 10, 32)
