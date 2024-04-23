@@ -41,8 +41,8 @@ func NewAllocateClient(sSetting AgonesSettingsParams) (allocation.AllocationServ
 	}
 }
 
-func NewAllocateClientMock(url string) (allocation.AllocationServiceClient, error) {
-	return &allocate.MockAllocationServiceClient{URL: url}, nil
+func NewAllocateClientMock(url []string) (allocation.AllocationServiceClient, error) {
+	return allocate.CreateMockAllocationServiceClient(url), nil
 }
 
 // AllocateClientModule is a fx module that provides an AllocateClient

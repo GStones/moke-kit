@@ -1,5 +1,7 @@
 package utility
 
+import "strings"
+
 type Deployments string
 
 const (
@@ -13,7 +15,15 @@ func (d Deployments) String() string {
 }
 
 func (d Deployments) IsProd() bool {
-	return d == DeploymentsProd
+	return strings.Contains(d.String(), DeploymentsProd.String())
+}
+
+func (d Deployments) IsDev() bool {
+	return strings.Contains(d.String(), DeploymentsDev.String())
+}
+
+func (d Deployments) IsLocal() bool {
+	return strings.Contains(d.String(), DeploymentsLocal.String())
 }
 
 func ParseDeployments(value string) Deployments {

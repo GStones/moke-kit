@@ -1,4 +1,4 @@
-package sfx
+package module
 
 import (
 	"context"
@@ -10,6 +10,7 @@ import (
 	"github.com/gstones/moke-kit/fxmain/pkg/mfx"
 	"github.com/gstones/moke-kit/server/internal/srpc"
 	"github.com/gstones/moke-kit/server/internal/zinx"
+	"github.com/gstones/moke-kit/server/pkg/sfx"
 	"github.com/gstones/moke-kit/server/siface"
 )
 
@@ -22,15 +23,15 @@ type ServiceBinder struct {
 	fx.In
 	mfx.AppParams // app settings params
 
-	SettingsParams         // server settings
-	SecuritySettingsParams // server security settings
+	sfx.SettingsParams         // server settings
+	sfx.SecuritySettingsParams // server security settings
 
-	ConnectionMuxParams  // connection mux params
-	GrpcServiceParams    //all grpc service injected (grpc)
-	ZinxServiceParams    // all zinx service injected (tcp/udp/websocket)
-	GatewayServiceParams // all gateway service injected (http)
-	AuthServiceParams    // grpc rpc auth middleware injected
-	OTelProviderParams   // opentelemetry provider injected
+	sfx.ConnectionMuxParams  // connection mux params
+	sfx.GrpcServiceParams    //all grpc service injected (grpc)
+	sfx.ZinxServiceParams    // all zinx service injected (tcp/udp/websocket)
+	sfx.GatewayServiceParams // all gateway service injected (http)
+	sfx.AuthServiceParams    // grpc rpc auth middleware injected
+	sfx.OTelProviderParams   // opentelemetry provider injected
 }
 
 func (sb *ServiceBinder) Execute(l *zap.Logger, lc fx.Lifecycle) error {
@@ -100,21 +101,14 @@ func (sb *ServiceBinder) bindZinxServices(
 	if len(sb.ZinxServices) == 0 {
 		return nil, nil
 	}
-	cert, key := "", ""
-	if sb.TCPTlsEnable {
-		cert, key = sb.ServerCert, sb.ServerKey
-	}
 	if zinxServer, err := zinx.NewZinxServer(
 		l,
-		sb.ZinxTcpPort,
-		sb.ZinxWSPort,
+		sb.SettingsParams,
+		sb.SecuritySettingsParams,
 		sb.AppName,
 		sb.Version,
 		sb.Deployment,
-		sb.Timeout,
 		sb.RateLimit,
-		cert,
-		key,
 	); err != nil {
 		return nil, err
 	} else {
