@@ -10,7 +10,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.1.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.19.1
-	github.com/gstones/zinx v1.2.4
+	github.com/gstones/zinx v1.2.5
 	github.com/hashicorp/vault/api v1.12.2
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/nats-io/nats.go v1.33.1
@@ -30,6 +30,7 @@ require (
 	go.uber.org/fx v1.21.0
 	go.uber.org/ratelimit v0.3.1
 	go.uber.org/zap v1.27.0
+	golang.org/x/exp v0.0.0-20240318143956-a85f2c67cd81
 	google.golang.org/grpc v1.62.1
 	gopkg.in/fsnotify.v1 v1.4.7
 	gorm.io/gorm v1.25.8
@@ -103,7 +104,6 @@ require (
 	go.uber.org/dig v1.17.1 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/crypto v0.21.0 // indirect
-	golang.org/x/exp v0.0.0-20240318143956-a85f2c67cd81 // indirect
 	golang.org/x/net v0.23.0 // indirect
 	golang.org/x/oauth2 v0.18.0 // indirect
 	golang.org/x/sync v0.6.0 // indirect
