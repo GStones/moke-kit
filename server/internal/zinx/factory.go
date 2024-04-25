@@ -30,7 +30,10 @@ func NewZinxServer(
 	deploy := utility.ParseDeployments(deployment)
 	zconf.GlobalObject.Name = name
 	zconf.GlobalObject.Version = version
-	zconf.GlobalObject.LogIsolationLevel = 2
+	if deploy.IsProd() {
+		// close zinx debug/info log
+		zconf.GlobalObject.LogIsolationLevel = 2
+	}
 	zconf.GlobalObject.WsPort = int(serverSetting.ZinxWSPort)
 	zconf.GlobalObject.TCPPort = int(serverSetting.ZinxTcpPort)
 	zconf.GlobalObject.HeartbeatMax = int(serverSetting.Timeout)
