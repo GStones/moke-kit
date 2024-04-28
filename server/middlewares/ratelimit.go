@@ -2,23 +2,30 @@ package middlewares
 
 import (
 	"context"
+	"errors"
 
-	"go.uber.org/ratelimit"
+	"golang.org/x/time/rate"
+)
+
+var (
+	ErrRateLimit = errors.New("rate limit exceeded")
 )
 
 // RateLimiter rate limit
 type RateLimiter struct {
-	limiter ratelimit.Limiter
+	tokenLimiter *rate.Limiter
 }
 
-func CreateRateLimiter(rate int) *RateLimiter {
-	rl := ratelimit.New(rate) // per second, some slack.
+func CreateRateLimiter(num int) *RateLimiter {
+	tokenLimiter := rate.NewLimiter(rate.Limit(num), num)
 	return &RateLimiter{
-		limiter: rl,
+		tokenLimiter: tokenLimiter,
 	}
 }
 
 func (rl *RateLimiter) Limit(_ context.Context) error {
-	rl.limiter.Take()
+	if !rl.tokenLimiter.Allow() {
+		return ErrRateLimit
+	}
 	return nil
 }
