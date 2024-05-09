@@ -18,7 +18,7 @@ Just like building with LEGO, you can assemble the service as you like.
 
 * Inversion of control with [uber/fx](https://github.com/uber-go/fx),assemble your service as you like.
 * Builtin TLS,mTLS to build [Zero Trust security](https://www.wikiwand.com/en/Zero_trust_security_model).
-* Builtin middlewares (rate limit, open telemetry, auth,logging, panic recovery, etc.).
+* Builtin middlewares (rate limit, open telemetry, auth override,logging, panic recovery, etc.).
 * Builtin [Cache-Aside pattern](https://learn.microsoft.com/en-us/azure/architecture/patterns/cache-aside) for orm and
   nosql.
 * Builtin [Compare-and-swap](https://www.wikiwand.com/en/Compare-and-swap) to ensure db update consistency.
