@@ -16,7 +16,18 @@ Just like building with LEGO, you can assemble the service as you like.
 
 ## Features
 
-* [Server Types](https://github.com/GStones/moke-kit/tree/main/server):
+* Inversion of control with [uber/fx](https://github.com/uber-go/fx),assemble your service as you like.
+* Builtin TLS,mTLS to build [Zero Trust security](https://www.wikiwand.com/en/Zero_trust_security_model).
+* Builtin middlewares (rate limit, open telemetry, auth,logging, panic recovery, etc.).
+* Builtin [Cache-Aside pattern](https://learn.microsoft.com/en-us/azure/architecture/patterns/cache-aside) for orm and
+  nosql.
+* Builtin [Compare-and-swap](https://www.wikiwand.com/en/Compare-and-swap) to ensure db update consistency.
+* Command client to interact with the server for independent testing.
+* One command to generate proto, grpc, gateway, swagger and client code with [buf](https://buf.build/).
+
+## Builtin Kits
+
+* [Servers](https://github.com/GStones/moke-kit/tree/main/server):
     * [gRPC](https://grpc.io/)
     * HTTP[[grpc-gateway](https://github.com/grpc-ecosystem/grpc-gateway)]
     * TCP [[zinx](https://github.com/aceld/zinx)]
