@@ -1,6 +1,7 @@
 package tools
 
 import (
+	"context"
 	"time"
 
 	"go.uber.org/zap"
@@ -10,33 +11,40 @@ import (
 // Watch watches the filesystem path `path`. When anything changes, changes are
 // batched for the period `batchFor`, then `processEvent` is called.
 //
-// Returns a cancel() function to terminate the watch.
+// Returns a destroy() function to terminate the watch.
 func Watch(logger *zap.Logger, path string, batchFor time.Duration, processEvent func()) (func(), error) {
 	logger = logger.With(zap.String("watch files", path))
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		return nil, err
 	}
-	cancelChan := make(chan struct{})
-	cancel := func() {
-		close(cancelChan)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	destroy := func() {
+		cancel()
 		_ = watcher.Close()
 	}
 	if err := watcher.Add(path); err != nil {
-		cancel()
+		destroy()
 		return nil, err
 	}
 
-	go batchWatch(batchFor, watcher.Events, watcher.Errors, cancelChan, processEvent, func(error) {
-		logger.Error("watcher error")
+	go batchWatch(ctx, batchFor, watcher.Events, watcher.Errors, processEvent, func(e error) {
+		logger.Error("watcher error", zap.Error(e))
 	})
-	return cancel, nil
+	return destroy, nil
 }
 
 // batchWatch: watch for events; when an event occurs, keep draining events for duration `batchFor`, then call processEvent().
 // Intended for batching of rapid-fire events where we want to process the batch once, like filesystem update notifications.
-func batchWatch(batchFor time.Duration, events chan fsnotify.Event, errors chan error, cancelChan chan struct{}, processEvent func(), onError func(error)) {
-	// Pattern shamelessly stolen from https://blog.gopheracademy.com/advent-2013/day-24-channel-buffering-patterns/
+func batchWatch(
+	ctx context.Context,
+	batchFor time.Duration,
+	events chan fsnotify.Event,
+	errors chan error,
+	processEvent func(),
+	onError func(error),
+) {
 	timer := time.NewTimer(0)
 	var timerCh <-chan time.Time
 
@@ -59,7 +67,7 @@ func batchWatch(batchFor time.Duration, events chan fsnotify.Event, errors chan 
 			onError(err)
 
 		// on cancel, abort
-		case <-cancelChan:
+		case <-ctx.Done():
 			return
 		}
 	}

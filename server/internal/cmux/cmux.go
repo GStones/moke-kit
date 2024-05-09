@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"path"
 	"sync/atomic"
 	"time"
 
@@ -114,7 +115,7 @@ func (cm *ConnectionMux) StopServing(_ context.Context) error {
 	return nil
 }
 
-func makeTLSConfig(tlsCert, tlsKey string, clientCa string) (*tls.Config, error) {
+func makeTLSConfig(logger *zap.Logger, tlsCert, tlsKey string, clientCa string) (*tls.Config, error) {
 	if cert, err := tls.LoadX509KeyPair(tlsCert, tlsKey); err != nil {
 		return nil, err
 	} else if caBytes, err := os.ReadFile(clientCa); err != nil {
@@ -127,8 +128,9 @@ func makeTLSConfig(tlsCert, tlsKey string, clientCa string) (*tls.Config, error)
 
 		tlsCertValue := atomic.Value{}
 		tlsCertValue.Store(cert)
-		logger, _ := zap.NewDevelopment()
-		if _, err := tools.Watch(logger, tlsCert, time.Second*10, func() {
+		p, _ := path.Split(tlsCert)
+		if _, err := tools.Watch(logger, p, time.Second*10, func() {
+			logger.Info("service reloading x509 key pair")
 			c, err := tls.LoadX509KeyPair(tlsCert, tlsKey)
 			if err != nil {
 				logger.Error("service failed to load x509 key pair", zap.Error(err))
