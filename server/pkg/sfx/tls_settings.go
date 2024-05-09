@@ -24,10 +24,10 @@ type SecuritySettingsParams struct {
 
 	// Zero trust security model: all services must be mTLS enabled
 	// if true, enable imports client for grpc/http(cmux service) clients
-	TLSClientEnable bool `name:"TLSClientEnable"`
+	MTLSEnable bool `name:"MTLSEnable"`
 
 	// if true, enable service tls for grpc/http(cmux service) services
-	TLSServerEnable bool `name:"TLSServerEnable"`
+	TLSEnable bool `name:"TLSEnable"`
 	// if true, enable Tls for tcp services(zinx service)
 	TCPTlsEnable bool `name:"TCPTlsEnable"`
 }
@@ -48,8 +48,9 @@ type SecuritySettingsResult struct {
 
 	// if true, enable mTLS for grpc/http(cmux service) services
 	// Zero trust security model: all services must be mTLS enabled
-	TLSClientEnable bool `name:"TLSClientEnable" envconfig:"TLS_CLIENT_ENABLE" default:"false"`
-	TLSServerEnable bool `name:"TLSServerEnable" envconfig:"TLS_SERVER_ENABLE" default:"false"`
+	MTLSEnable bool `name:"MTLSEnable" envconfig:"MTLS_ENABLE" default:"false"`
+	// if true, enable service tls for grpc/http(cmux service) services
+	TLSEnable bool `name:"TLSEnable" envconfig:"TLS_ENABLE" default:"false"`
 	// if true, enable Tls for tcp services(zinx service)
 	TcpTlsEnable bool `name:"TCPTlsEnable" envconfig:"TCP_TLS_ENABLE" default:"false"`
 }

@@ -6,6 +6,7 @@ import (
 	"crypto/x509"
 	"fmt"
 	"os"
+	"path"
 	"time"
 
 	"go.uber.org/atomic"
@@ -65,7 +66,10 @@ func makeTls(logger *zap.Logger, clientCert, clientKey, serverName, serverCa str
 	}
 	tlsCert := atomic.Value{}
 	tlsCert.Store(cert)
-	if _, err := Watch(logger, clientCert, time.Second*10, func() {
+
+	p, _ := path.Split(clientCert)
+	if _, err := Watch(logger, p, time.Second*10, func() {
+		logger.Info("client reload certificate")
 		c, err := tls.LoadX509KeyPair(clientCert, clientKey)
 		if err != nil {
 			return

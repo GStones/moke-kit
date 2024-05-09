@@ -26,7 +26,7 @@ func (cmr *ConnectionMuxResult) Execute(
 	g SettingsParams,
 	s SecuritySettingsParams,
 ) (err error) {
-	if s.TLSServerEnable {
+	if s.TLSEnable {
 		cmr.ConnectionMux, err = cmux.NewTlsConnectionMux(l, g.Port, s.ServerCert, s.ServerKey, s.ClientCaCert)
 	} else {
 		cmr.ConnectionMux, err = cmux.NewConnectionMux(l, g.Port)
