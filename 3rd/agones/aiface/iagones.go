@@ -24,22 +24,22 @@ type IAgones interface {
 type IAlpha interface {
 	GetPlayerCapacity() (int64, error)
 	SetPlayerCapacity(capacity int64) error
-	PlayerConnect(playerID string) (bool, error)
-	PlayerDisconnect(playerID string) (bool, error)
+	PlayerConnect(id string) (bool, error)
+	PlayerDisconnect(id string) (bool, error)
 	GetPlayerCount() (int64, error)
-	IsPlayerConnected(playerID string) (bool, error)
+	IsPlayerConnected(id string) (bool, error)
 	GetConnectedPlayers() ([]string, error)
 	GetCounterCount(key string) (int64, error)
-	IncrementCounter(key string, amount int64) error
-	DecrementCounter(key string, amount int64) error
-	SetCounterCount(key string, amount int64) error
+	IncrementCounter(key string, amount int64) (bool, error)
+	DecrementCounter(key string, amount int64) (bool, error)
+	SetCounterCount(key string, amount int64) (bool, error)
 	GetCounterCapacity(key string) (int64, error)
-	SetCounterCapacity(key string, amount int64) error
+	SetCounterCapacity(key string, amount int64) (bool, error)
 	GetListCapacity(key string) (int64, error)
-	SetListCapacity(key string, amount int64) error
+	SetListCapacity(key string, amount int64) (bool, error)
 	ListContains(key, value string) (bool, error)
 	GetListLength(key string) (int, error)
 	GetListValues(key string) ([]string, error)
-	AppendListValue(key, value string) error
-	DeleteListValue(key, value string) error
+	AppendListValue(key, value string) (bool, error)
+	DeleteListValue(key, value string) (bool, error)
 }
