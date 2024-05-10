@@ -17,7 +17,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/redis/go-redis/v9 v9.5.1
 	github.com/soheilhy/cmux v0.1.5
-	go.mongodb.org/mongo-driver v1.15.0
+	go.mongodb.org/mongo-driver v1.14.0
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.49.0
 	go.opentelemetry.io/otel v1.26.0
 	go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc v1.26.0
