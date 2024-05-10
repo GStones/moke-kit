@@ -3,7 +3,7 @@ module github.com/gstones/moke-kit
 go 1.21
 
 require (
-	agones.dev/agones v1.39.0
+	agones.dev/agones v1.40.0
 	github.com/abiosoft/ishell v2.0.0+incompatible
 	github.com/awa/go-iap v1.29.0
 	github.com/duke-git/lancet/v2 v2.3.0
