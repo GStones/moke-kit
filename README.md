@@ -4,6 +4,8 @@
 [![Go Reference](https://pkg.go.dev/badge/github.com/GStones/moke-kit.svg)](https://pkg.go.dev/github.com/GStones/moke-kit)
 [![Release](https://img.shields.io/github/v/release/gstones/moke-kit.svg?style=flat-square)](https://github.com/GStones/moke-kit)
 
+#### English | [中文](./README_CN.md)
+
 ## What is moke-kit?
 
 moke-kit is a toolkit for building a [Domain-Driven Hexagon](https://github.com/Sairyss/domain-driven-hexagon)
@@ -32,6 +34,7 @@ Just like building with LEGO, you can assemble the service as you like.
     * HTTP[[grpc-gateway](https://github.com/grpc-ecosystem/grpc-gateway)]
     * TCP [[zinx](https://github.com/aceld/zinx)]
     * Websocket [[zinx](https://github.com/aceld/zinx)]
+    * KCP [[zinx](https://github.com/aceld/zinx)]
 * [MQ](https://github.com/GStones/moke-kit/tree/main/mq):
     * [nats](https://nats.io/)
 * [Orm](https://github.com/GStones/moke-kit/tree/main/orm):
