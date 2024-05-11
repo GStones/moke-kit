@@ -29,32 +29,26 @@ func (dsr *DocumentStoreResult) NewDocument(
 	mClient *mongo2.Client,
 	connect string,
 ) (err error) {
-	if mClient != nil {
-		dsr.DriverProvider = mongo.NewProvider(mClient, l)
-	}
-	if connect != "" {
-		if u, e := url.Parse(connect); e != nil {
-			err = e
-		} else {
-			switch u.Scheme {
-			case "mongodb", "mongodb+srv":
-				dsr.DriverProvider = mongo.NewProvider(mClient, l)
-			case "test":
-				l.Info("Connect to test", zap.String("url", "test"))
-				//dsr.DriverProvider, err = mock.NewDocumentStoreProvider()
-
-			default:
-				return nerrors.ErrInvalidNosqlURL
-			}
-			lc.Append(fx.Hook{
-				OnStop: func(context.Context) error {
-					return dsr.DriverProvider.Shutdown()
-				},
-			})
-		}
-	} else {
+	if connect == "" {
 		return nerrors.ErrMissingNosqlURL
 	}
+
+	if u, e := url.Parse(connect); e != nil {
+		err = e
+	} else {
+		switch u.Scheme {
+		case "mongodb", "mongodb+srv":
+			dsr.DriverProvider = mongo.NewProvider(mClient, l)
+		default:
+			return nerrors.ErrInvalidNosqlURL
+		}
+		lc.Append(fx.Hook{
+			OnStop: func(context.Context) error {
+				return dsr.DriverProvider.Shutdown()
+			},
+		})
+	}
+
 	return
 }
 
