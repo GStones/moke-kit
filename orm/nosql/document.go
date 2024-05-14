@@ -78,10 +78,18 @@ func (d *DocumentBase) Create() error {
 	return nil
 }
 
+type VersionCache struct {
+	Version any
+	Data    any
+}
+
 // Load loads this DocumentBase from its store if it exists.
 func (d *DocumentBase) Load() error {
 	d.clear()
-	if ok := d.cache.GetCache(d.Key, d.data); !ok {
+	if ok := d.cache.GetCache(d.Key, &VersionCache{
+		Version: &d.version,
+		Data:    d.data,
+	}); !ok {
 		if version, err := d.DocumentStore.Get(
 			d.Key,
 			noptions.WithDestination(d.data),
@@ -89,7 +97,10 @@ func (d *DocumentBase) Load() error {
 			return err
 		} else {
 			d.version = version
-			d.cache.SetCache(d.Key, d.data)
+			d.cache.SetCache(d.Key, &VersionCache{
+				Version: d.version,
+				Data:    d.data,
+			})
 		}
 	}
 	return nil
