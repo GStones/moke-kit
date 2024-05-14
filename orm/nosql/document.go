@@ -78,6 +78,7 @@ func (d *DocumentBase) Create() error {
 	return nil
 }
 
+// VersionCache is a cache of a version and its data structure.
 type VersionCache struct {
 	Version any
 	Data    any
