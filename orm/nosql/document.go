@@ -129,6 +129,7 @@ func (d *DocumentBase) doUpdate(f func() bool, u func() error) error {
 				return nil
 			} else {
 				time.Sleep(time.Millisecond * time.Duration(rand.Float32()*float32(r+1)*5))
+				d.cache.DeleteCache(d.Key)
 				if err := d.Load(); err != nil {
 					// a failed load is a real error
 					return err
