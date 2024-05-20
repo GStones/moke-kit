@@ -1,7 +1,9 @@
 package miface
 
+import "context"
+
 type MessageQueue interface {
-	Subscribe(topic string, handler SubResponseHandler, opts ...SubOption) (Subscription, error)
+	Subscribe(context context.Context, topic string, handler SubResponseHandler, opts ...SubOption) (Subscription, error)
 	Publish(topic string, opts ...PubOption) error
 }
 
