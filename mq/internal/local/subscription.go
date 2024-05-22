@@ -32,10 +32,7 @@ func CreateSubscription(
 			select {
 			case <-ctx.Done():
 				return
-			case msg, ok := <-msgIn:
-				if !ok {
-					return
-				}
+			case msg := <-msgIn:
 				if msg != nil {
 					m := msg2Message(topic, msg)
 					if code := sub.handler(m, nil); code == common.ConsumeNackTransientFailure {
