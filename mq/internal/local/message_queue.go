@@ -51,10 +51,8 @@ func (m *MessageQueue) Subscribe(
 func (m *MessageQueue) Publish(topic string, pOpts ...miface.PubOption) error {
 	if topic == "" {
 		return qerrors.ErrEmptyTopic
-	} else {
-		topic = common.NamespaceTopic(topic)
 	}
-
+	topic = common.NamespaceTopic(topic)
 	if options, err := miface.NewPubOptions(pOpts...); err != nil {
 		return err
 	} else if options.Delay != 0 {
