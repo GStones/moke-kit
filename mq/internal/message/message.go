@@ -1,4 +1,4 @@
-package nats
+package message
 
 import (
 	"github.com/gstones/moke-kit/mq/miface"

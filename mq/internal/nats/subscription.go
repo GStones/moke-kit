@@ -1,6 +1,7 @@
 package nats
 
 import (
+	"context"
 	"sync"
 
 	"github.com/google/uuid"
@@ -8,33 +9,29 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/gstones/moke-kit/mq/common"
+	"github.com/gstones/moke-kit/mq/internal/message"
 	"github.com/gstones/moke-kit/mq/internal/qerrors"
 	"github.com/gstones/moke-kit/mq/miface"
 )
 
 type Subscription struct {
-	topic       string
-	mutex       sync.Mutex
-	nSub        *nats.Subscription
-	handler     miface.SubResponseHandler
-	decoder     miface.Decoder
-	vPtrFactory miface.ValuePtrFactory
+	topic   string
+	mutex   sync.Mutex
+	nSub    *nats.Subscription
+	handler miface.SubResponseHandler
 }
 
 func NewSubscription(
+	ctx context.Context,
 	topic string,
 	conn *nats.Conn,
 	deliverySemantics common.DeliverySemantics,
 	queue string,
 	handler miface.SubResponseHandler,
-	decoder miface.Decoder,
-	vPtrFactory miface.ValuePtrFactory,
 ) (*Subscription, error) {
 	sub := &Subscription{
-		topic:       topic,
-		handler:     handler,
-		decoder:     decoder,
-		vPtrFactory: vPtrFactory,
+		topic:   topic,
+		handler: handler,
 	}
 
 	if deliverySemantics == common.Unset {
@@ -47,7 +44,6 @@ func NewSubscription(
 			return nil, err
 		} else {
 			sub.nSub = nSub
-			return sub, nil
 		}
 
 	case common.AtMostOnce:
@@ -59,12 +55,16 @@ func NewSubscription(
 			return nil, err
 		} else {
 			sub.nSub = nSub
-			return sub, nil
 		}
 
 	default:
 		return nil, errors.New("Unsupported delivery semantics type: " + string(deliverySemantics))
 	}
+	go func() {
+		<-ctx.Done()
+		_ = sub.Unsubscribe()
+	}()
+	return sub, nil
 }
 
 func (s *Subscription) IsValid() bool {
@@ -100,18 +100,8 @@ func (s *Subscription) handleMessage(nMsg *nats.Msg) {
 	}
 	if uid, err := uuid.NewUUID(); err != nil {
 		s.handler(nil, err)
-	} else if s.decoder != nil && s.vPtrFactory != nil {
-		vPtrMessage := s.vPtrFactory.NewVPtr()
-
-		if err := s.decoder.Decode(nMsg.Subject, nMsg.Data, vPtrMessage); err != nil {
-			s.handler(nil, err)
-		} else {
-			mqMsg := NewMessage(uid.String(), nMsg.Subject, nil, vPtrMessage)
-			s.handler(mqMsg, nil)
-		}
 	} else {
-		mqMsg := NewMessage(uid.String(), nMsg.Subject, nMsg.Data, nil)
-
+		mqMsg := message.NewMessage(uid.String(), nMsg.Subject, nMsg.Data, nil)
 		s.handler(mqMsg, nil)
 	}
 }

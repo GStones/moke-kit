@@ -1,6 +1,7 @@
 package nats
 
 import (
+	"context"
 	"net/url"
 
 	"github.com/nats-io/nats.go"
@@ -27,6 +28,7 @@ func NewMessageQueue(logger *zap.Logger, address string) (*MessageQueue, error) 
 }
 
 func (m *MessageQueue) Subscribe(
+	ctx context.Context,
 	topic string,
 	handler miface.SubResponseHandler,
 	sOpts ...miface.SubOption,
@@ -41,13 +43,13 @@ func (m *MessageQueue) Subscribe(
 		return nil, err
 	} else {
 		return NewSubscription(
+			ctx,
 			topic,
 			m.conn,
 			options.DeliverySemantics,
 			options.GroupId,
 			handler,
-			options.Decoder,
-			options.VPtrFactory)
+		)
 	}
 }
 
