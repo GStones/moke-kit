@@ -43,9 +43,8 @@ func (m *MessageQueue) Subscribe(
 ) (miface.Subscription, error) {
 	if topic == "" {
 		return nil, qerrors.ErrEmptyTopic
-	} else {
-		topic = common.NamespaceTopic(topic)
 	}
+	topic = common.NamespaceTopic(topic)
 	return CreateSubscription(ctx, topic, handler, m.subscriber)
 }
 
