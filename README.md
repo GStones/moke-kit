@@ -8,8 +8,7 @@
 
 ## What is moke-kit?
 
-moke-kit is a toolkit for building a [Domain-Driven Hexagon](https://github.com/Sairyss/domain-driven-hexagon)
-microservices/monolithic in Go. You can develop as a monolithic service and deploy it as a microservice.
+moke-kit is a toolkit for building a microservices/monolithic in Go. You can develop as a monolithic service and deploy it as a microservice.
 Just like building with LEGO, you can assemble the service as you like.
 
 ## Diagram

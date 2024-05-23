@@ -8,8 +8,7 @@
 
 ## 什么是 moke-kit?
 
-moke-kit 是一个[Domain-Driven Hexagon](https://github.com/Sairyss/domain-driven-hexagon)架构用于构建微服务/单体应用的基础框架。
-可以按照单体应用开发，生产环境部署为微服务模式。像玩LEGO积木一样，你可以按需灵活拼接不同类型的服务。
+moke-kit 是一个用于构建微服务/单体应用的基础框架。可以按照单体应用开发，生产环境部署为微服务模式。像玩LEGO积木一样，你可以按需灵活拼接不同类型的服务。
 
 ## 架构
 
