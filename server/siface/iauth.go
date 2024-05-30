@@ -1,5 +1,8 @@
 package siface
 
-type IAuth interface {
-	Auth(token string) (string, error)
+import "context"
+
+type IAuthMiddleware interface {
+	Auth(ctx context.Context) (context.Context, error)
+	AddUnAuthMethod(method string)
 }

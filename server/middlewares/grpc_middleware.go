@@ -22,7 +22,7 @@ import (
 
 func MakeServerOptions(
 	logger *zap.Logger,
-	authClient siface.IAuth,
+	authClient siface.IAuthMiddleware,
 	deployments utility.Deployments,
 	rateLimit int32,
 	opts ...grpc.ServerOption,
@@ -35,7 +35,7 @@ func MakeServerOptions(
 	rl := CreateRateLimiter(int(rateLimit))
 	ui := []grpc.UnaryServerInterceptor{
 		ratelimit.UnaryServerInterceptor(rl),
-		selector.UnaryServerInterceptor(auth.UnaryServerInterceptor(authFunc(authClient)), selector.MatchFunc(allBut)),
+		selector.UnaryServerInterceptor(auth.UnaryServerInterceptor(AuthFunc(authClient)), selector.MatchFunc(allBut)),
 		logging.UnaryServerInterceptor(
 			interceptorLogger(logger),
 			logging.WithLevels(logging.DefaultServerCodeToLevel),
@@ -45,7 +45,7 @@ func MakeServerOptions(
 	}
 	si := []grpc.StreamServerInterceptor{
 		ratelimit.StreamServerInterceptor(rl),
-		selector.StreamServerInterceptor(auth.StreamServerInterceptor(authFunc(authClient)), selector.MatchFunc(allBut)),
+		selector.StreamServerInterceptor(auth.StreamServerInterceptor(AuthFunc(authClient)), selector.MatchFunc(allBut)),
 		logging.StreamServerInterceptor(
 			interceptorLogger(logger),
 			logging.WithLevels(logging.DefaultServerCodeToLevel),
