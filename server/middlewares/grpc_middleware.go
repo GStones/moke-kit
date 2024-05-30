@@ -22,7 +22,7 @@ import (
 
 func MakeServerOptions(
 	logger *zap.Logger,
-	authClient siface.IAuth,
+	authClient siface.IAuthMiddleware,
 	deployments utility.Deployments,
 	rateLimit int32,
 	opts ...grpc.ServerOption,

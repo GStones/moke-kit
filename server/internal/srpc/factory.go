@@ -14,7 +14,7 @@ import (
 func NewGrpcServer(
 	logger *zap.Logger,
 	listener net.Listener,
-	auth siface.IAuth,
+	auth siface.IAuthMiddleware,
 	deployment string,
 	rateLimit int32,
 	opts ...grpc.ServerOption,

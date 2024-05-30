@@ -30,7 +30,7 @@ type ServiceBinder struct {
 	sfx.GrpcServiceParams    //all grpc service injected (grpc)
 	sfx.ZinxServiceParams    // all zinx service injected (tcp/udp/websocket)
 	sfx.GatewayServiceParams // all gateway service injected (http)
-	sfx.AuthServiceParams    // grpc rpc auth middleware injected
+	sfx.AuthMiddlewareParams // grpc rpc auth middleware injected
 	sfx.OTelProviderParams   // opentelemetry provider injected
 }
 
@@ -78,7 +78,7 @@ func (sb *ServiceBinder) bindGrpcServices(l *zap.Logger) (hooks []LifecycleHook,
 	} else if grpcServer, e := srpc.NewGrpcServer(
 		l,
 		listener,
-		sb.AuthService,
+		sb.AuthMiddleware,
 		sb.Deployment,
 		sb.RateLimit,
 	); e != nil {
