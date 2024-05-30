@@ -9,7 +9,7 @@ import (
 	"github.com/gstones/moke-kit/server/siface"
 )
 
-func AuthFunc(authClient siface.IAuthMiddleware) auth.AuthFunc {
+func authFunc(authClient siface.IAuthMiddleware) auth.AuthFunc {
 	return func(ctx context.Context) (context.Context, error) {
 		if authClient != nil {
 			return authClient.Auth(ctx)

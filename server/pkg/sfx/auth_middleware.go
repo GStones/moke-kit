@@ -6,14 +6,16 @@ import (
 	"github.com/gstones/moke-kit/server/siface"
 )
 
-// Auth module
+// Auth  middleware module
 
+// AuthMiddlewareParams module params
 type AuthMiddlewareParams struct {
 	fx.In
 
 	AuthMiddleware siface.IAuthMiddleware `name:"AuthMiddleware" optional:"true"`
 }
 
+// AuthMiddlewareResult module result
 type AuthMiddlewareResult struct {
 	fx.Out
 
