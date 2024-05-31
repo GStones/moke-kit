@@ -18,7 +18,8 @@ moke-kit 是一个用于构建微服务/单体应用的基础框架。可以按�
 
 * 使用 [uber/fx](https://github.com/uber-go/fx) 实现IOC(依赖注入控制反转)，可以按需组装不同类型服务。
 * 内置TLS，mTLS，快速构建[Zero Trust安全模型](https://www.wikiwand.com/en/Zero_trust_security_model)。
-* 内置中间件(rate limit, open telemetry, auth override,logging, panic recovery等)。
+* 内置[基于Token的认证](https://www.okta.com/identity-101/what-is-token-based-authentication/)，支持JWT token。
+* 内置中间件(rate limit, open telemetry, auth middleware,logging, panic recovery等)。
 * 内置[Cache-Aside模式](https://learn.microsoft.com/en-us/azure/architecture/patterns/cache-aside)数据缓存机制。
 * 内置[Compare-and-swap](https://www.wikiwand.com/en/Compare-and-swap)保证数据库操作的一致性。
 * 内置交互式命令行客户端，方便独立测试服务接口。

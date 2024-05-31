@@ -8,7 +8,8 @@
 
 ## What is moke-kit?
 
-moke-kit is a toolkit for building a microservices/monolithic in Go. You can develop as a monolithic service and deploy it as a microservice.
+moke-kit is a toolkit for building a microservices/monolithic in Go. You can develop as a monolithic service and deploy
+it as a microservice.
 Just like building with LEGO, you can assemble the service as you like.
 
 ## Diagram
@@ -18,8 +19,9 @@ Just like building with LEGO, you can assemble the service as you like.
 ## Features
 
 * Inversion of control with [uber/fx](https://github.com/uber-go/fx),assemble your service as you like.
-* Builtin TLS,mTLS to build [Zero Trust security](https://www.wikiwand.com/en/Zero_trust_security_model).
-* Builtin middlewares (rate limit, open telemetry, auth override,logging, panic recovery, etc.).
+* Builtin TLS, mTLS to build [Zero Trust security](https://www.wikiwand.com/en/Zero_trust_security_model).
+* Builtin [Token-based authentication](https://www.okta.com/identity-101/what-is-token-based-authentication/), support JWT token.
+* Builtin middlewares (rate limit, open telemetry, auth middleware,logging, panic recovery, etc.).
 * Builtin [Cache-Aside pattern](https://learn.microsoft.com/en-us/azure/architecture/patterns/cache-aside) for orm and
   nosql.
 * Builtin [Compare-and-swap](https://www.wikiwand.com/en/Compare-and-swap) to ensure db update consistency.
