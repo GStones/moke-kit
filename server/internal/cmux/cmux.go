@@ -11,7 +11,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/pkg/errors"
 	"github.com/soheilhy/cmux"
 	"go.uber.org/zap"
 
@@ -22,14 +21,12 @@ var (
 	httpMatcher     cmux.Matcher
 	grpcMatchWriter cmux.MatchWriter
 	wsl             cmux.Matcher
-	tcp             cmux.Matcher
 )
 
 func init() {
 	grpcMatchWriter = cmux.HTTP2MatchHeaderFieldSendSettings("content-type", "application/grpc")
 	wsl = cmux.HTTP1HeaderField("Upgrade", "websocket")
 	httpMatcher = cmux.HTTP1Fast()
-	tcp = cmux.Any()
 }
 
 type ConnectionMux struct {
@@ -40,41 +37,31 @@ type ConnectionMux struct {
 	tlsConfig *tls.Config
 }
 
-func (cm *ConnectionMux) GrpcListener() (listener net.Listener, err error) {
+func (cm *ConnectionMux) GrpcListener() (net.Listener, error) {
 	if cm.mux == nil {
-		err = errors.New("connection mux is not serving")
-	} else {
-		listener = cm.mux.MatchWithWriters(grpcMatchWriter)
+		if err := cm.init(); err != nil {
+			return nil, err
+		}
 	}
-	return
+	return cm.mux.MatchWithWriters(grpcMatchWriter), nil
 }
 
-func (cm *ConnectionMux) WSListener() (listener net.Listener, err error) {
+func (cm *ConnectionMux) WSListener() (net.Listener, error) {
 	if cm.mux == nil {
-		err = errors.New("connection mux is not serving")
-	} else {
-		listener = cm.mux.Match(wsl)
+		if err := cm.init(); err != nil {
+			return nil, err
+		}
 	}
-	return
+	return cm.mux.Match(wsl), nil
 }
 
 func (cm *ConnectionMux) HTTPListener() (listener net.Listener, err error) {
 	if cm.mux == nil {
-		err = errors.New("connection mux is not serving")
-	} else {
-		listener = cm.mux.Match(httpMatcher)
+		if err := cm.init(); err != nil {
+			return nil, err
+		}
 	}
-
-	return
-}
-
-func (cm *ConnectionMux) TCPListener() (listener net.Listener, err error) {
-	if cm.mux == nil {
-		err = errors.New("connection mux is not serving")
-	} else {
-		listener = cm.mux.Match(tcp)
-	}
-	return
+	return cm.mux.Match(httpMatcher), nil
 }
 
 func (cm *ConnectionMux) init() error {

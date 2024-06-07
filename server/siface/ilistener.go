@@ -13,7 +13,3 @@ type IHttpListener interface {
 type IWebSocketListener interface {
 	WSListener() (net.Listener, error)
 }
-
-type ITcpListener interface {
-	TCPListener() (net.Listener, error)
-}
