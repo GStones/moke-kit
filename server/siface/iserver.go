@@ -5,8 +5,9 @@ import (
 	"net/http"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	"github.com/gstones/zinx/ziface"
 	"google.golang.org/grpc"
+
+	"github.com/gstones/zinx/ziface"
 )
 
 type IServer interface {

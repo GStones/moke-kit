@@ -44,7 +44,9 @@ func (sb *ServiceBinder) Execute(l *zap.Logger, lc fx.Lifecycle) error {
 	); err != nil {
 		return err
 	} else {
-		connectionMuxHook(lc, sb.ConnectionMux)
+		if len(sb.GrpcServices) > 0 || len(sb.GatewayServices) > 0 {
+			connectionMuxHook(lc, sb.ConnectionMux)
+		}
 		for _, h := range hooks {
 			h(lc)
 		}

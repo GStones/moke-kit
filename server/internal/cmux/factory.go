@@ -12,7 +12,6 @@ func NewConnectionMux(
 		logger: logger,
 		port:   port,
 	}
-	err = result.init()
 	return
 }
 
@@ -31,7 +30,6 @@ func NewTlsConnectionMux(
 			port:      port,
 			tlsConfig: config,
 		}
-		err = result.init()
 	}
 
 	return
