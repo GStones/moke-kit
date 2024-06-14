@@ -65,7 +65,7 @@ func (rr *RedisResult) init(
 			DB:       1,
 		})
 	}
-	l.Info("Connecting redis", zap.String("host", n.CacheURL))
+	l.Info("Connecting redis", zap.String("url", n.CacheURL))
 	if rr.Redis != nil {
 		lc.Append(fx.Hook{
 			OnStop: func(ctx context.Context) error {
