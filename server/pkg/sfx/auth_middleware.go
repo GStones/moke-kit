@@ -8,14 +8,14 @@ import (
 
 // Auth  middleware module
 
-// AuthMiddlewareParams module params
+// AuthMiddlewareParams module params for injecting AuthMiddleware
 type AuthMiddlewareParams struct {
 	fx.In
 
 	AuthMiddleware siface.IAuthMiddleware `name:"AuthMiddleware" optional:"true"`
 }
 
-// AuthMiddlewareResult module result
+// AuthMiddlewareResult module result for exporting AuthMiddleware
 type AuthMiddlewareResult struct {
 	fx.Out
 

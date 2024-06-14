@@ -8,12 +8,12 @@ Bind,Manager and Run all services with [uber fx](https://github.com/uber-go/fx)
 
 ## Environment Variables
 
-| ENV        | Description                                                                                                          | Default |
-|------------|----------------------------------------------------------------------------------------------------------------------|---------|
-| APP_NAME   | Application name                                                                                                     | app     |
-| APP_ID     | Application id                                                                                                       | app     |
-| DEPLOYMENT | local,dev,prod <br/> prod: <br/>  logger change to production mod <br/> grpc will add recovery panic with middleware | local   |
-| VERSION    | Application version                                                                                                  | 0.0.1   |
+| ENV        | Description                                                                                                            | Default |
+|------------|------------------------------------------------------------------------------------------------------------------------|---------|
+| APP_NAME   | Application name                                                                                                       | app     |
+| APP_ID     | Application id                                                                                                         | app     |
+| DEPLOYMENT | local,dev,prod <br/> you can customize it as your need <br/>local_{name} = local, dev_{name} = dev, prod_{name} = prod | local   |
+| VERSION    | Application version                                                                                                    | 0.0.1   |
 
 
 

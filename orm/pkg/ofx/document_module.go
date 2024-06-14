@@ -23,18 +23,18 @@ type DocumentStoreResult struct {
 	DriverProvider diface.IDocumentProvider `name:"DriverProvider"`
 }
 
-func (dsr *DocumentStoreResult) NewDocument(
+func (dsr *DocumentStoreResult) init(
 	lc fx.Lifecycle,
 	l *zap.Logger,
 	mClient *mongo2.Client,
 	connect string,
-) (err error) {
+) error {
 	if connect == "" {
 		return nerrors.ErrMissingNosqlURL
 	}
 
 	if u, e := url.Parse(connect); e != nil {
-		err = e
+		return e
 	} else {
 		switch u.Scheme {
 		case "mongodb", "mongodb+srv":
@@ -49,7 +49,19 @@ func (dsr *DocumentStoreResult) NewDocument(
 		})
 	}
 
-	return
+	return nil
+}
+
+// CreateDocumentStore creates a new DocumentStoreResult.
+func CreateDocumentStore(
+	lc fx.Lifecycle,
+	l *zap.Logger,
+	mClient *mongo2.Client,
+	connect string,
+) (DocumentStoreResult, error) {
+	var dOut DocumentStoreResult
+	err := dOut.init(lc, l, mClient, connect)
+	return dOut, err
 }
 
 // DocumentStoreModule provides  to the mfx dependency graph.
@@ -60,10 +72,6 @@ var DocumentStoreModule = fx.Provide(
 		mp MongoParams,
 		sp SettingsParams,
 	) (dOut DocumentStoreResult, err error) {
-		err = dOut.NewDocument(
-			lc, l, mp.MongoClient,
-			sp.DatabaseURL,
-		)
-		return
+		return CreateDocumentStore(lc, l, mp.MongoClient, sp.DatabaseURL)
 	},
 )

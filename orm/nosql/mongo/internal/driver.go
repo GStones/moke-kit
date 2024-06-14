@@ -14,14 +14,19 @@ import (
 	"github.com/gstones/moke-kit/orm/nosql/key"
 )
 
+// DatabaseDriver is a driver for a MongoDB database.
 type DatabaseDriver struct {
 	database *mongo.Database
 }
 
+// GetName Name returns the name of this ICollection.
 func (dd *DatabaseDriver) GetName() string {
 	return dd.database.Name()
 }
 
+// Set with a key and options
+// If the version is not noVersion, then the version must match the version in the database,
+// Or it will return  error `ErrVersionNotMatch`
 func (dd *DatabaseDriver) Set(key key.Key, opts ...noptions.Option) (noptions.Version, error) {
 	coll := dd.database.Collection(key.Prefix())
 	if o, err := noptions.NewOptions(opts...); err != nil {
@@ -49,6 +54,7 @@ func (dd *DatabaseDriver) Set(key key.Key, opts ...noptions.Option) (noptions.Ve
 	}
 }
 
+// Get  data from mongoDB
 func (dd *DatabaseDriver) Get(key key.Key, opts ...noptions.Option) (noptions.Version, error) {
 	coll := dd.database.Collection(key.Prefix())
 	if o, err := noptions.NewOptions(opts...); err != nil {
@@ -118,6 +124,7 @@ func (dd *DatabaseDriver) Incr(key key.Key, field string, amount int32) (int64, 
 	return value, nil
 }
 
+// NewCollectionDriver creates a new DatabaseDriver.
 func NewCollectionDriver(database *mongo.Database) (*DatabaseDriver, error) {
 	return &DatabaseDriver{
 		database: database,

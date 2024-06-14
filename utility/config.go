@@ -10,6 +10,7 @@ import (
 	"github.com/kelseyhightower/envconfig"
 )
 
+// Load from environment and vault
 func Load(spec any) error {
 	if err := envconfig.Process("", spec); err != nil {
 		return err

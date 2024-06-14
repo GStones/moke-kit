@@ -6,8 +6,7 @@ import (
 	"github.com/gstones/moke-kit/utility"
 )
 
-// Client&Server mTls settings module
-
+// SecuritySettingsParams module params for injecting SecuritySettings
 type SecuritySettingsParams struct {
 	fx.In
 
@@ -32,6 +31,7 @@ type SecuritySettingsParams struct {
 	TCPTlsEnable bool `name:"TCPTlsEnable"`
 }
 
+// SecuritySettingsResult module result for exporting SecuritySettings
 type SecuritySettingsResult struct {
 	fx.Out
 
@@ -55,14 +55,19 @@ type SecuritySettingsResult struct {
 	TcpTlsEnable bool `name:"TCPTlsEnable" envconfig:"TCP_TLS_ENABLE" default:"false"`
 }
 
-func (g *SecuritySettingsResult) LoadFromEnv() (err error) {
-	err = utility.Load(g)
+func (g *SecuritySettingsResult) loadFromEnv() error {
+	return utility.Load(g)
+}
+
+// CreateSecuritySettings load server settings from environment
+func CreateSecuritySettings() (out SecuritySettingsResult, err error) {
+	err = out.loadFromEnv()
 	return
 }
 
+// SecuritySettingsModule module for SecuritySettings
 var SecuritySettingsModule = fx.Provide(
-	func() (out SecuritySettingsResult, err error) {
-		err = out.LoadFromEnv()
-		return
+	func() (SecuritySettingsResult, error) {
+		return CreateSecuritySettings()
 	},
 )

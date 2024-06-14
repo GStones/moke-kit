@@ -15,18 +15,23 @@ import (
 // RedisParams provides the RedisParams to the mfx dependency graph.
 type RedisParams struct {
 	fx.In
+
+	//use redis db 0
 	Redis *goredis.Client `name:"Redis"`
+	//use redis db 1
 	Cache *goredis.Client `name:"Cache"`
 }
 
 // RedisResult provides the RedisResult to the mfx dependency graph.
 type RedisResult struct {
 	fx.Out
+	//use redis db 0
 	Redis *goredis.Client `name:"Redis"`
+	//use redis db 1
 	Cache *goredis.Client `name:"Cache"`
 }
 
-func (rr *RedisResult) Execute(
+func (rr *RedisResult) init(
 	lc fx.Lifecycle,
 	l *zap.Logger,
 	n SettingsParams,
@@ -60,8 +65,7 @@ func (rr *RedisResult) Execute(
 			DB:       1,
 		})
 	}
-	l.Info("Connecting to redis", zap.String("host", n.CacheURL))
-
+	l.Info("Connecting redis", zap.String("url", n.CacheURL))
 	if rr.Redis != nil {
 		lc.Append(fx.Hook{
 			OnStop: func(ctx context.Context) error {
@@ -73,6 +77,17 @@ func (rr *RedisResult) Execute(
 	return nil
 }
 
+// CreateRedis creates a new Redis driver
+func CreateRedis(
+	lc fx.Lifecycle,
+	l *zap.Logger,
+	n SettingsParams,
+) (RedisResult, error) {
+	var out RedisResult
+	err := out.init(lc, l, n)
+	return out, err
+}
+
 // RedisModule is the module for redis driver
 // github.com/redis/go-redis/v9
 var RedisModule = fx.Provide(
@@ -80,8 +95,7 @@ var RedisModule = fx.Provide(
 		lc fx.Lifecycle,
 		l *zap.Logger,
 		n SettingsParams,
-	) (out RedisResult, err error) {
-		err = out.Execute(lc, l, n)
-		return
+	) (RedisResult, error) {
+		return CreateRedis(lc, l, n)
 	},
 )

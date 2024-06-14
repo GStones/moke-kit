@@ -13,6 +13,7 @@ import (
 	"github.com/gstones/moke-kit/orm/nosql/mongo/internal"
 )
 
+// NewProvider returns a new IDocumentProvider.
 func NewProvider(
 	mClient *mongo.Client,
 	logger *zap.Logger,
@@ -20,6 +21,7 @@ func NewProvider(
 	return internal.NewDriverProvider(mClient, logger)
 }
 
+// NewMongoClient returns a new mongo driver client.
 func NewMongoClient(
 	opts *options.ClientOptions,
 ) (*mongo.Client, error) {

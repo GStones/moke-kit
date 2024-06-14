@@ -9,11 +9,11 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 
 	"github.com/gstones/moke-kit/utility"
 )
 
+// GatewayServer is the struct for the gateway server.
 type GatewayServer struct {
 	logger   *zap.Logger
 	server   *http.Server
@@ -22,6 +22,7 @@ type GatewayServer struct {
 	opts     []grpc.DialOption
 }
 
+// StartServing starts the gateway server.
 func (gs *GatewayServer) StartServing(_ context.Context) error {
 	gs.logger.Info(
 		"grpc gateway start serving",
@@ -43,6 +44,7 @@ func (gs *GatewayServer) StartServing(_ context.Context) error {
 	return nil
 }
 
+// StopServing stops the gateway server.
 func (gs *GatewayServer) StopServing(ctx context.Context) error {
 	if err := gs.server.Shutdown(ctx); err != nil {
 		return err
@@ -50,44 +52,26 @@ func (gs *GatewayServer) StopServing(ctx context.Context) error {
 	return nil
 }
 
+// GatewayServer returns the gateway server.
 func (gs *GatewayServer) GatewayServer() *http.Server {
 	return gs.server
 }
 
+// GatewayRuntimeMux returns the gateway runtime mux.
 func (gs *GatewayServer) GatewayRuntimeMux() *runtime.ServeMux {
 	return gs.mux
 }
 
+// GatewayOption returns the gateway option.
 func (gs *GatewayServer) GatewayOption() []grpc.DialOption {
 	return gs.opts
 }
 
+// Endpoint returns the endpoint.
 func (gs *GatewayServer) Endpoint() string {
 	return gs.server.Addr
 }
 
-func NewGatewayServer(
-	logger *zap.Logger,
-	listener net.Listener,
-) (result *GatewayServer, err error) {
-	mux := runtime.NewServeMux(
-		runtime.WithIncomingHeaderMatcher(Matcher),
-		runtime.WithOutgoingHeaderMatcher(Matcher),
-	)
-	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
-	server := &http.Server{
-		Addr:    listener.Addr().String(),
-		Handler: allowCORS(withLogger(mux)),
-	}
-	result = &GatewayServer{
-		logger:   logger,
-		server:   server,
-		mux:      mux,
-		opts:     opts,
-		listener: listener,
-	}
-	return
-}
 func allowCORS(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if origin := r.Header.Get("Origin"); origin != "" {
@@ -117,7 +101,7 @@ func withLogger(h http.Handler) http.Handler {
 	})
 }
 
-func Matcher(key string) (string, bool) {
+func matcher(key string) (string, bool) {
 	switch key {
 	case string(utility.TokenContextKey):
 		return key, true

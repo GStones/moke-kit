@@ -6,6 +6,7 @@ import (
 	"github.com/gstones/moke-kit/server/pkg/sfx"
 )
 
+// Module is the module for the server.
 var Module = fx.Module("server",
 	sfx.SecuritySettingsModule,
 	sfx.SettingsModule,

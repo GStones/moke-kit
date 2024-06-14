@@ -1,7 +1,6 @@
 package middlewares
 
 import (
-	"runtime/debug"
 	"time"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/auth"
@@ -13,13 +12,13 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 
 	"github.com/gstones/moke-kit/server/siface"
 	"github.com/gstones/moke-kit/utility"
 )
 
+// MakeServerOptions creates a set of grpc server options
+// options include: rate limit, auth, logging, recovery, and opentelemetry etc.
 func MakeServerOptions(
 	logger *zap.Logger,
 	authClient siface.IAuthMiddleware,
@@ -27,10 +26,6 @@ func MakeServerOptions(
 	rateLimit int32,
 	opts ...grpc.ServerOption,
 ) []grpc.ServerOption {
-	grpcPanicRecoveryHandler := func(p any) (err error) {
-		logger.Error("recovered from panic", zap.Any("panic", p), zap.String("stack", string(debug.Stack())))
-		return status.Errorf(codes.Internal, "%s", p)
-	}
 
 	rl := CreateRateLimiter(int(rateLimit))
 	ui := []grpc.UnaryServerInterceptor{
@@ -67,7 +62,6 @@ func MakeServerOptions(
 	if opts != nil {
 		interceptorOpts = append(interceptorOpts, opts...)
 	}
-	logger.Info("grpc server interceptor options", zap.Any("options", interceptorOpts))
 	return interceptorOpts
 }
 
@@ -96,6 +90,5 @@ func MakeClientOptions(
 		grpc.WithChainUnaryInterceptor(ui...),
 		grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
 	}
-	logger.Info("grpc client interceptor options", zap.Any("options", interceptorOpts))
 	return interceptorOpts
 }

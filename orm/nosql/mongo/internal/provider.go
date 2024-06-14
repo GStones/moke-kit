@@ -27,6 +27,7 @@ func (dp *DriverProvider) OpenDbDriver(name string) (diface.ICollection, error) 
 	}
 }
 
+// NewDriverProvider returns a new DriverProvider.
 func NewDriverProvider(
 	mClient *mongo.Client,
 	logger *zap.Logger,

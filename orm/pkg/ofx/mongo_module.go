@@ -23,11 +23,11 @@ type MongoResult struct {
 	MongoClient *mongo2.Client `name:"MongoClient"`
 }
 
-func (mr *MongoResult) NewDocument(
+func (mr *MongoResult) init(
 	lc fx.Lifecycle,
 	l *zap.Logger,
 	n SettingsParams,
-) (err error) {
+) error {
 	if n.DatabaseURL == "" {
 		return nil
 	}
@@ -44,15 +44,31 @@ func (mr *MongoResult) NewDocument(
 		}
 		cOptions.Auth.Password = n.DatabasePassword
 	}
-	l.Info("Connect to mongodb", zap.String("url", n.DatabaseURL))
-	mr.MongoClient, err = mongo.NewMongoClient(cOptions)
+	l.Info("Connecting mongodb", zap.String("url", n.DatabaseURL))
+	client, err := mongo.NewMongoClient(cOptions)
+	if err != nil {
+		l.Error("Failed to connect mongodb", zap.Error(err))
+		return err
+	}
+	mr.MongoClient = client
 	lc.Append(fx.Hook{
 		OnStop: func(ctx context.Context) error {
 			return mr.MongoClient.Disconnect(ctx)
 		},
 	})
 
-	return
+	return nil
+}
+
+// CreateMongoDriver creates a new Mongo driver client.
+func CreateMongoDriver(
+	lc fx.Lifecycle,
+	l *zap.Logger,
+	n SettingsParams,
+) (MongoResult, error) {
+	var dOut MongoResult
+	err := dOut.init(lc, l, n)
+	return dOut, err
 }
 
 // MongoPureModule is the module for mongo driver
@@ -62,8 +78,7 @@ var MongoPureModule = fx.Provide(
 		lc fx.Lifecycle,
 		l *zap.Logger,
 		n SettingsParams,
-	) (dOut MongoResult, err error) {
-		err = dOut.NewDocument(lc, l, n)
-		return
+	) (MongoResult, error) {
+		return CreateMongoDriver(lc, l, n)
 	},
 )

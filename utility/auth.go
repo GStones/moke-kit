@@ -4,6 +4,7 @@ import (
 	"context"
 )
 
+// Tag is the type for the auth tag,
 type Tag string
 
 func (t Tag) String() string {
