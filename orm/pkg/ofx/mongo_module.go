@@ -47,6 +47,7 @@ func (mr *MongoResult) init(
 	l.Info("Connecting mongodb", zap.String("url", n.DatabaseURL))
 	client, err := mongo.NewMongoClient(cOptions)
 	if err != nil {
+		l.Error("Failed to connect mongodb", zap.Error(err))
 		return err
 	}
 	mr.MongoClient = client

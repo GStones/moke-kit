@@ -33,6 +33,7 @@ type ServiceBinder struct {
 	sfx.OTelProviderParams   // opentelemetry provider injected
 }
 
+// Bind all types service to the specified server
 func (sb *ServiceBinder) Bind(l *zap.Logger, lc fx.Lifecycle) error {
 	if hooks, err := bind(
 		l,

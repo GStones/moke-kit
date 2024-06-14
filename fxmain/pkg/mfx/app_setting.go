@@ -39,6 +39,7 @@ func (ar *AppResult) loadFromEnv() error {
 	return nil
 }
 
+// CreateAppModule load the application settings from the environment.
 func CreateAppModule() (AppResult, error) {
 	out := AppResult{}
 	err := out.loadFromEnv()

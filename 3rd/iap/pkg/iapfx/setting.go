@@ -48,6 +48,7 @@ func (s *SettingResult) loadFromEnv() error {
 	return utility.Load(s)
 }
 
+// CreateSetting load IAP settings from environment
 func CreateSetting() (SettingResult, error) {
 	var out SettingResult
 	err := out.loadFromEnv()

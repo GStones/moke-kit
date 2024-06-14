@@ -44,6 +44,7 @@ func (cmr *ConnectionMuxResult) init(
 	return nil
 }
 
+// CreateConnectionMux creates a connection mux for the server
 func CreateConnectionMux(
 	l *zap.Logger,
 	g SettingsParams,

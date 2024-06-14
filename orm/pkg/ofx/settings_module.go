@@ -38,12 +38,14 @@ func (sr *SettingsResult) loadFromEnv() error {
 	return utility.Load(sr)
 }
 
+// CreateSettings load orm settings from environment
 func CreateSettings() (SettingsResult, error) {
 	var out SettingsResult
 	err := out.loadFromEnv()
 	return out, err
 }
 
+// SettingsModule is a module that provides the settings.
 var SettingsModule = fx.Provide(
 	func() (SettingsResult, error) {
 		return CreateSettings()

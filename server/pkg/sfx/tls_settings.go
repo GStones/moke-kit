@@ -59,11 +59,13 @@ func (g *SecuritySettingsResult) loadFromEnv() error {
 	return utility.Load(g)
 }
 
+// CreateSecuritySettings load server settings from environment
 func CreateSecuritySettings() (out SecuritySettingsResult, err error) {
 	err = out.loadFromEnv()
 	return
 }
 
+// SecuritySettingsModule module for SecuritySettings
 var SecuritySettingsModule = fx.Provide(
 	func() (SecuritySettingsResult, error) {
 		return CreateSecuritySettings()

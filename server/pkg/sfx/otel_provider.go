@@ -99,6 +99,7 @@ func initMeterProvider(appSetting mfx.AppParams) (*sdkmetric.MeterProvider, erro
 	return mp, nil
 }
 
+// CreateOTelProvider creates a OTelProvider with the given settings
 func CreateOTelProvider(
 	appSetting mfx.AppParams,
 	sSetting SettingsParams,
