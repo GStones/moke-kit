@@ -36,14 +36,20 @@ type AgonesSettingsResult struct {
 	ServerCaCert       string `name:"AllocateServerCaCert" envconfig:"ALLOCATE_SERVER_CA_CERT" default:"./configs/agones/ca.crt"`
 }
 
-func (g *AgonesSettingsResult) LoadFromEnv() (err error) {
-	err = utility.Load(g)
-	return
+func (as *AgonesSettingsResult) loadFromEnv() error {
+	return utility.Load(as)
 }
 
+// CreateAgonesSettingsModule creates an AgonesSettingsModule
+func CreateAgonesSettingsModule() (AgonesSettingsResult, error) {
+	out := AgonesSettingsResult{}
+	err := out.loadFromEnv()
+	return out, err
+}
+
+// SettingsModule is a fx module that provides an AgonesSettingsModule
 var SettingsModule = fx.Provide(
 	func() (out AgonesSettingsResult, err error) {
-		err = out.LoadFromEnv()
-		return
+		return CreateAgonesSettingsModule()
 	},
 )

@@ -18,6 +18,7 @@ const (
 	WsServerMod  string = "websocket"
 )
 
+// NewZinxServer creates a new zinx server with the given settings.
 func NewZinxServer(
 	logger *zap.Logger,
 	serverSetting sfx.SettingsParams,
@@ -31,7 +32,6 @@ func NewZinxServer(
 	zconf.GlobalObject.Name = name
 	zconf.GlobalObject.Version = version
 	if deploy.IsProd() {
-		// close zinx debug/info log
 		zconf.GlobalObject.LogIsolationLevel = 2
 	}
 	zconf.GlobalObject.WsPort = int(serverSetting.ZinxWSPort)

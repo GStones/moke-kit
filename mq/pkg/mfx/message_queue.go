@@ -31,17 +31,23 @@ type MQImplementations struct {
 	LocalMQ miface.MessageQueue `name:"LocalMQ" optional:"true"`
 }
 
-func (g *MessageQueueResult) Execute(deploy utility.Deployments, i MQImplementations) (err error) {
-	common.SetNamespace(deploy.String())
-	g.MessageQueue = internal.NewMessageQueue(i.KafkaMQ, i.NatsMQ, i.NsqMQ, i.LocalMQ)
-
+func (g *MessageQueueResult) init(mqs MQImplementations) (err error) {
+	g.MessageQueue = internal.NewMessageQueue(mqs.KafkaMQ, mqs.NatsMQ, mqs.NsqMQ, mqs.LocalMQ)
 	return nil
 }
 
+// CreateMessageQueueModule creates a new message queue module.
+func CreateMessageQueueModule(deploy utility.Deployments, mqs MQImplementations) (MessageQueueResult, error) {
+	common.SetNamespace(deploy.String())
+	out := MessageQueueResult{}
+	err := out.init(mqs)
+	return out, err
+}
+
+// MqModule is a module that provides the message queue.
 var MqModule = fx.Provide(
-	func(ap mfx.AppParams, i MQImplementations) (out MessageQueueResult, err error) {
+	func(ap mfx.AppParams, mqs MQImplementations) (out MessageQueueResult, err error) {
 		deployment := utility.ParseDeployments(ap.Deployment)
-		err = out.Execute(deployment, i)
-		return
+		return CreateMessageQueueModule(deployment, mqs)
 	},
 )

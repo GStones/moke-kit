@@ -16,6 +16,8 @@ type RateLimiter struct {
 	tokenLimiter *rate.Limiter
 }
 
+// CreateRateLimiter creates a rate limiter
+// here we use golang.org/x/time/rate
 func CreateRateLimiter(num int) *RateLimiter {
 	tokenLimiter := rate.NewLimiter(rate.Limit(num), num)
 	return &RateLimiter{

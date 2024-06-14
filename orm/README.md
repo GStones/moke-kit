@@ -18,5 +18,6 @@ Database Adapter
 | DATABASE_USER     | Database username | ""                        |
 | DATABASE_PASSWORD | Database password | ""                        |
 | CACHE_URL         | Cache host        | redis://localhost:6379    |
+| CACHE_USER        | Cache username    | ""                        |
 | CACHE_PASSWORD    | Cache password    | ""                        |
 

@@ -32,14 +32,21 @@ type SettingsResult struct {
 	NatsUrl string `name:"NatsUrl" envconfig:"NATS_URL" default:"nats://localhost:4222"`
 }
 
-func (ar *SettingsResult) LoadFromEnv() (err error) {
+func (ar *SettingsResult) loadFromEnv() (err error) {
 	err = utility.Load(ar)
 	return
 }
 
+// CreateSettingsModule creates a new settings module.
+func CreateSettingsModule() (SettingsResult, error) {
+	out := SettingsResult{}
+	err := out.loadFromEnv()
+	return out, err
+}
+
+// SettingModule is a module that provides the settings.
 var SettingModule = fx.Provide(
 	func() (out SettingsResult, err error) {
-		err = out.LoadFromEnv()
-		return
+		return CreateSettingsModule()
 	},
 )

@@ -21,22 +21,30 @@ type RedisCacheResult struct {
 }
 
 // Execute initializes the RedisCacheResult.
-func (c *RedisCacheResult) Execute(
+func (c *RedisCacheResult) init(
 	l *zap.Logger,
 	rParams RedisParams,
-) (err error) {
+) error {
 	c.RedisCache = cache.CreateRedisCache(l, rParams.Cache)
-	return
+	return nil
+}
+
+// CreateRedisCache creates a redis cathe .
+func CreateRedisCache(
+	l *zap.Logger,
+	rParams RedisParams,
+) (RedisCacheResult, error) {
+	var out RedisCacheResult
+	err := out.init(l, rParams)
+	return out, err
 }
 
 // RedisCacheModule provides the RedisCacheModule to the mfx dependency graph.
 var RedisCacheModule = fx.Provide(
 	func(
-		lc fx.Lifecycle,
 		l *zap.Logger,
 		rParams RedisParams,
-	) (out RedisCacheResult, err error) {
-		err = out.Execute(l, rParams)
-		return
+	) (RedisCacheResult, error) {
+		return CreateRedisCache(l, rParams)
 	},
 )

@@ -8,35 +8,54 @@ import (
 	"github.com/gstones/moke-kit/server/siface"
 )
 
+// https://github.com/soheilhy/cmux
 // ConnectionMux module:listen and serve same port for different protocols
-// github.com/soheilhy/cmux
 
+// ConnectionMuxParams module params for injecting ConnectionMux
 type ConnectionMuxParams struct {
 	fx.In
 	ConnectionMux siface.IConnectionMux `name:"ConnectionMux"`
 }
 
+// ConnectionMuxResult module result for exporting ConnectionMux
 type ConnectionMuxResult struct {
 	fx.Out
 	ConnectionMux siface.IConnectionMux `name:"ConnectionMux"`
 }
 
-func (cmr *ConnectionMuxResult) Execute(
+func (cmr *ConnectionMuxResult) init(
 	l *zap.Logger,
 	g SettingsParams,
 	s SecuritySettingsParams,
-) (err error) {
+) error {
 	if s.TLSEnable {
-		cmr.ConnectionMux, err = cmux.NewTlsConnectionMux(l, g.Port, s.ServerCert, s.ServerKey, s.ClientCaCert)
+		mux, err := cmux.NewTlsConnectionMux(l, g.Port, s.ServerCert, s.ServerKey, s.ClientCaCert)
+		if err != nil {
+			return err
+		}
+		cmr.ConnectionMux = mux
 	} else {
-		cmr.ConnectionMux, err = cmux.NewConnectionMux(l, g.Port)
+		mux, err := cmux.NewConnectionMux(l, g.Port)
+		if err != nil {
+			return err
+		}
+		cmr.ConnectionMux = mux
 	}
+	return nil
+}
+
+func CreateConnectionMux(
+	l *zap.Logger,
+	g SettingsParams,
+	s SecuritySettingsParams,
+) (out ConnectionMuxResult, err error) {
+	err = out.init(l, g, s)
 	return
 }
 
+// ConnectionMuxModule module for ConnectionMux
 var ConnectionMuxModule = fx.Provide(
-	func(l *zap.Logger, g SettingsParams, s SecuritySettingsParams) (out ConnectionMuxResult, err error) {
-		err = out.Execute(l, g, s)
-		return
+	func(l *zap.Logger, g SettingsParams, s SecuritySettingsParams) (ConnectionMuxResult, error) {
+		return CreateConnectionMux(l, g, s)
 	},
 )

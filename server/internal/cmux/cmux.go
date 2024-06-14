@@ -29,6 +29,8 @@ func init() {
 	httpMatcher = cmux.HTTP1Fast()
 }
 
+// ConnectionMux is the struct for the connection mux.
+// https://github.com/soheilhy/cmux
 type ConnectionMux struct {
 	logger    *zap.Logger
 	listener  net.Listener
@@ -37,6 +39,7 @@ type ConnectionMux struct {
 	tlsConfig *tls.Config
 }
 
+// GrpcListener returns the grpc listener from the connection mux.
 func (cm *ConnectionMux) GrpcListener() (net.Listener, error) {
 	if cm.mux == nil {
 		if err := cm.init(); err != nil {
@@ -46,6 +49,7 @@ func (cm *ConnectionMux) GrpcListener() (net.Listener, error) {
 	return cm.mux.MatchWithWriters(grpcMatchWriter), nil
 }
 
+// WSListener returns the websocket listener from the connection mux.
 func (cm *ConnectionMux) WSListener() (net.Listener, error) {
 	if cm.mux == nil {
 		if err := cm.init(); err != nil {
@@ -55,6 +59,7 @@ func (cm *ConnectionMux) WSListener() (net.Listener, error) {
 	return cm.mux.Match(wsl), nil
 }
 
+// HTTPListener returns the http listener from the connection mux.
 func (cm *ConnectionMux) HTTPListener() (listener net.Listener, err error) {
 	if cm.mux == nil {
 		if err := cm.init(); err != nil {
@@ -76,6 +81,7 @@ func (cm *ConnectionMux) init() error {
 	return nil
 }
 
+// StartServing starts the connection mux.
 func (cm *ConnectionMux) StartServing(_ context.Context) error {
 	go func() {
 		if err := cm.mux.Serve(); err != nil {
@@ -97,11 +103,14 @@ func (cm *ConnectionMux) StartServing(_ context.Context) error {
 	return nil
 }
 
+// StopServing stops the connection mux.
 func (cm *ConnectionMux) StopServing(_ context.Context) error {
 	cm.mux.Close()
 	return nil
 }
 
+// NewConnectionMux creates a new connection mux.
+// Watch the tls certificate and reload it when it changes.
 func makeTLSConfig(logger *zap.Logger, tlsCert, tlsKey string, clientCa string) (*tls.Config, error) {
 	if cert, err := tls.LoadX509KeyPair(tlsCert, tlsKey); err != nil {
 		return nil, err

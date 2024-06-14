@@ -9,12 +9,18 @@ import (
 type SettingsParams struct {
 	fx.In
 
-	DatabaseURL      string `name:"DatabaseURL"`
-	DatabaseUser     string `name:"DatabaseUser"`     // will replace  database url username
-	DatabasePassword string `name:"DatabasePassword"` // will replace  database url password
-	CacheURL         string `name:"CacheURL"`
-	CacheUser        string `name:"CacheUser"`     // will replace  cache url username
-	CachePassword    string `name:"CachePassword"` // will replace  cache url password
+	// DatabaseURL is the url of the database(mongodb).
+	DatabaseURL string `name:"DatabaseURL"`
+	// will replace  database url username
+	DatabaseUser string `name:"DatabaseUser"`
+	// will replace  database url password
+	DatabasePassword string `name:"DatabasePassword"`
+	// CacheURL is the url of the cache(redis).
+	CacheURL string `name:"CacheURL"`
+	// will replace  cache url username
+	CacheUser string `name:"CacheUser"`
+	// will replace  cache url password
+	CachePassword string `name:"CachePassword"`
 }
 
 type SettingsResult struct {
@@ -28,14 +34,18 @@ type SettingsResult struct {
 	CachePassword    string `name:"CachePassword" envconfig:"CACHE_PASSWORD" default:""`
 }
 
-func (sr *SettingsResult) LoadFromEnv() (err error) {
-	err = utility.Load(sr)
-	return
+func (sr *SettingsResult) loadFromEnv() error {
+	return utility.Load(sr)
+}
+
+func CreateSettings() (SettingsResult, error) {
+	var out SettingsResult
+	err := out.loadFromEnv()
+	return out, err
 }
 
 var SettingsModule = fx.Provide(
-	func() (out SettingsResult, err error) {
-		err = out.LoadFromEnv()
-		return
+	func() (SettingsResult, error) {
+		return CreateSettings()
 	},
 )

@@ -13,19 +13,28 @@ type NatsResult struct {
 	NatsMQ miface.MessageQueue `name:"NatsMQ"`
 }
 
-func (k *NatsResult) Execute(logger *zap.Logger, s SettingsParams) (err error) {
-	k.NatsMQ, err = nats.NewMessageQueue(logger, s.NatsUrl)
+func (k *NatsResult) init(logger *zap.Logger, s SettingsParams) error {
+	mq, err := nats.NewMessageQueue(logger, s.NatsUrl)
 	if err != nil {
 		logger.Error("Nats message queue connect failure:",
 			zap.Error(err),
 			zap.String("address", s.NatsUrl))
+		return err
 	}
-	return err
+	k.NatsMQ = mq
+	return nil
 }
 
+// CreateNatsModule creates a new nats message queue module.
+func CreateNatsModule(l *zap.Logger, s SettingsParams) (NatsResult, error) {
+	out := NatsResult{}
+	err := out.init(l, s)
+	return out, err
+}
+
+// NatsModule is the module for nats message queue
 var NatsModule = fx.Provide(
-	func(l *zap.Logger, s SettingsParams) (out NatsResult, err error) {
-		err = out.Execute(l, s)
-		return
+	func(l *zap.Logger, s SettingsParams) (NatsResult, error) {
+		return CreateNatsModule(l, s)
 	},
 )

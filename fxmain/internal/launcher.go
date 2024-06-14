@@ -15,8 +15,9 @@ type launchParams struct {
 	Logger    *zap.Logger
 }
 
+// Launch launches the server
 func Launch(in launchParams) (err error) {
-	if err := in.ServiceBinder.Execute(in.Logger, in.Lifecycle); err != nil {
+	if err := in.ServiceBinder.Bind(in.Logger, in.Lifecycle); err != nil {
 		return err
 	}
 	return err

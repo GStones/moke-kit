@@ -53,14 +53,17 @@ type SettingsResult struct {
 	MaxMsgChanLen uint32 `name:"MaxMsgChanLen" envconfig:"MAX_MSG_CHAN_LEN" default:"1024"`
 }
 
-func (g *SettingsResult) LoadFromEnv() (err error) {
-	err = utility.Load(g)
+func (g *SettingsResult) loadFromEnv() error {
+	return utility.Load(g)
+}
+
+func CreateSettings() (out SettingsResult, err error) {
+	err = out.loadFromEnv()
 	return
 }
 
 var SettingsModule = fx.Provide(
 	func() (out SettingsResult, err error) {
-		err = out.LoadFromEnv()
-		return
+		return CreateSettings()
 	},
 )

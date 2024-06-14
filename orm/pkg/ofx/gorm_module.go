@@ -32,20 +32,19 @@ type GormDriverResult struct {
 	Dialector gorm.Dialector `name:"Dialector"`
 }
 
-func (mr *GormResult) NewDocument(
+func (mr *GormResult) init(
 	lc fx.Lifecycle,
 	logger *zap.Logger,
 	dialector gorm.Dialector,
-) (err error) {
+) error {
 	if dialector == nil {
 		logger.Info("no gorm driver")
-		return
+		return nil
 	} else if db, err := gorm.Open(dialector, &gorm.Config{}); err != nil {
 		return err
 	} else {
 		logger.Info("open gorm driver", zap.String("dialector", dialector.Name()))
 		mr.GormDB = db
-
 		lc.Append(fx.Hook{
 			OnStop: func(ctx context.Context) error {
 				logger.Info("close gorm driver", zap.String("dialector", dialector.Name()))
@@ -56,9 +55,21 @@ func (mr *GormResult) NewDocument(
 				return sqlDB.Close()
 			},
 		})
-
 	}
-	return
+	return nil
+}
+
+// CreateGormDriver creates a new gorm driver
+func CreateGormDriver(
+	lc fx.Lifecycle,
+	logger *zap.Logger,
+	dialector gorm.Dialector,
+) (GormResult, error) {
+	var mr GormResult
+	if err := mr.init(lc, logger, dialector); err != nil {
+		return mr, err
+	}
+	return mr, nil
 }
 
 // GormModule is the module for gorm driver
@@ -68,8 +79,7 @@ var GormModule = fx.Provide(
 		lc fx.Lifecycle,
 		l *zap.Logger,
 		dParams GormDriverParams,
-	) (dOut GormResult, err error) {
-		err = dOut.NewDocument(lc, l, dParams.Dialector)
-		return
+	) (GormResult, error) {
+		return CreateGormDriver(lc, l, dParams.Dialector)
 	},
 )

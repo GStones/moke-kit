@@ -2,7 +2,6 @@ package module
 
 import (
 	"context"
-	"reflect"
 
 	"go.uber.org/fx"
 	"go.uber.org/zap"
@@ -17,8 +16,8 @@ import (
 type LifecycleHook = func(lc fx.Lifecycle)
 type BinderFunc func(*zap.Logger) ([]LifecycleHook, error)
 
-// ServiceBinder bind all registers services(http/grpc/tcp/udp/websocket) to server
-
+// ServiceBinder bind all register services to the server
+// Service types: grpc, zinx, gateway and opentelemetry provider
 type ServiceBinder struct {
 	fx.In
 	mfx.AppParams // app settings params
@@ -34,7 +33,7 @@ type ServiceBinder struct {
 	sfx.OTelProviderParams   // opentelemetry provider injected
 }
 
-func (sb *ServiceBinder) Execute(l *zap.Logger, lc fx.Lifecycle) error {
+func (sb *ServiceBinder) Bind(l *zap.Logger, lc fx.Lifecycle) error {
 	if hooks, err := bind(
 		l,
 		sb.bindGrpcServices,
@@ -87,10 +86,12 @@ func (sb *ServiceBinder) bindGrpcServices(l *zap.Logger) (hooks []LifecycleHook,
 		err = e
 	} else {
 		for _, s := range sb.GrpcServices {
-			l.Info("register grpc service", zap.String("service", reflect.TypeOf(s).String()))
 			if e := s.RegisterWithGrpcServer(grpcServer); e != nil {
 				err = e
 			}
+		}
+		for k, v := range grpcServer.GrpcServer().GetServiceInfo() {
+			l.Info("register grpc service", zap.String("service", k), zap.Any("info", v.Metadata))
 		}
 		hooks = append(hooks, makeServerHook(grpcServer))
 	}
@@ -115,9 +116,9 @@ func (sb *ServiceBinder) bindZinxServices(
 		return nil, err
 	} else {
 		for _, s := range sb.ZinxServices {
-			l.Info("register zinx service", zap.String("service", reflect.TypeOf(s).String()))
 			s.RegisterWithServer(zinxServer)
 		}
+		l.Info("register zinx service", zap.String("service", zinxServer.ZinxServer().ServerName()))
 		hooks = append(hooks, makeServerHook(zinxServer))
 	}
 
@@ -139,12 +140,12 @@ func (sb *ServiceBinder) bindGatewayServices(
 		return nil, err
 	} else {
 		for _, s := range sb.GatewayServices {
-			l.Info("register gateway service", zap.String("service", reflect.TypeOf(s).String()))
 			err := s.RegisterWithGatewayServer(gatewayServer)
 			if err != nil {
 				return nil, err
 			}
 		}
+		l.Info("register gateway service", zap.String("service", gatewayServer.Endpoint()))
 		hooks = append(hooks, makeServerHook(gatewayServer))
 	}
 	return

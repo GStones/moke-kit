@@ -4,6 +4,7 @@ import (
 	"go.uber.org/zap"
 )
 
+// NewConnectionMux creates a new connection mux.
 func NewConnectionMux(
 	logger *zap.Logger,
 	port int32,
@@ -15,6 +16,7 @@ func NewConnectionMux(
 	return
 }
 
+// NewTlsConnectionMux creates a new connection mux with TLS.
 func NewTlsConnectionMux(
 	logger *zap.Logger,
 	port int32,

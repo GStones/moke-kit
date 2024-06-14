@@ -59,6 +59,8 @@ func DialWithSecurity(
 	return conn, nil
 }
 
+// makeTls make tls config
+// Watch the client certificate and reload it when it changes
 func makeTls(logger *zap.Logger, clientCert, clientKey, serverName, serverCa string) (*tls.Config, error) {
 	cert, err := tls.LoadX509KeyPair(clientCert, clientKey)
 	if err != nil {

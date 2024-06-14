@@ -12,7 +12,7 @@ import (
 	"go.uber.org/fx"
 )
 
-func AppRun(opts ...fx.Option) error {
+func appRun(opts ...fx.Option) error {
 	app := internal.NewApp(opts...)
 	if err := app.Run(); err != nil {
 		return err
@@ -26,8 +26,9 @@ func AppRun(opts ...fx.Option) error {
 	return nil
 }
 
+// Main starts the application
 func Main(opts ...fx.Option) {
-	if err := AppRun(
+	if err := appRun(
 		module.AppModule,
 		fx.Options(opts...),
 		fx.Invoke(internal.Launch),

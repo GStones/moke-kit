@@ -44,14 +44,18 @@ type SettingResult struct {
 	PublicKeyPath string `name:"googlePlayPublicKey" envconfig:"GOOGLE_PLAY_PUBLIC_KEY" default:""`
 }
 
-func (g *SettingResult) LoadFromEnv() (err error) {
-	err = utility.Load(g)
-	return
+func (s *SettingResult) loadFromEnv() error {
+	return utility.Load(s)
+}
+
+func CreateSetting() (SettingResult, error) {
+	var out SettingResult
+	err := out.loadFromEnv()
+	return out, err
 }
 
 // SettingModule is a fx setting module that provides an IAPClient
 var SettingModule = fx.Provide(
-	func() (out SettingResult, err error) {
-		err = out.LoadFromEnv()
-		return
+	func() (SettingResult, error) {
+		return CreateSetting()
 	})
