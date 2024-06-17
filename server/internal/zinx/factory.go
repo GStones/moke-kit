@@ -33,6 +33,8 @@ func NewZinxServer(
 	zconf.GlobalObject.Version = version
 	if deploy.IsProd() {
 		zconf.GlobalObject.LogIsolationLevel = 2
+	} else {
+		zconf.GlobalObject.LogIsolationLevel = 1
 	}
 	zconf.GlobalObject.WsPort = int(serverSetting.ZinxWSPort)
 	zconf.GlobalObject.TCPPort = int(serverSetting.ZinxTcpPort)
@@ -59,6 +61,7 @@ func NewZinxServer(
 	l := logger.With(zap.String("service", name), zap.Any("deployment", deploy))
 	s := znet.NewServer()
 	s.AddInterceptor(interceptors.NewRateLimitInterceptor(l, rateLimit))
+	s.AddInterceptor(interceptors.NewLoggerInterceptor(l))
 	result = &ZinxServer{
 		logger: logger,
 		server: s,
