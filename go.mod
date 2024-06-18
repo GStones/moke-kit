@@ -1,6 +1,6 @@
 module github.com/gstones/moke-kit
 
-go 1.21
+go 1.21.0
 
 require (
 	agones.dev/agones v1.40.0
