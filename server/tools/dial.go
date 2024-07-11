@@ -1,7 +1,6 @@
 package tools
 
 import (
-	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
@@ -18,17 +17,12 @@ import (
 	"github.com/gstones/moke-kit/server/middlewares"
 )
 
-// Timeout grpc dial timeout
-const Timeout = 2 * time.Second
-
 // DialInsecure dial insecure grpc
 func DialInsecure(target string) (cConn *grpc.ClientConn, err error) {
-	ctx, cancel := context.WithTimeout(context.Background(), Timeout)
-	defer cancel()
 	logger, _ := zap.NewDevelopment()
 	opts := middlewares.MakeClientOptions(logger)
 	opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	conn, err := grpc.DialContext(ctx, target, opts...)
+	conn, err := grpc.NewClient(target, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -50,11 +44,10 @@ func DialWithSecurity(
 		opts,
 		grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)),
 	)
-	ctx, cancel := context.WithTimeout(context.Background(), Timeout)
-	defer cancel()
-	conn, err := grpc.DialContext(ctx, target, opts...)
+	conn, err := grpc.NewClient(target, opts...)
 	if err != nil {
 		return nil, err
+
 	}
 	return conn, nil
 }
