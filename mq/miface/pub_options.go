@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/gstones/moke-kit/mq/common"
-
 	"github.com/gstones/moke-kit/mq/internal/qerrors"
 )
 
@@ -49,20 +47,6 @@ func WithJSON(data any) PubOption {
 		} else {
 			o.Data, err = json.Marshal(data)
 			return
-		}
-	}
-}
-
-// WithEncoder Use WithEncoder to set the PubOptions' Data field with with encoded data
-func WithEncoder(encoder Encoder, topic string, data any) PubOption {
-	return func(o *PubOptions) error {
-		if len(o.Data) != 0 {
-			return qerrors.ErrDataAlreadySet
-		} else if data, err := encoder.Encode(common.NamespaceTopic(topic), data); err != nil {
-			return err
-		} else {
-			o.Data = data
-			return nil
 		}
 	}
 }

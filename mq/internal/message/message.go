@@ -1,6 +1,8 @@
 package message
 
 import (
+	wmsg "github.com/ThreeDotsLabs/watermill/message"
+
 	"github.com/gstones/moke-kit/mq/miface"
 )
 
@@ -9,6 +11,11 @@ type message struct {
 	topic string
 	data  []byte
 	vPtr  any
+}
+
+// Msg2Message converts a watermill message to a message
+func Msg2Message(topic string, msg *wmsg.Message) miface.Message {
+	return NewMessage(msg.UUID, topic, msg.Payload, nil)
 }
 
 func NewMessage(id string, topic string, data []byte, vPtr any) miface.Message {

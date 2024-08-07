@@ -5,6 +5,7 @@ go 1.22.5
 require (
 	agones.dev/agones v1.40.0
 	github.com/ThreeDotsLabs/watermill v1.3.5
+	github.com/ThreeDotsLabs/watermill-nats/v2 v2.0.2
 	github.com/abiosoft/ishell v2.0.0+incompatible
 	github.com/awa/go-iap v1.34.1
 	github.com/duke-git/lancet/v2 v2.3.1

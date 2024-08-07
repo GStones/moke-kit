@@ -28,30 +28,16 @@ func CreateSubscription(
 		return nil, err
 	}
 	go func() {
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case msg, ok := <-msgIn:
-				if !ok {
-					return
-				}
-				if msg != nil {
-					m := msg2Message(topic, msg)
-					if code := sub.handler(m, nil); code == common.ConsumeNackTransientFailure {
-						msg.Nack()
-					} else {
-						msg.Ack()
-					}
-				}
+		for msg := range msgIn {
+			m := message2.Msg2Message(topic, msg)
+			if code := sub.handler(m, nil); code == common.ConsumeNackTransientFailure {
+				msg.Nack()
+			} else {
+				msg.Ack()
 			}
 		}
 	}()
 	return sub, nil
-}
-
-func msg2Message(topic string, msg *message.Message) miface.Message {
-	return message2.NewMessage(msg.UUID, topic, msg.Payload, nil)
 }
 
 func (s *Subscription) IsValid() bool {
