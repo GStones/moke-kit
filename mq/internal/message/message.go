@@ -13,6 +13,7 @@ type message struct {
 	vPtr  any
 }
 
+// Msg2Message converts a watermill message to a message
 func Msg2Message(topic string, msg *wmsg.Message) miface.Message {
 	return NewMessage(msg.UUID, topic, msg.Payload, nil)
 }

@@ -103,7 +103,7 @@ func (m *MessageQueue) Subscribe(
 			if code := handler(ms, nil); code == common.ConsumeNackTransientFailure {
 				msg.Nack()
 			} else {
-				//msg.Ack()
+				msg.Ack()
 			}
 		}
 	}()
