@@ -1,9 +1,9 @@
 package nats
 
 import (
-	"github.com/gstones/moke-kit/mq/common"
+	"github.com/ThreeDotsLabs/watermill-nats/v2/pkg/nats"
 )
 
-const (
-	defaultDeliverySemantics = common.AtLeastOnce
-)
+var jsConfig = nats.JetStreamConfig{Disabled: true}
+
+var marshaler = &nats.JSONMarshaler{}
