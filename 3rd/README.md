@@ -35,3 +35,19 @@
 | APPLE_SANDBOX          | apple sandbox               | true    |
 | GOOGLE_PLAY_PUBLIC_KEY | google play public key path | ""      |
 
+## AUTH Middleware
+
+### Modules:
+
+* Firebase Auth Middleware: https://firebase.google.com/
+* Supabase Auth Middleware: https://supabase.io/
+
+### Environment Variables:
+
+| ENV               | Description            | Default                                     |
+|-------------------|------------------------|---------------------------------------------|
+| FIREBASE_KEY_FILE | firebase key file path | "./configs/firebase/serviceAccountKey.json" |
+| SUPABASE_URL      | supabase url           | ""                                          |
+| SUPABASE_KEY      | supabase key           | ""                                          |
+
+    
