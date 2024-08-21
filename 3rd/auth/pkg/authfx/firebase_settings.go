@@ -21,9 +21,9 @@ type FirebaseSettingsResult struct {
 }
 
 // LoadFromEnv load from env
-func (g *FirebaseSettingsResult) LoadFromEnv() (err error) {
-	err = utility.Load(g)
-	return
+func (g *FirebaseSettingsResult) LoadFromEnv() error {
+	return utility.Load(g)
+
 }
 
 // FirebaseSettingsModule is the Firebase settings module

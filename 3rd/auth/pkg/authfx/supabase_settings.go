@@ -23,9 +23,8 @@ type SupabaseSettingsResult struct {
 }
 
 // LoadFromEnv load from env
-func (g *SupabaseSettingsResult) LoadFromEnv() (err error) {
-	err = utility.Load(g)
-	return
+func (g *SupabaseSettingsResult) LoadFromEnv() error {
+	return utility.Load(g)
 }
 
 // SupabaseSettingsModule is the supabase settings module
