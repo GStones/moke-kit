@@ -7,8 +7,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"go.uber.org/fx"
-
-	"github.com/gstones/moke-kit/utility"
 )
 
 // AWSConfigParams module params for injecting AWSConfig
@@ -19,14 +17,11 @@ type AWSConfigParams struct {
 	Config aws.Config `name:"awsConfig"`
 }
 
+// AWSConfigResult module result for exporting AWSConfig
 type AWSConfigResult struct {
 	fx.Out
 	// Config aws config object
 	Config aws.Config `name:"awsConfig"`
-}
-
-func (g *AWSConfigResult) loadFromEnv() error {
-	return utility.Load(g)
 }
 
 // AWSConfigModule is the AWS config module
