@@ -65,7 +65,7 @@ func (d *DocumentBase) Clear() {
 	d.clear()
 }
 
-// Create creates this DocumentBase if it doesn't already exist.
+// Create  data and version in the database.
 func (d *DocumentBase) Create() error {
 	version, err := d.DocumentStore.Set(
 		d.Key,
@@ -84,7 +84,7 @@ type VersionCache struct {
 	Data    any
 }
 
-// Load loads this DocumentBase from its store if it exists.
+// Load loads data and version from the database.
 func (d *DocumentBase) Load() error {
 	d.clear()
 	if ok := d.cache.GetCache(d.Key, &VersionCache{
@@ -107,7 +107,8 @@ func (d *DocumentBase) Load() error {
 	return nil
 }
 
-// Save saves this DocumentBase to the database if it's based on the latest version that Couchbase knows about.
+// Save saves data to the database.
+// compare the version in the database and swap it.
 func (d *DocumentBase) Save() error {
 	version, err := d.DocumentStore.Set(
 		d.Key,
@@ -142,6 +143,9 @@ func (d *DocumentBase) doUpdate(f func() bool, u func() error) error {
 	return nerrors.ErrTooManyRetries
 }
 
+// Update change the data with the given function and CAS(compare and swap) save it to the database.
+// If the function returns false, the update will be aborted.
+// If the update CAS fails, the function will be retried up to MaxRetries times with a randomized backoff.
 func (d *DocumentBase) Update(f func() bool) error {
 	if err := d.doUpdate(f, func() error {
 		return d.Save()
@@ -152,6 +156,7 @@ func (d *DocumentBase) Update(f func() bool) error {
 	}
 }
 
+// Delete delete data from the database.
 func (d *DocumentBase) Delete() error {
 	if err := d.DocumentStore.Delete(d.Key); err != nil {
 		return err
