@@ -4,27 +4,30 @@ import (
 	"fmt"
 	log2 "log"
 	"sync"
-	"testing"
 
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 
-	"github.com/gstones/moke-kit/fxmain"
 	"github.com/gstones/moke-kit/orm/nosql/diface"
 	"github.com/gstones/moke-kit/orm/nosql/key"
 	"github.com/gstones/moke-kit/orm/pkg/ofx"
 )
 
-func TestDocumentBase_Update(t *testing.T) {
-	fxmain.Main(
-		TestModule,
-	)
-}
-func TestConcurrentUpdate(t *testing.T) {
-	fxmain.Main(
-		ConcurrentUpdateModule,
-	)
-}
+//// TestDocumentBase_Update is a test for document base update.
+//// Tips: require mongo server running.
+//func TestDocumentBase_Update(t *testing.T) {
+//	fxmain.Main(
+//		TestModule,
+//	)
+//}
+
+//// TestDocumentBase_Update is a test for document base update.
+//// Tips: require mongo server running.
+//func TestConcurrentUpdate(t *testing.T) {
+//	fxmain.Main(
+//		ConcurrentUpdateModule,
+//	)
+//}
 
 type Data struct {
 	Message string

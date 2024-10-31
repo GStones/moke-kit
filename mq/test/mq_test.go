@@ -16,6 +16,14 @@ import (
 	"github.com/gstones/moke-kit/mq/pkg/mfx"
 )
 
+//
+//func TestMain(m *testing.M) {
+//	fxmain.Main(
+//		mfx.LocalModule,
+//		AppLocalMQModule,
+//	)
+//}
+
 // TestLocalMQ is a test local(channel) mq.
 func TestLocalMQ(t *testing.T) {
 	fxmain.Main(
@@ -27,15 +35,15 @@ func TestLocalMQ(t *testing.T) {
 }
 
 // TestNatsMQ is a test nats mq.
-// require nats server running.
-func TestNatsMQ(t *testing.T) {
-	fxmain.Main(
-		//inject nats message queue
-		mfx.NatsModule,
-		//need use nats mq app module
-		AppNatsMQModule,
-	)
-}
+// Tips: require nats server running.
+//func TestNatsMQ(t *testing.T) {
+//	fxmain.Main(
+//		//inject nats message queue
+//		mfx.NatsModule,
+//		//need use nats mq app module
+//		AppNatsMQModule,
+//	)
+//}
 
 // AppLocalMQModule is a test local mq application module.
 var AppLocalMQModule = fx.Invoke(
