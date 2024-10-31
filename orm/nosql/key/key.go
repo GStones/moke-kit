@@ -27,7 +27,7 @@ func init() {
 	validatePathExp = regexp.MustCompile(validatePathPattern)
 }
 
-// A Key is a structured abstraction of a Couchbase nosql identifier.
+// A Key is a structured abstraction of nosql identifier.
 type Key struct {
 	value string
 }
