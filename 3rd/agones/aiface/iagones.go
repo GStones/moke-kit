@@ -18,17 +18,10 @@ type IAgones interface {
 	SetAnnotation(key, value string) error
 	GameServer() (*sdk.GameServer, error)
 	WatchGameServer(_ agone.GameServerCallback) error
-	Alpha() IAlpha
+	CounterList() ICounterList
 }
 
-type IAlpha interface {
-	GetPlayerCapacity() (int64, error)
-	SetPlayerCapacity(capacity int64) error
-	PlayerConnect(playerID string) (bool, error)
-	PlayerDisconnect(playerID string) (bool, error)
-	GetPlayerCount() (int64, error)
-	IsPlayerConnected(playerID string) (bool, error)
-	GetConnectedPlayers() ([]string, error)
+type ICounterList interface {
 	GetCounterCount(key string) (int64, error)
 	IncrementCounter(key string, amount int64) error
 	DecrementCounter(key string, amount int64) error

@@ -1,84 +1,56 @@
 package sdk
 
-type MockAlpha struct {
+type MockCounterList struct {
 }
 
-func (d *MockAlpha) GetPlayerCapacity() (int64, error) {
+func (d *MockCounterList) GetCounterCount(key string) (int64, error) {
 	return 0, nil
 }
 
-func (d *MockAlpha) SetPlayerCapacity(capacity int64) error {
+func (d *MockCounterList) IncrementCounter(key string, amount int64) error {
 	return nil
 }
 
-func (d *MockAlpha) PlayerConnect(id string) (bool, error) {
+func (d *MockCounterList) DecrementCounter(key string, amount int64) error {
+	return nil
+}
+
+func (d *MockCounterList) SetCounterCount(key string, amount int64) error {
+	return nil
+}
+
+func (d *MockCounterList) GetCounterCapacity(key string) (int64, error) {
+	return 0, nil
+}
+
+func (d *MockCounterList) SetCounterCapacity(key string, amount int64) error {
+	return nil
+}
+
+func (d *MockCounterList) GetListCapacity(key string) (int64, error) {
+	return 0, nil
+}
+
+func (d *MockCounterList) SetListCapacity(key string, amount int64) error {
+	return nil
+}
+
+func (d *MockCounterList) ListContains(key, value string) (bool, error) {
 	return true, nil
 }
 
-func (d *MockAlpha) PlayerDisconnect(id string) (bool, error) {
-	return true, nil
-}
-
-func (d *MockAlpha) GetPlayerCount() (int64, error) {
+func (d *MockCounterList) GetListLength(key string) (int, error) {
 	return 0, nil
 }
 
-func (d *MockAlpha) IsPlayerConnected(id string) (bool, error) {
-	return true, nil
-}
-
-func (d *MockAlpha) GetConnectedPlayers() ([]string, error) {
-	return make([]string, 0), nil
-}
-
-func (d *MockAlpha) GetCounterCount(key string) (int64, error) {
-	return 0, nil
-}
-
-func (d *MockAlpha) IncrementCounter(key string, amount int64) error {
-	return nil
-}
-
-func (d *MockAlpha) DecrementCounter(key string, amount int64) error {
-	return nil
-}
-
-func (d *MockAlpha) SetCounterCount(key string, amount int64) error {
-	return nil
-}
-
-func (d *MockAlpha) GetCounterCapacity(key string) (int64, error) {
-	return 0, nil
-}
-
-func (d *MockAlpha) SetCounterCapacity(key string, amount int64) error {
-	return nil
-}
-
-func (d *MockAlpha) GetListCapacity(key string) (int64, error) {
-	return 0, nil
-}
-
-func (d *MockAlpha) SetListCapacity(key string, amount int64) error {
-	return nil
-}
-
-func (d *MockAlpha) ListContains(key, value string) (bool, error) {
-	return true, nil
-}
-
-func (d *MockAlpha) GetListLength(key string) (int, error) {
-	return 0, nil
-}
-
-func (d *MockAlpha) GetListValues(key string) ([]string, error) {
+func (d *MockCounterList) GetListValues(key string) ([]string, error) {
 	return nil, nil
 }
 
-func (d *MockAlpha) AppendListValue(key, value string) error {
+func (d *MockCounterList) AppendListValue(key, value string) error {
 	return nil
 }
 
-func (d *MockAlpha) DeleteListValue(key, value string) error {
+func (d *MockCounterList) DeleteListValue(key, value string) error {
 	return nil
 }
