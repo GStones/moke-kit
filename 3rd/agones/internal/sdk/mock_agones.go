@@ -52,6 +52,6 @@ func (d *Mock) WatchGameServer(_ agone.GameServerCallback) error {
 	return nil
 }
 
-func (d *Mock) Alpha() aiface.IAlpha {
-	return &MockAlpha{}
+func (d *Mock) CounterList() aiface.ICounterList {
+	return &MockCounterList{}
 }

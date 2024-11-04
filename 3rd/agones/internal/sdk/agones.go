@@ -62,6 +62,6 @@ func (a *Agones) WatchGameServer(cb agone.GameServerCallback) error {
 	return nil
 }
 
-func (a *Agones) Alpha() aiface.IAlpha {
-	return a.sdk.Alpha()
+func (a *Agones) CounterList() aiface.ICounterList {
+	return a.sdk.Beta()
 }
