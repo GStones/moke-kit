@@ -14,6 +14,77 @@ moke-kit 是一个用于构建微服务/单体应用的基础框架。可以按�
 
 ![moke-kit](./assets/moke-kit-diagram.drawio.png)
 
+
+## Layers
+```mermaid
+graph TB
+    subgraph "Application Layer"
+        App[Application]
+        DI[Dependency Injection<br/>uber/fx]
+    end
+
+    subgraph "Server Layer"
+        GRPC[gRPC Server]
+        HTTP[HTTP Gateway]
+        TCP[TCP Server]
+        WS[WebSocket Server]
+        KCP[KCP Server]
+    end
+
+    subgraph "Middleware Layer"
+        Auth[Authentication]
+        Rate[Rate Limiting]
+        Tel[OpenTelemetry]
+        Log[Logging]
+        Rec[Recovery]
+    end
+
+    subgraph "Storage Layer"
+        subgraph "Database"
+            GORM[GORM]
+            MongoDB[MongoDB]
+        end
+        subgraph "Cache"
+            Redis[Redis]
+            Dragon[Dragonfly]
+        end
+        subgraph "Message Queue"
+            MQ[NATS Message Queue]
+        end
+    end
+
+    subgraph "Integration Layer"
+        IAP[IAP Verification]
+        Agones[Agones Gaming]
+    end
+
+    App --> DI
+    DI --> GRPC
+    DI --> HTTP
+    DI --> TCP
+    DI --> WS
+    DI --> KCP
+    
+    GRPC --> Auth
+    HTTP --> Auth
+    TCP --> Auth
+    WS --> Auth
+    KCP --> Auth
+    
+    Auth --> GORM
+    Auth --> MongoDB
+    Auth --> Redis
+    Auth --> Dragon
+    Auth --> MQ
+    Auth --> IAP
+    Auth --> Agones
+
+    classDef default fill:#f9f9f9,stroke:#333,stroke-width:2px
+    classDef layer fill:#e4f0f8,stroke:#333,stroke-width:2px
+    class App,DI default
+    class Server_Layer,Middleware_Layer,Storage_Layer,Integration_Layer layer
+```
+
 ## 特性
 
 * 使用 [uber/fx](https://github.com/uber-go/fx) 实现IOC(依赖注入控制反转)，可以按需组装不同类型服务。
