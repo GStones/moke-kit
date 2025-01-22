@@ -1,6 +1,8 @@
 package nosql
 
 import (
+	"context"
+	"math"
 	"math/rand"
 	"time"
 
@@ -8,10 +10,29 @@ import (
 	"github.com/gstones/moke-kit/orm/nosql/diface"
 	"github.com/gstones/moke-kit/orm/nosql/key"
 	"github.com/gstones/moke-kit/orm/nosql/noptions"
+	"github.com/pkg/errors"
 )
 
-const MaxRetries = 5
+const (
+	MaxRetries      = 5
+	DefaultCacheTTL = 30 * time.Minute
+)
 
+// CacheStrategy defines caching behavior configuration
+type CacheStrategy struct {
+	EnableReadThrough bool
+	CacheTTL          time.Duration
+}
+
+// DefaultCacheStrategy returns default cache strategy configuration
+func DefaultCacheStrategy() CacheStrategy {
+	return CacheStrategy{
+		EnableReadThrough: true,
+		CacheTTL:          DefaultCacheTTL,
+	}
+}
+
+// DocumentBase represents a base document structure for NoSQL operations
 type DocumentBase struct {
 	Key key.Key
 
@@ -21,42 +42,32 @@ type DocumentBase struct {
 
 	DocumentStore diface.ICollection
 	cache         diface.ICache
+	ctx           context.Context
+	strategy      CacheStrategy
+}
+
+// New write operation type for write-behind
+type writeOperation struct {
+	key     key.Key
+	data    any
+	version noptions.Version
 }
 
 // Init performs an in-place initialization of a DocumentBase.
 func (d *DocumentBase) Init(
+	ctx context.Context,
 	data any,
 	clear func(),
 	store diface.ICollection,
 	key key.Key,
 ) {
+	d.ctx = ctx
 	d.clear = clear
 	d.data = data
 	d.DocumentStore = store
 	d.Key = key
 	d.cache = diface.DefaultDocumentCache()
-}
-
-func (d *DocumentBase) InitWithCache(
-	data any,
-	clear func(),
-	store diface.ICollection,
-	key key.Key,
-	cache diface.ICache,
-) {
-	d.Init(data, clear, store, key)
-	d.cache = cache
-}
-
-func (d *DocumentBase) InitWithVersion(
-	data any,
-	clear func(),
-	store diface.ICollection,
-	key key.Key,
-	version noptions.Version,
-) {
-	d.Init(data, clear, store, key)
-	d.version = version
+	d.strategy = DefaultCacheStrategy()
 }
 
 // Clear clears all data on this DocumentBase.
@@ -68,6 +79,7 @@ func (d *DocumentBase) Clear() {
 // Create  data and version in the database.
 func (d *DocumentBase) Create() error {
 	version, err := d.DocumentStore.Set(
+		d.ctx,
 		d.Key,
 		noptions.WithSource(d.data),
 	)
@@ -84,33 +96,59 @@ type VersionCache struct {
 	Data    any
 }
 
-// Load loads data and version from the database.
+// Load implements Read-Through caching
 func (d *DocumentBase) Load() error {
 	d.clear()
-	if ok := d.cache.GetCache(d.Key, &VersionCache{
-		Version: &d.version,
-		Data:    d.data,
-	}); !ok {
-		if version, err := d.DocumentStore.Get(
+
+	if !d.strategy.EnableReadThrough {
+		// Directly load from database if Read-Through is disabled
+		version, err := d.DocumentStore.Get(
+			d.ctx,
 			d.Key,
 			noptions.WithDestination(d.data),
-		); err != nil {
+		)
+		if err != nil {
 			return err
-		} else {
-			d.version = version
-			d.cache.SetCache(d.Key, &VersionCache{
-				Version: d.version,
-				Data:    d.data,
-			})
 		}
+		d.version = version
+		return nil
 	}
+
+	cache := &VersionCache{
+		Version: &d.version,
+		Data:    d.data,
+	}
+
+	// Try cache first
+	if d.cache.GetCache(d.ctx, d.Key, cache) {
+		return nil
+	}
+
+	// Cache miss - load from database
+	version, err := d.DocumentStore.Get(
+		d.ctx,
+		d.Key,
+		noptions.WithDestination(d.data),
+	)
+	if err != nil {
+		return err
+	}
+
+	d.version = version
+	// Update cache after loading from database
+	d.cache.SetCache(d.ctx, d.Key, &VersionCache{
+		Version: d.version,
+		Data:    d.data,
+	}, d.strategy.CacheTTL)
+
 	return nil
 }
 
-// Save saves data to the database.
-// compare the version in the database and swap it.
+// Save implements synchronous write with cache update
 func (d *DocumentBase) Save() error {
+	// 直接同步写入数据库
 	version, err := d.DocumentStore.Set(
+		d.ctx,
 		d.Key,
 		noptions.WithSource(d.data),
 		noptions.WithVersion(d.version),
@@ -119,28 +157,38 @@ func (d *DocumentBase) Save() error {
 		return err
 	}
 	d.version = version
-	d.cache.DeleteCache(d.Key)
+
+	// 更新缓存
+	d.cache.SetCache(d.ctx, d.Key, &VersionCache{
+		Version: d.version,
+		Data:    d.data,
+	}, d.strategy.CacheTTL)
+
 	return nil
 }
 
 func (d *DocumentBase) doUpdate(f func() bool, u func() error) error {
+	var lastErr error
 	for r := 0; r < MaxRetries; r++ {
-		if f() {
-			if err := u(); err == nil {
-				return nil
-			} else {
-				time.Sleep(time.Millisecond * time.Duration(rand.Float32()*float32(r+1)*5))
-				if err := d.Load(); err != nil {
-					// a failed load is a real error
-					return err
-				}
-			}
-		} else {
+		if !f() {
 			return nerrors.ErrUpdateLogicFailed
 		}
-	}
 
-	return nerrors.ErrTooManyRetries
+		if err := u(); err == nil {
+			return nil
+		} else {
+			lastErr = err
+			// Exponential backoff with jitter
+			backoff := time.Duration(math.Pow(2, float64(r))) * time.Millisecond
+			jitter := time.Duration(rand.Float64() * float64(backoff))
+			time.Sleep(backoff + jitter)
+
+			if err := d.Load(); err != nil {
+				return err
+			}
+		}
+	}
+	return errors.Wrap(nerrors.ErrTooManyRetries, lastErr.Error())
 }
 
 // Update change the data with the given function and CAS(compare and swap) save it to the database.
@@ -158,9 +206,14 @@ func (d *DocumentBase) Update(f func() bool) error {
 
 // Delete delete data from the database.
 func (d *DocumentBase) Delete() error {
-	if err := d.DocumentStore.Delete(d.Key); err != nil {
+	if err := d.DocumentStore.Delete(d.ctx, d.Key); err != nil {
 		return err
 	}
-	d.cache.DeleteCache(d.Key)
+	d.cache.DeleteCache(d.ctx, d.Key)
 	return nil
+}
+
+// SetCacheStrategy allows updating the cache strategy
+func (d *DocumentBase) SetCacheStrategy(strategy CacheStrategy) {
+	d.strategy = strategy
 }

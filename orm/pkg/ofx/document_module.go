@@ -10,6 +10,7 @@ import (
 
 	"github.com/gstones/moke-kit/orm/nerrors"
 	"github.com/gstones/moke-kit/orm/nosql/diface"
+	"github.com/gstones/moke-kit/orm/nosql/mock"
 	"github.com/gstones/moke-kit/orm/nosql/mongo"
 )
 
@@ -39,6 +40,8 @@ func (dsr *DocumentStoreResult) init(
 		switch u.Scheme {
 		case "mongodb", "mongodb+srv":
 			dsr.DriverProvider = mongo.NewProvider(mClient, l)
+		case "mock":
+			dsr.DriverProvider = mock.NewMockDriverProvider(l)
 		default:
 			return nerrors.ErrInvalidNosqlURL
 		}

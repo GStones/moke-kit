@@ -39,28 +39,27 @@ func NewOptions(opts ...Option) (options Options, err error) {
 	return
 }
 
-// WithVersion provides a Version value option.  This is optionally used when updating documents to ensure the user has
-// the correct version before updating.
+// WithVersion provides a Version value option. This is used when updating documents
+// to ensure concurrent modification safety by version checking.
 func WithVersion(v Version) Option {
 	return func(o *Options) error {
 		if o.AnyVersion {
 			return nerrors.ErrAnyVersionConflict
-		} else {
-			o.Version = v
-			return nil
 		}
+		o.Version = v
+		return nil
 	}
 }
 
-// Use WithAnyVersion to update documents without caring what their version is.
+// WithAnyVersion indicates that version checking should be skipped during updates.
+// Cannot be used together with WithVersion.
 func WithAnyVersion() Option {
 	return func(o *Options) error {
 		if o.Version != NoVersion {
 			return nerrors.ErrAnyVersionConflict
-		} else {
-			o.AnyVersion = true
-			return nil
 		}
+		o.AnyVersion = true
+		return nil
 	}
 }
 
@@ -88,27 +87,28 @@ func WithMultipleSource(src map[string]any) Option {
 }
 
 // WithDestination provides an interface for receiving data when getting a nosql.
+// The destination must be a non-nil pointer.
 func WithDestination(dst any) Option {
 	return func(o *Options) error {
 		if dst == nil {
 			return nerrors.ErrDestIsNil
-		} else if reflect.TypeOf(dst).Kind() != reflect.Ptr {
-			return nerrors.ErrDestMustBePointer
-		} else {
-			o.Destination = dst
-			return nil
 		}
+		if reflect.TypeOf(dst).Kind() != reflect.Ptr {
+			return nerrors.ErrDestMustBePointer
+		}
+		o.Destination = dst
+		return nil
 	}
 }
 
-// WithDestinationList provides a interface list for receiving data when getting a nosql.
+// WithDestinationList provides a slice of interfaces for receiving multiple items when getting nosql data.
+// The destination slice must not be nil.
 func WithDestinationList(dst []any) Option {
 	return func(o *Options) error {
 		if dst == nil {
 			return nerrors.ErrDestIsNil
-		} else {
-			o.DestinationList = dst
-			return nil
 		}
+		o.DestinationList = dst
+		return nil
 	}
 }

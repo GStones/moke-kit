@@ -2,6 +2,7 @@ package ofx
 
 import (
 	"context"
+	"net/url"
 
 	mongo2 "go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -31,6 +32,12 @@ func (mr *MongoResult) init(
 	if n.DatabaseURL == "" {
 		return nil
 	}
+	if v, err := url.Parse(n.DatabaseURL); err != nil {
+		return err
+	} else if v.Scheme != "mongodb" && v.Scheme != "mongodb+srv" {
+		return nil
+	}
+
 	cOptions := options.Client().ApplyURI(n.DatabaseURL)
 	if n.DatabaseUser != "" {
 		if cOptions.Auth == nil {

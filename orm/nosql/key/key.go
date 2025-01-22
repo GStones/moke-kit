@@ -48,27 +48,20 @@ func NewKeys(values ...string) []Key {
 
 // NewKeyFromParts creates a new keys within the current core.Namespace.
 func NewKeyFromParts(parts ...string) (key Key, err error) {
-	if np := len(parts); np == 0 {
-		err = ErrNotEnoughParts
-	} else {
-		n := np
-
-		for _, p := range parts {
-			n += len(p)
-		}
-
-		r := make([]byte, n)
-		i := 0
-
-		for _, s := range parts {
-			i += copy(r[i:], KeySeparator)
-			i += copy(r[i:], s)
-		}
-
-		key, err = NewKeyFromString(string(r))
+	if len(parts) == 0 {
+		return key, ErrNotEnoughParts
 	}
 
-	return
+	var builder strings.Builder
+	// Preallocate capacity for all parts + separators
+	builder.Grow(len(parts) + len(KeySeparator)*len(parts))
+
+	for _, part := range parts {
+		builder.WriteString(KeySeparator)
+		builder.WriteString(part)
+	}
+
+	return NewKeyFromString(builder.String())
 }
 
 // NewKeyFromString creates a new keys within the current core.Namespace from a string
@@ -115,12 +108,23 @@ func (k *Key) Clear() {
 
 // Parts returns a slice of the component parts of the keys.
 func (k *Key) Parts() []string {
+	if k.IsEmpty() {
+		return nil
+	}
+	// Skip first empty string from split since key starts with separator
 	return strings.Split(k.String(), KeySeparator)[1:]
 }
 
 // Base returns the final KeySeparator-separated element of the keys.
 func (k *Key) Base() string {
-	return k.String()[strings.LastIndex(k.String(), KeySeparator)+1:]
+	if k.IsEmpty() {
+		return ""
+	}
+	str := k.String()
+	if idx := strings.LastIndex(str, KeySeparator); idx >= 0 {
+		return str[idx+1:]
+	}
+	return str
 }
 
 func (k *Key) Prefix() string {
