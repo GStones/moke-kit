@@ -8,9 +8,7 @@
 
 ## What is moke-kit?
 
-moke-kit is a toolkit for building a microservices/monolithic in Go. You can develop as a monolithic service and deploy
-it as a microservice.
-Just like building with LEGO, you can assemble the service as you like.
+moke-kit is a toolkit for building microservices or monolithic applications in Go. You can develop your application as a monolithic service and deploy it as microservices. Like building with LEGO, you can assemble your services exactly how you want them.
 
 ## Diagram
 
@@ -18,47 +16,46 @@ Just like building with LEGO, you can assemble the service as you like.
 
 ## Features
 
-* Inversion of control with [uber/fx](https://github.com/uber-go/fx),assemble your service as you like.
-* Builtin TLS, mTLS to build [Zero Trust security](https://www.wikiwand.com/en/Zero_trust_security_model).
-* Builtin [Token-based authentication](https://www.okta.com/identity-101/what-is-token-based-authentication/), support JWT token.
-* Builtin middlewares (rate limit, open telemetry, auth middleware,logging, panic recovery, etc.).
-* Builtin [Cache-Aside pattern](https://learn.microsoft.com/en-us/azure/architecture/patterns/cache-aside) for orm and
-  nosql.
-* Builtin [Compare-and-swap](https://www.wikiwand.com/en/Compare-and-swap) to ensure db update consistency.
-* Command client to interact with the server for independent testing.
-* One command to generate proto, grpc, gateway, swagger and client code with [buf](https://buf.build/).
+* **Dependency Injection**: Uses [uber/fx](https://github.com/uber-go/fx) for inversion of control
+* **Security**: 
+  * Built-in TLS and mTLS support for [Zero Trust security](https://www.wikiwand.com/en/Zero_trust_security_model)
+  * Built-in [Token-based authentication](https://www.okta.com/identity-101/what-is-token-based-authentication/) with JWT support
+* **Built-in Middleware**: Rate limiting, OpenTelemetry, authentication, logging, panic recovery, and more
+* **Caching**: 
+  * Built-in [Cache-Aside pattern](https://learn.microsoft.com/en-us/azure/architecture/patterns/cache-aside) for ORM and NoSQL
+  * Built-in [Compare-and-swap](https://www.wikiwand.com/en/Compare-and-swap) for database consistency
+* **Development Tools**:
+  * Command-line client for independent testing
+  * Single command generation of proto, gRPC, gateway, Swagger, and client code using [buf](https://buf.build/)
 
-## Builtin Kits
+## Built-in Kits
 
 * [Servers](https://github.com/GStones/moke-kit/tree/main/server):
-    * [gRPC](https://grpc.io/)
-    * HTTP[[grpc-gateway](https://github.com/grpc-ecosystem/grpc-gateway)]
-    * TCP [[zinx](https://github.com/aceld/zinx)]
-    * Websocket [[zinx](https://github.com/aceld/zinx)]
-    * KCP [[zinx](https://github.com/aceld/zinx)]
-* [MQ](https://github.com/GStones/moke-kit/tree/main/mq):
-    * [nats](https://nats.io/)
-* [Orm](https://github.com/GStones/moke-kit/tree/main/orm):
-    * [gorm](https://gorm.io/)
-    * [mongodb](https://github.com/mongodb/mongo-go-driver)
+  * [gRPC](https://grpc.io/)
+  * HTTP with [grpc-gateway](https://github.com/grpc-ecosystem/grpc-gateway)
+  * TCP via [zinx](https://github.com/aceld/zinx)
+  * WebSocket via [zinx](https://github.com/aceld/zinx)
+  * KCP via [zinx](https://github.com/aceld/zinx)
+* [Message Queue](https://github.com/GStones/moke-kit/tree/main/mq):
+  * [NATS](https://nats.io/)
+* [ORM](https://github.com/GStones/moke-kit/tree/main/orm):
+  * [GORM](https://gorm.io/)
+  * [MongoDB](https://github.com/mongodb/mongo-go-driver)
 * [Cache](https://github.com/GStones/moke-kit/tree/main/orm/nosql/cache):
-    * redis
-    * [dragonfly](https://github.com/dragonflydb/dragonfly)
-* [Third Party](https://github.com/GStones/moke-kit/tree/main/3rd):
-    * [IAP](https://github.com/awa/go-iap): Verifies the purchase receipt via AppStore, GooglePlayStore or Amazon
-      AppStore.
-    * [Agones](https://agones.dev/site/):  Host, Run and Scale dedicated game servers on Kubernetes.
+  * Redis
+  * [Dragonfly](https://github.com/dragonflydb/dragonfly)
+* [Third Party Integrations](https://github.com/GStones/moke-kit/tree/main/3rd):
+  * [IAP](https://github.com/awa/go-iap) - Purchase receipt verification for AppStore, GooglePlayStore, and Amazon AppStore
+  * [Agones](https://agones.dev/site/) - Game server hosting and scaling on Kubernetes
 
-## Getting started
+## Getting Started
 
-* install gonew:
+1. Install gonew:
+```bash
+go install golang.org/x/tools/cmd/gonew@latest
+```
 
- ``` bash 
-    go install golang.org/x/tools/cmd/gonew@latest
- ```
-
-* create a new project:
-
- ``` bash 
-    gonew github.com/gstones/moke-layout your.domain/myprog
- ```
+2. Create a new project:
+```bash
+gonew github.com/gstones/moke-layout your.domain/myprog
+```
