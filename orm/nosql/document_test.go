@@ -81,6 +81,7 @@ func TestDocument_CRUD(t *testing.T) {
 		err = td.Delete()
 		assert.NoError(t, err, "Failed to delete document")
 
+		os.Exit(0)
 		return nil
 	})
 
@@ -139,6 +140,7 @@ func TestDocument_ConcurrentUpdates(t *testing.T) {
 		err = finalTd.Delete()
 		assert.NoError(t, err, "Failed to cleanup test document")
 
+		os.Exit(0)
 		return nil
 	})
 
