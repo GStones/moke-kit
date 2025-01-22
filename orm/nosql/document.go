@@ -14,7 +14,9 @@ import (
 )
 
 const (
-	MaxRetries      = 5
+	// MaxRetries is the maximum number of retries for update operations
+	MaxRetries = 5
+	// DefaultCacheTTL is the default cache TTL for read-through caching
 	DefaultCacheTTL = 30 * time.Minute
 )
 
