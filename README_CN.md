@@ -8,18 +8,89 @@
 
 ## 什么是 moke-kit?
 
-moke-kit 是一个用于构建微服务/单体应用的基础框架。可以按照单体应用开发，生产环境部署为微服务模式。像玩LEGO积木一样，你可以按需灵活拼接不同类型的服务。
+moke-kit 是一个用于构建微服务/单体应用的基础框架。可以按照单体应用开发，生产环境部署为微服务模式。像玩LEGO积木一样，你可以按需灵活搭建不同类型的服务。
 
 ## 架构
 
 ![moke-kit](./assets/moke-kit-diagram.drawio.png)
+
+
+## Layers
+```mermaid
+graph TB
+    subgraph "Application Layer"
+        App[Application]
+        DI[Dependency Injection<br/>uber/fx]
+    end
+
+    subgraph "Server Layer"
+        GRPC[gRPC Server]
+        HTTP[HTTP Gateway]
+        TCP[TCP Server]
+        WS[WebSocket Server]
+        KCP[KCP Server]
+    end
+
+    subgraph "Middleware Layer"
+        Auth[Authentication]
+        Rate[Rate Limiting]
+        Tel[OpenTelemetry]
+        Log[Logging]
+        Rec[Recovery]
+    end
+
+    subgraph "Storage Layer"
+        subgraph "Database"
+            GORM[GORM]
+            MongoDB[MongoDB]
+        end
+        subgraph "Cache"
+            Redis[Redis]
+            Dragon[Dragonfly]
+        end
+        subgraph "Message Queue"
+            MQ[NATS Message Queue]
+        end
+    end
+
+    subgraph "Integration Layer"
+        IAP[IAP Verification]
+        Agones[Agones Gaming]
+    end
+
+    App --> DI
+    DI --> GRPC
+    DI --> HTTP
+    DI --> TCP
+    DI --> WS
+    DI --> KCP
+    
+    GRPC --> Auth
+    HTTP --> Auth
+    TCP --> Auth
+    WS --> Auth
+    KCP --> Auth
+    
+    Auth --> GORM
+    Auth --> MongoDB
+    Auth --> Redis
+    Auth --> Dragon
+    Auth --> MQ
+    Auth --> IAP
+    Auth --> Agones
+
+    classDef default fill:#f9f9f9,stroke:#333,stroke-width:2px
+    classDef layer fill:#e4f0f8,stroke:#333,stroke-width:2px
+    class App,DI default
+    class Server_Layer,Middleware_Layer,Storage_Layer,Integration_Layer layer
+```
 
 ## 特性
 
 * 使用 [uber/fx](https://github.com/uber-go/fx) 实现IOC(依赖注入控制反转)，可以按需组装不同类型服务。
 * 内置TLS，mTLS，快速构建[Zero Trust安全模型](https://www.wikiwand.com/en/Zero_trust_security_model)。
 * 内置[基于Token的认证](https://www.okta.com/identity-101/what-is-token-based-authentication/)，支持JWT token。
-* 内置中间件(rate limit, open telemetry, auth middleware,logging, panic recovery等)。
+* 内置中间件(rate limit, open telemetry, auth middleware, logging, panic recovery等)。
 * 内置[Cache-Aside模式](https://learn.microsoft.com/en-us/azure/architecture/patterns/cache-aside)数据缓存机制。
 * 内置[Compare-and-swap](https://www.wikiwand.com/en/Compare-and-swap)保证数据库操作的一致性。
 * 内置交互式命令行客户端，方便独立测试服务接口。
@@ -49,15 +120,15 @@ moke-kit 是一个用于构建微服务/单体应用的基础框架。可以按�
 
 * 安装 gonew:
 
- ``` bash 
-    go install golang.org/x/tools/cmd/gonew@latest
- ```
+```bash
+go install golang.org/x/tools/cmd/gonew@latest
+```
 
 * 创建自己的项目:
 
- ``` bash 
-    gonew github.com/gstones/moke-layout your.domain/myprog
- ```
+```bash
+gonew github.com/gstones/moke-layout your.domain/myprog
+```
     
 
 

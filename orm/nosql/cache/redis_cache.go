@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/duke-git/lancet/v2/random"
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 
@@ -31,8 +30,8 @@ func CreateRedisCache(logger *zap.Logger, client *redis.Client) *RedisCache {
 }
 
 // GetCache gets cache
-func (c *RedisCache) GetCache(key key.Key, doc any) bool {
-	if res := c.Get(context.Background(), key.String()); res.Err() != nil {
+func (c *RedisCache) GetCache(ctx context.Context, key key.Key, doc any) bool {
+	if res := c.Get(ctx, key.String()); res.Err() != nil {
 		return false
 	} else if data, err := res.Bytes(); err != nil {
 		return false
@@ -43,18 +42,17 @@ func (c *RedisCache) GetCache(key key.Key, doc any) bool {
 }
 
 // SetCache sets cache
-func (c *RedisCache) SetCache(key key.Key, doc any) {
-	expire := random.RandInt(int(ExpireRangeMin), int(ExpireRangeMax))
+func (c *RedisCache) SetCache(ctx context.Context, key key.Key, doc any, expire time.Duration) {
 	if data, err := json.Marshal(doc); err != nil {
 		return
-	} else if res := c.Set(context.Background(), key.String(), data, time.Duration(expire)); res.Err() != nil {
+	} else if res := c.Set(ctx, key.String(), data, expire); res.Err() != nil {
 		return
 	}
 }
 
 // DeleteCache deletes cache
-func (c *RedisCache) DeleteCache(key key.Key) {
-	if res := c.Del(context.Background(), key.String()); res.Err() != nil {
+func (c *RedisCache) DeleteCache(ctx context.Context, key key.Key) {
+	if res := c.Del(ctx, key.String()); res.Err() != nil {
 		return
 	}
 }

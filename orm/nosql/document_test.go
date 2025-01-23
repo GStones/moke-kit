@@ -1,11 +1,13 @@
 package nosql
 
 import (
+	"context"
 	"fmt"
-	log2 "log"
+	"os"
 	"sync"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 
@@ -14,22 +16,6 @@ import (
 	"github.com/gstones/moke-kit/orm/nosql/key"
 	"github.com/gstones/moke-kit/orm/pkg/ofx"
 )
-
-// TestDocumentBase_Update is a test for document base update.
-// Tips: require mongo server running.
-func TestDocumentBase_Update(t *testing.T) {
-	fxmain.Main(
-		TestModule,
-	)
-}
-
-// TestDocumentBase_Update is a test for document base update.
-// Tips: require mongo server running.
-func TestConcurrentUpdate(t *testing.T) {
-	fxmain.Main(
-		ConcurrentUpdateModule,
-	)
-}
 
 type Data struct {
 	Message string
@@ -48,12 +34,11 @@ func createTestData(id string, mongoCollect diface.ICollection) *TestData {
 			Message: "hello",
 		},
 	}
-
 	k, err := key.NewKeyFromParts("demo", td.ID)
 	if err != nil {
 		panic(err)
 	}
-	td.Init(&td.Data, td.clear, mongoCollect, k)
+	td.Init(context.Background(), &td.Data, td.clear, mongoCollect, k)
 	return td
 }
 
@@ -61,94 +46,103 @@ func (td *TestData) clear() {
 	td.Data = nil
 }
 
-var TestModule = fx.Invoke(func(
-	log *zap.Logger,
-	dProvider ofx.DocumentStoreParams,
-) error {
-	// init mongo collection
-	mongoCollect, err := dProvider.DriverProvider.OpenDbDriver("test")
-	if err != nil {
-		panic(err)
-	}
-	td := createTestData("10000", mongoCollect)
-	if err := td.Create(); err != nil { // create document version =1
-		panic(err)
-	} else if err := td.Update(func() bool { // update document version =2
-		// update logic
-		td.Data.Message = "world"
-		return true
-	}); err != nil {
-		panic(err)
-	}
+func TestDocument_CRUD(t *testing.T) {
+	os.Setenv("DATABASE_URL", "mock://127.0.0.1:27017")
 
-	td2 := createTestData("10000", mongoCollect)
-	if err := td2.Load(); err != nil {
-		panic(err)
-	}
-	if td2.Data.Message != "world" {
-		log.Panic("message is not expect:world", zap.String("msg", td2.Data.Message))
-	} else if td2.version != 2 {
-		log.Panic("version is not expect:2", zap.Int64("version", td2.version))
-	} else if err := td2.Delete(); err != nil {
-		panic(err)
-	}
-	log2.Fatal("test done")
-	return nil
-})
-
-var ConcurrentUpdateModule = fx.Invoke(func(
-	log *zap.Logger,
-	dProvider ofx.DocumentStoreParams,
-) error {
-	// init mongo collection
-	mongoCollect, err := dProvider.DriverProvider.OpenDbDriver("test_concurrent")
-	if err != nil {
-		panic(err)
-	}
-	tdInit := createTestData("10000", mongoCollect)
-	if err := tdInit.Create(); err != nil {
-		panic(err)
-	}
-
-	// create 10 document
-	testDatas := make([]*TestData, 0)
-	for i := 0; i < 10; i++ {
-		td := createTestData("10000", mongoCollect)
-		if err := td.Load(); err != nil { // create document version =1
-			panic(err)
-		} else {
-			testDatas = append(testDatas, td)
+	var testModule = fx.Invoke(func(
+		log *zap.Logger,
+		dProvider ofx.DocumentStoreParams,
+	) error {
+		mongoCollect, err := dProvider.DriverProvider.OpenDbDriver("test")
+		if err != nil {
+			t.Fatal(err)
 		}
-	}
 
-	// concurrent update
-	wg := sync.WaitGroup{}
-	wg.Add(10)
-	for k, td := range testDatas {
-		go func(td *TestData) {
-			log.Info("start update", zap.String("msg:", td.Data.Message))
-			if err := td.Update(func() bool { // update document version =2
-				// update logic
-				td.Data.Message = fmt.Sprint("world+", k)
-				return true
-			}); err != nil {
-				panic(err)
-			}
-			wg.Done()
-		}(td)
-	}
-	wg.Wait()
+		// Test Create
+		td := createTestData("10000", mongoCollect)
+		err = td.Create()
+		assert.NoError(t, err, "Failed to create document")
+		assert.Equal(t, int64(1), td.version, "Initial version should be 1")
 
-	td := createTestData("10000", mongoCollect)
-	if err := td.Load(); err != nil {
-		panic(err)
-	}
-	if td.version != 11 {
-		log.Panic("version is not expect:11", zap.Int64("version", td.version))
-	} else if err := td.Delete(); err != nil {
-		panic(err)
-	}
-	log2.Fatal("test done")
+		// Test Update
+		err = td.Update(func() bool {
+			td.Data.Message = "world"
+			return true
+		})
+		assert.NoError(t, err, "Failed to update document")
+		assert.Equal(t, int64(2), td.version, "Version should be 2 after update")
 
-	return nil
-})
+		// Test Load
+		td.Load()
+		assert.NoError(t, err, "Failed to load document")
+		assert.Equal(t, "world", td.Data.Message, "Loaded message doesn't match")
+
+		// Test Delete
+		err = td.Delete()
+		assert.NoError(t, err, "Failed to delete document")
+
+		os.Exit(0)
+		return nil
+	})
+
+	fxmain.Main(testModule)
+}
+
+func TestDocument_ConcurrentUpdates(t *testing.T) {
+	os.Setenv("DATABASE_URL", "mock://127.0.0.1:27017")
+
+	var concurrentModule = fx.Invoke(func(
+		log *zap.Logger,
+		dProvider ofx.DocumentStoreParams,
+	) error {
+		mongoCollect, err := dProvider.DriverProvider.OpenDbDriver("test_concurrent")
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// Initialize document
+		tdInit := createTestData("10000", mongoCollect)
+		err = tdInit.Create()
+		assert.NoError(t, err, "Failed to create initial document")
+
+		// Create multiple test data instances
+		const numGoroutines = 10
+		testDatas := make([]*TestData, numGoroutines)
+		for i := 0; i < numGoroutines; i++ {
+			td := createTestData("10000", mongoCollect)
+			err = td.Load()
+			assert.NoError(t, err, "Failed to load document for concurrent test")
+			testDatas[i] = td
+		}
+
+		// Perform concurrent updates
+		var wg sync.WaitGroup
+		wg.Add(numGoroutines)
+		for i, td := range testDatas {
+			go func(index int, data *TestData) {
+				defer wg.Done()
+				err := data.Update(func() bool {
+					data.Data.Message = fmt.Sprintf("world+%d", index)
+					return true
+				})
+				assert.NoError(t, err, "Concurrent update failed")
+			}(i, td)
+		}
+		wg.Wait()
+
+		// Verify final state
+		finalTd := createTestData("10000", mongoCollect)
+		err = finalTd.Load()
+		assert.NoError(t, err, "Failed to load final state")
+		assert.Equal(t, int64(11), finalTd.version, "Final version should be 11")
+
+		// Cleanup
+		err = finalTd.Delete()
+		assert.NoError(t, err, "Failed to cleanup test document")
+
+		os.Exit(0)
+		return nil
+	})
+
+	fxmain.Main(concurrentModule)
+}
