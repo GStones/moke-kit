@@ -6,11 +6,12 @@ import (
 	"math/rand"
 	"time"
 
+	"github.com/pkg/errors"
+
 	"github.com/gstones/moke-kit/orm/nerrors"
 	"github.com/gstones/moke-kit/orm/nosql/diface"
 	"github.com/gstones/moke-kit/orm/nosql/key"
 	"github.com/gstones/moke-kit/orm/nosql/noptions"
-	"github.com/pkg/errors"
 )
 
 const (
@@ -19,20 +20,6 @@ const (
 	// DefaultCacheTTL is the default cache TTL for read-through caching
 	DefaultCacheTTL = 30 * time.Minute
 )
-
-// CacheStrategy defines caching behavior configuration
-type CacheStrategy struct {
-	EnableReadThrough bool
-	CacheTTL          time.Duration
-}
-
-// DefaultCacheStrategy returns default cache strategy configuration
-func DefaultCacheStrategy() CacheStrategy {
-	return CacheStrategy{
-		EnableReadThrough: true,
-		CacheTTL:          DefaultCacheTTL,
-	}
-}
 
 // DocumentBase represents a base document structure for NoSQL operations
 type DocumentBase struct {
@@ -45,7 +32,6 @@ type DocumentBase struct {
 	DocumentStore diface.ICollection
 	cache         diface.ICache
 	ctx           context.Context
-	strategy      CacheStrategy
 }
 
 // New write operation type for write-behind
@@ -63,13 +49,25 @@ func (d *DocumentBase) Init(
 	store diface.ICollection,
 	key key.Key,
 ) {
+	defaultCache := diface.DefaultDocumentCache()
+	d.InitWithCache(ctx, data, clear, store, key, defaultCache)
+}
+
+// InitWithCache performs an in-place initialization of a DocumentBase with cache.
+func (d *DocumentBase) InitWithCache(
+	ctx context.Context,
+	data any,
+	clear func(),
+	store diface.ICollection,
+	key key.Key,
+	cache diface.ICache,
+) {
 	d.ctx = ctx
 	d.clear = clear
 	d.data = data
 	d.DocumentStore = store
 	d.Key = key
-	d.cache = diface.DefaultDocumentCache()
-	d.strategy = DefaultCacheStrategy()
+	d.cache = cache
 }
 
 // Clear clears all data on this DocumentBase.
@@ -101,21 +99,6 @@ type VersionCache struct {
 // Load implements Read-Through caching
 func (d *DocumentBase) Load() error {
 	d.clear()
-
-	if !d.strategy.EnableReadThrough {
-		// Directly load from database if Read-Through is disabled
-		version, err := d.DocumentStore.Get(
-			d.ctx,
-			d.Key,
-			noptions.WithDestination(d.data),
-		)
-		if err != nil {
-			return err
-		}
-		d.version = version
-		return nil
-	}
-
 	cache := &VersionCache{
 		Version: &d.version,
 		Data:    d.data,
@@ -141,7 +124,7 @@ func (d *DocumentBase) Load() error {
 	d.cache.SetCache(d.ctx, d.Key, &VersionCache{
 		Version: d.version,
 		Data:    d.data,
-	}, d.strategy.CacheTTL)
+	}, DefaultCacheTTL)
 
 	return nil
 }
@@ -164,7 +147,7 @@ func (d *DocumentBase) Save() error {
 	d.cache.SetCache(d.ctx, d.Key, &VersionCache{
 		Version: d.version,
 		Data:    d.data,
-	}, d.strategy.CacheTTL)
+	}, DefaultCacheTTL)
 
 	return nil
 }
@@ -213,9 +196,4 @@ func (d *DocumentBase) Delete() error {
 	}
 	d.cache.DeleteCache(d.ctx, d.Key)
 	return nil
-}
-
-// SetCacheStrategy allows updating the cache strategy
-func (d *DocumentBase) SetCacheStrategy(strategy CacheStrategy) {
-	d.strategy = strategy
 }
