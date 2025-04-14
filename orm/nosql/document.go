@@ -169,7 +169,7 @@ func (d *DocumentBase) doUpdate(f func() bool, u func() error) error {
 	if lastErr != nil {
 		return errors.Wrap(nerrors.ErrTooManyRetries, lastErr.Error())
 	}
-	return nerrors.ErrTooManyRetries
+	return errors.Wrap(nerrors.ErrTooManyRetries, "no underlying error")
 }
 
 // Update change the data with the given function and CAS(compare and swap) save it to the database.
