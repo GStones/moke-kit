@@ -11,78 +11,89 @@
 moke-kit is a toolkit for building microservices or monolithic applications in Go. You can develop your application as a monolithic service and deploy it as microservices. Like building with LEGO, you can assemble your services exactly how you want them.
 
 ## Diagram
-
-![moke-kit](./assets/moke-kit-diagram.drawio.png)
-
-
-## Layers
 ```mermaid
-graph TB
-    subgraph "Application Layer"
-        App[Application]
-        DI[Dependency Injection<br/>uber/fx]
-    end
+flowchart TD
+%% Application Layer
+  subgraph "Application Layer"
+    app["App & DI (fxmain)"]:::app
+  end
 
-    subgraph "Server Layer"
-        GRPC[gRPC Server]
-        HTTP[HTTP Gateway]
-        TCP[TCP Server]
-        WS[WebSocket Server]
-        KCP[KCP Server]
-    end
+%% Server Layer
+  subgraph "Server Layer"
+    grpc["gRPC Server"]:::server
+    gateway["HTTP Gateway"]:::server
+    zinx["TCP/WebSocket/KCP Server (zinx)"]:::server
+  end
 
-    subgraph "Middleware Layer"
-        Auth[Authentication]
-        Rate[Rate Limiting]
-        Tel[OpenTelemetry]
-        Log[Logging]
-        Rec[Recovery]
-    end
+%% Middleware Layer
+  subgraph "Middleware Layer"
+    auth["Auth Middleware"]:::mw
+    stdmw["Other Middlewares (Logging,RateLimit,Recovery,OTel)"]:::mw
+  end
 
-    subgraph "Storage Layer"
-        subgraph "Database"
-            GORM[GORM]
-            MongoDB[MongoDB]
-        end
-        subgraph "Cache"
-            Redis[Redis]
-            Dragon[Dragonfly]
-        end
-        subgraph "Message Queue"
-            MQ[NATS Message Queue]
-        end
-    end
+%% Storage & Message Queue Layer
+  subgraph "Storage & Message Queue Layer"
+    gorm["Relational DB (GORM)"]:::storage
+    mongo["NoSQL DB (MongoDB)"]:::storage
+    cache["Cache (Redis & Dragonfly)"]:::storage
+    nats["Message Queue (NATS)"]:::storage
+  end
 
-    subgraph "Integration Layer"
-        IAP[IAP Verification]
-        Agones[Agones Gaming]
-    end
+%% Integration Layer
+  subgraph "Integration Layer"
+    iap["IAP Integration"]:::integration
+    agones["Agones Integration"]:::integration
+  end
 
-    App --> DI
-    DI --> GRPC
-    DI --> HTTP
-    DI --> TCP
-    DI --> WS
-    DI --> KCP
-    
-    GRPC --> Auth
-    HTTP --> Auth
-    TCP --> Auth
-    WS --> Auth
-    KCP --> Auth
-    
-    Auth --> GORM
-    Auth --> MongoDB
-    Auth --> Redis
-    Auth --> Dragon
-    Auth --> MQ
-    Auth --> IAP
-    Auth --> Agones
+%% Connections from Application Layer to Server Layer 
+  app -->|"initializes"| grpc
+  app -->|"initializes"| gateway
+  app -->|"initializes"| zinx
 
-    classDef default fill:#f9f9f9,stroke:#333,stroke-width:2px
-    classDef layer fill:#e4f0f8,stroke:#333,stroke-width:2px
-    class App,DI default
-    class Server_Layer,Middleware_Layer,Storage_Layer,Integration_Layer layer
+%% Connections from Server Layer to Middleware Layer
+  grpc -->|"processed by"| auth
+  grpc -->|"processed by"| stdmw
+  gateway -->|"processed by"| auth
+  gateway -->|"processed by"| stdmw
+  zinx -->|"processed by"| auth
+  zinx -->|"processed by"| stdmw
+
+%% Connections from Middleware Layer to Storage & Message Queue Layer
+  auth -->|"accesses"| gorm
+  auth -->|"accesses"| mongo
+  auth -->|"accesses"| cache
+  auth -->|"accesses"| nats
+  stdmw -->|"accesses"| gorm
+  stdmw -->|"accesses"| mongo
+  stdmw -->|"accesses"| cache
+  stdmw -->|"accesses"| nats
+
+%% Connections from Middleware Layer to Integration Layer
+  auth -->|"integrates"| iap
+  auth -->|"integrates"| agones
+  stdmw -->|"integrates"| iap
+  stdmw -->|"integrates"| agones
+
+%% Styles
+  classDef app fill:#D0E6A5,stroke:#333,stroke-width:2px;
+  classDef server fill:#86E3CE,stroke:#333,stroke-width:2px;
+  classDef mw fill:#FFDD94,stroke:#333,stroke-width:2px;
+  classDef storage fill:#F09494,stroke:#333,stroke-width:2px;
+  classDef integration fill:#A29BFE,stroke:#333,stroke-width:2px;
+
+%% Click Events
+  click app "https://github.com/gstones/moke-kit/blob/main/fxmain/fxmain.go"
+  click grpc "https://github.com/gstones/moke-kit/blob/main/server/internal/srpc/grpc.go"
+  click gateway "https://github.com/gstones/moke-kit/blob/main/server/internal/srpc/gateway.go"
+  click zinx "https://github.com/gstones/moke-kit/blob/main/server/internal/zinx/zinx_tcp.go"
+  click auth "https://github.com/gstones/moke-kit/blob/main/3rd/auth/pkg/authfx/firebase_middleware.go"
+  click stdmw "https://github.com/gstones/moke-kit/blob/main/server/middlewares/logger.go"
+  click gorm "https://github.com/gstones/moke-kit/blob/main/orm/pkg/ofx/gorm_module.go"
+  click mongo "https://github.com/gstones/moke-kit/blob/main/orm/nosql/mongo/factory.go"
+  click cache "https://github.com/gstones/moke-kit/blob/main/orm/nosql/cache/redis_cache.go"
+  click nats "https://github.com/gstones/moke-kit/blob/main/mq/internal/nats/message_queue.go"
+  click iap "https://github.com/gstones/moke-kit/blob/main/3rd/iap/pkg/iapfx/iap_clients.go"
+  click agones "https://github.com/gstones/moke-kit/tree/main/3rd/agones/pkg/agonesfx"
 ```
 
 
