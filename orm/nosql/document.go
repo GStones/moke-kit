@@ -34,13 +34,6 @@ type DocumentBase struct {
 	ctx           context.Context
 }
 
-// New write operation type for write-behind
-type writeOperation struct {
-	key     key.Key
-	data    any
-	version noptions.Version
-}
-
 // Init performs an in-place initialization of a DocumentBase.
 func (d *DocumentBase) Init(
 	ctx context.Context,
@@ -173,7 +166,10 @@ func (d *DocumentBase) doUpdate(f func() bool, u func() error) error {
 			}
 		}
 	}
-	return errors.Wrap(nerrors.ErrTooManyRetries, lastErr.Error())
+	if lastErr != nil {
+		return errors.Wrap(nerrors.ErrTooManyRetries, lastErr.Error())
+	}
+	return nerrors.ErrTooManyRetries
 }
 
 // Update change the data with the given function and CAS(compare and swap) save it to the database.
