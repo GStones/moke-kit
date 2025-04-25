@@ -2,6 +2,7 @@ package diface
 
 import (
 	"context"
+	"log"
 	"time"
 
 	"github.com/gstones/moke-kit/orm/nosql/key"
@@ -31,7 +32,6 @@ func (c *defaultDocumentCache) GetCache(ctx context.Context, key key.Key, fields
 }
 
 func (c *defaultDocumentCache) SetCache(ctx context.Context, key key.Key, data map[string]any, expire time.Duration) error {
-	log.Println("Warning: SetCache called on defaultDocumentCache, but this implementation is a no-op.")
 }
 
 func (c *defaultDocumentCache) DeleteCache(ctx context.Context, key key.Key) {
