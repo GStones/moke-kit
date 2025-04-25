@@ -162,7 +162,7 @@ func (d *DocumentBase) Create() error {
 
 // 生成随机的缓存过期时间，防止缓存雪崩
 func randomExpiration() time.Duration {
-	return (ExpireRangeMin + time.Duration(rand.Int63n(int64(ExpireRangeMax-ExpireRangeMin)))) * time.Hour
+	return ExpireRangeMin + time.Duration(rand.Int63n(int64(ExpireRangeMax-ExpireRangeMin)))
 }
 
 // 更新缓存
