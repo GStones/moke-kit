@@ -100,7 +100,7 @@ func (m *MessageQueue) Subscribe(
 	go func() {
 		for msg := range msgChan {
 			ms := message2.Msg2Message(topic, msg)
-			if code := handler(ms, nil); code == common.ConsumeNackTransientFailure {
+			if code := handler(ctx, ms, nil); code == common.ConsumeNackTransientFailure {
 				msg.Nack()
 			} else {
 				msg.Ack()

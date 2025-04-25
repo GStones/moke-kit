@@ -30,7 +30,7 @@ func CreateSubscription(
 	go func() {
 		for msg := range msgIn {
 			m := message2.Msg2Message(topic, msg)
-			if code := sub.handler(m, nil); code == common.ConsumeNackTransientFailure {
+			if code := sub.handler(ctx, m, nil); code == common.ConsumeNackTransientFailure {
 				msg.Nack()
 			} else {
 				msg.Ack()
