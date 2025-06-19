@@ -54,7 +54,6 @@ func (m *MockCollection) Set(ctx context.Context, key key.Key, opts ...noptions.
 		}
 		m.data = jsonData
 	}
-	
 	// 直接增加版本号
 	m.version++
 	
