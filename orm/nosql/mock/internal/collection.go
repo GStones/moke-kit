@@ -21,8 +21,16 @@ func NewMockCollection(name string) *MockCollection {
 		version: 0,
 	}
 	mc.On("GetName").Return(name)
-	mc.On("Set", mock.Anything, mock.Anything, mock.Anything).Return(mc.version+1, nil)
-	mc.On("Get", mock.Anything, mock.Anything, mock.Anything).Return(mc.version, nil)
+	mc.On("Set", mock.Anything, mock.Anything, mock.Anything).Return(func(ctx context.Context, key key.Key, opts ...noptions.Option) noptions.Version {
+		mc.version++
+		return mc.version
+	}, nil)
+	mc.On("Get", mock.Anything, mock.Anything, mock.Anything).Return(func(ctx context.Context, key key.Key, opts ...noptions.Option) noptions.Version {
+		if mc.version == 0 {
+			mc.version = 1 // 确保至少返回版本1
+		}
+		return mc.version
+	}, nil)
 	mc.On("Delete", mock.Anything, mock.Anything).Return(nil)
 	mc.On("Incr", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(int64(1), nil)
 	return mc
@@ -46,12 +54,11 @@ func (m *MockCollection) Set(ctx context.Context, key key.Key, opts ...noptions.
 		}
 		m.data = jsonData
 	}
+	// 直接增加版本号
+	m.version++
+	
 	ret := m.Called(ctx, key, opts)
-	r1 := ret.Error(1)
-	if r1 == nil {
-		m.version = m.version + 1
-	}
-	return m.version, r1
+	return m.version, ret.Error(1)
 }
 
 func (m *MockCollection) Get(
@@ -64,14 +71,18 @@ func (m *MockCollection) Get(
 		return noptions.NoVersion, err
 	}
 
-	if options.Destination != nil {
+	if options.Destination != nil && m.data != nil {
 		json.Unmarshal(m.data, options.Destination)
 	}
 
 	ret := m.Called(ctx, key, opts)
-	r0 := ret.Get(0).(noptions.Version)
-	r1 := ret.Error(1)
-	return r0, r1
+	
+	// 确保返回有效的版本号
+	if m.version == 0 {
+		m.version = 1
+	}
+	
+	return m.version, ret.Error(1)
 }
 
 func (m *MockCollection) Delete(ctx context.Context, key key.Key) error {
