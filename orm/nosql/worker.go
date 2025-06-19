@@ -63,11 +63,17 @@ func (w *WriteBackWorker) Start() error {
 			noptions.WithVersion(payload.Version),
 		)
 		if err != nil {
-			w.logger.Error("Failed to write back document", zap.String("key", payload.Key), zap.Error(err))
+			w.logger.Error("Failed to write back document",
+				zap.String("key", payload.Key),
+				zap.Any("data", payload.Data),
+				zap.Error(err),
+			)
 			return common.ConsumeNackPersistentFailure
 		}
-		w.logger.Info("Successfully wrote back document", zap.String("key", payload.Key), zap.String("collection", payload.CollectionName))
-
+		w.logger.Info("Successfully wrote back document",
+			zap.String("key", payload.Key),
+			zap.String("collection", payload.CollectionName),
+		)
 		return common.ConsumeAck
 	}
 

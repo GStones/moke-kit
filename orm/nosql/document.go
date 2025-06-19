@@ -58,9 +58,9 @@ func DefaultWriteBackOptions() WriteBackOptions {
 type DocumentBase struct {
 	Key key.Key
 
-	clear   func()
-	data    any
-	version noptions.Version
+	clearFunc func()
+	data      any
+	version   noptions.Version
 
 	DocumentStore diface.ICollection
 	cache         diface.ICache
@@ -92,7 +92,7 @@ func (d *DocumentBase) InitWithCache(
 	cache diface.ICache,
 ) {
 	d.ctx = ctx
-	d.clear = clear
+	d.clearFunc = clear
 	d.data = data
 	d.DocumentStore = store
 	d.Key = key
@@ -141,7 +141,7 @@ func (d *DocumentBase) scheduleWriteBackWithMQ(changes map[string]any) error {
 // Clear 清除此 DocumentBase 上的所有数据
 func (d *DocumentBase) Clear() {
 	d.version = noptions.NoVersion
-	d.clear()
+	d.clearFunc()
 }
 
 // Create 在数据库中创建数据和版本
@@ -186,7 +186,7 @@ func (d *DocumentBase) updateCache() error {
 
 // Load 实现读穿透缓存
 func (d *DocumentBase) Load() error {
-	d.clear()
+	d.clearFunc()
 
 	// 首先尝试缓存
 	if data := d.cache.GetCache(d.ctx, d.Key); len(data) > 0 {
@@ -207,7 +207,7 @@ func (d *DocumentBase) Load() error {
 	return d.updateCache()
 }
 
-// SaveAsync 实现异步写入，更新缓存并安排延迟回写
+// SaveAsync 实现异步写入，更新缓存并安排延迟回写数据库
 func (d *DocumentBase) SaveAsync(changes map[string]any) error {
 	// 更新缓存
 	if err := d.updateCacheChanges(changes); err != nil {
@@ -217,6 +217,8 @@ func (d *DocumentBase) SaveAsync(changes map[string]any) error {
 	// 如果启用了回写，安排回写
 	if d.writeBack.Enabled && d.writeBack.MQ != nil {
 		go func() {
+			// 延迟回写
+			time.Sleep(d.writeBack.Delay)
 			if err := d.scheduleWriteBackWithMQ(changes); err != nil {
 				return
 			}
