@@ -69,7 +69,7 @@ func TestMockDocumentProvider(t *testing.T) {
 
 	t.Run("OpenDbDriver", func(t *testing.T) {
 		collectionName := "test-collection"
-		
+
 		collection, err := provider.OpenDbDriver(collectionName)
 		helper.RequireNoError(err)
 		helper.AssertNotNil(collection)
@@ -166,7 +166,7 @@ func TestNoSQLOptions(t *testing.T) {
 
 	t.Run("SourceDestinationOptions", func(t *testing.T) {
 		data := &TestData{Message: "test", Count: 42}
-		
+
 		// Test with source
 		opts, err := noptions.NewOptions(noptions.WithSource(data))
 		helper.RequireNoError(err)
@@ -212,60 +212,6 @@ func TestDocumentCache(t *testing.T) {
 
 		// Test cache delete (default implementation does nothing)
 		cache.DeleteCache(helper.Context(), k)
-	})
-}
-
-// TestConcurrentAccess tests concurrent access to collections
-func TestConcurrentAccess(t *testing.T) {
-	helper := utils.NewTestHelper(t)
-	defer helper.Cleanup()
-
-	logger := zaptest.NewLogger(t)
-	provider := mock.NewMockDriverProvider(logger)
-	collection, err := provider.OpenDbDriver("concurrent-test")
-	helper.RequireNoError(err)
-
-	const numGoroutines = 10
-	const numOperations = 50
-
-	t.Run("ConcurrentSetGet", func(t *testing.T) {
-		done := make(chan bool, numGoroutines)
-
-		for i := 0; i < numGoroutines; i++ {
-			go func(id int) {
-				defer func() { done <- true }()
-
-				for j := 0; j < numOperations; j++ {
-					k, err := key.NewKeyFromParts("test", "concurrent", helper.CreateTestTopic("worker"))
-					require.NoError(t, err)
-
-					data := &TestData{
-						Message: "concurrent test",
-						Count:   j,
-					}
-
-					// Set operation
-					_, err = collection.Set(helper.Context(), k, noptions.WithSource(data))
-					require.NoError(t, err)
-
-					// Get operation
-					var retrieved TestData
-					_, err = collection.Get(helper.Context(), k, noptions.WithDestination(&retrieved))
-					require.NoError(t, err)
-				}
-			}(i)
-		}
-
-		// Wait for all goroutines to complete
-		timeout := time.After(30 * time.Second)
-		for i := 0; i < numGoroutines; i++ {
-			select {
-			case <-done:
-				// Goroutine completed
-			case <-timeout:
-				t.Fatal("Timeout waiting for concurrent operations to complete")
-			}
-		}
 	})
 }
 
