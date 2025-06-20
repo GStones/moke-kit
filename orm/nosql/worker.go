@@ -3,6 +3,8 @@ package nosql
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"strings"
 	"sync"
 	"time"
 
@@ -41,6 +43,50 @@ func NewWriteBackWorker(
 	}
 }
 
+// WriteBackMetrics 回写工作器的指标统计
+type WriteBackMetrics struct {
+	ProcessedCount int64         `json:"processed_count"`
+	FailedCount    int64         `json:"failed_count"`
+	AverageLatency time.Duration `json:"average_latency"`
+	LastProcessed  time.Time     `json:"last_processed"`
+}
+
+// GetMetrics 获取工作器指标
+func (w *WriteBackWorker) GetMetrics() WriteBackMetrics {
+	// 这里可以使用原子操作来保证线程安全
+	// 暂时简化实现
+	return WriteBackMetrics{
+		ProcessedCount: 0, // TODO: 实现指标收集
+		FailedCount:    0,
+		AverageLatency: 0,
+		LastProcessed:  time.Now(),
+	}
+}
+
+// handleError 处理回写错误并返回适当的消费代码
+func (w *WriteBackWorker) handleError(err error, payload WriteBackPayload) common.ConsumptionCode {
+	w.logger.Error("WriteBack operation failed",
+		zap.Error(err),
+		zap.String("collection", payload.CollectionName),
+		zap.String("key", payload.Key),
+	)
+
+	switch {
+	case errors.Is(err, context.DeadlineExceeded):
+		w.logger.Warn("WriteBack timeout, will retry", zap.String("key", payload.Key))
+		return common.ConsumeNackTransientFailure
+	case strings.Contains(err.Error(), "version mismatch"):
+		w.logger.Warn("Version mismatch, dropping message", zap.String("key", payload.Key))
+		return common.ConsumeNackPersistentFailure
+	case strings.Contains(err.Error(), "connection"):
+		w.logger.Warn("Connection error, will retry", zap.String("key", payload.Key))
+		return common.ConsumeNackTransientFailure
+	default:
+		w.logger.Error("Unknown error, will retry", zap.Error(err), zap.String("key", payload.Key))
+		return common.ConsumeNackTransientFailure
+	}
+}
+
 // Start 启动回写工作器
 func (w *WriteBackWorker) Start() error {
 	handler := func(ctx context.Context, msg miface.Message, err error) common.ConsumptionCode {
@@ -55,6 +101,7 @@ func (w *WriteBackWorker) Start() error {
 			return common.ConsumeNackPersistentFailure
 		}
 
+		startTime := time.Now()
 		// 原始JSON数据可以直接用于Set操作
 		_, err = coll.Set(
 			ctx,
@@ -62,18 +109,31 @@ func (w *WriteBackWorker) Start() error {
 			noptions.WithSource(payload.Data),
 			noptions.WithVersion(payload.Version),
 		)
+		latency := time.Since(startTime)
+
 		if err != nil {
 			w.logger.Error("Failed to write back document",
 				zap.String("key", payload.Key),
 				zap.Any("data", payload.Data),
 				zap.Error(err),
+				zap.Duration("latency", latency),
 			)
-			return common.ConsumeNackPersistentFailure
+			return w.handleError(err, payload)
 		}
-		w.logger.Info("Successfully wrote back document",
+
+		w.logger.Debug("Successfully wrote back document",
 			zap.String("key", payload.Key),
 			zap.String("collection", payload.CollectionName),
+			zap.Duration("latency", latency),
 		)
+		
+		
+		w.logger.Debug("Successfully wrote back document",
+			zap.String("key", payload.Key),
+			zap.String("collection", payload.CollectionName),
+			zap.Duration("latency", latency),
+		)
+		
 		return common.ConsumeAck
 	}
 

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"strings"
 )
 
 // isBasicType 检查 reflect.Kind 是否为 Go 的基本类型（bool, numeric, string）。
@@ -67,8 +68,25 @@ func map2StructShallow(m map[string]any, obj any) error {
 			field.Set(mv1.Convert(field.Type()))
 			continue
 		}
-		if err := json.Unmarshal([]byte(v1.(string)), field.Addr().Interface()); err != nil {
-			return fmt.Errorf("failed to unmarshal: %w", err)
+		
+		// 处理需要 JSON 反序列化的情况
+		var jsonData []byte
+		switch v := v1.(type) {
+		case string:
+			jsonData = []byte(v)
+		case []byte:
+			jsonData = v
+		default:
+			// 如果不是字符串或字节数组，尝试序列化再反序列化
+			var err error
+			jsonData, err = json.Marshal(v1)
+			if err != nil {
+				return fmt.Errorf("failed to marshal value for field %s: %w", k1, err)
+			}
+		}
+		
+		if err := json.Unmarshal(jsonData, field.Addr().Interface()); err != nil {
+			return fmt.Errorf("failed to unmarshal field %s: %w", k1, err)
 		}
 	}
 	return nil
@@ -108,9 +126,43 @@ func struct2MapShallow(obj any) (map[string]any, error) {
 		// 只处理导出的字段 (首字母大写)
 		if field.IsExported() {
 			fieldName := field.Name
+			// 使用 json 标签名称（如果存在）
+			if jsonTag != "" && jsonTag != "-" {
+				// 处理 json 标签中的选项（如 omitempty）
+				tagParts := strings.Split(jsonTag, ",")
+				if tagParts[0] != "" {
+					fieldName = tagParts[0]
+				}
+			}
 			fieldValue := v.Field(i)
 			res[fieldName] = fieldValue.Interface()
 		}
 	}
 	return res, nil
+}
+
+// diffMapAny 比较两个 map 并返回差异
+func diffMapAny(oldMap, newMap map[string]any) (map[string]any, error) {
+	changes := make(map[string]any)
+
+	// 检查新增和修改的字段
+	for key, newValue := range newMap {
+		if oldValue, exists := oldMap[key]; !exists {
+			// 新增字段
+			changes[key] = newValue
+		} else if !reflect.DeepEqual(oldValue, newValue) {
+			// 修改字段
+			changes[key] = newValue
+		}
+	}
+
+	// 检查删除的字段
+	for key := range oldMap {
+		if _, exists := newMap[key]; !exists {
+			// 标记为已删除
+			changes[key] = nil
+		}
+	}
+
+	return changes, nil
 }

@@ -4,7 +4,6 @@ import (
 	"context"
 	"math"
 	"math/rand"
-	"reflect"
 	"time"
 
 	"github.com/pkg/errors"
@@ -52,6 +51,17 @@ func DefaultWriteBackOptions() WriteBackOptions {
 		Delay:   DefaultWriteBackDelay,
 		MQ:      nil,
 	}
+}
+
+// Validate 验证回写选项的有效性
+func (opts WriteBackOptions) Validate() error {
+	if opts.Enabled && opts.MQ == nil {
+		return errors.New("MQ client is required when WriteBack is enabled")
+	}
+	if opts.Delay < 0 {
+		return errors.New("WriteBack delay cannot be negative")
+	}
+	return nil
 }
 
 // DocumentBase 表示 NoSQL 操作的基础文档结构
@@ -282,19 +292,6 @@ func (d *DocumentBase) Update(f func() bool) error {
 	return d.doUpdate(f, func() error {
 		return d.Save()
 	})
-}
-
-// diffMapAny 比较两个 map[string]any，返回不同的键值对
-func diffMapAny(oldData map[string]any, newData map[string]any) (map[string]any, error) {
-	changes := make(map[string]any)
-	// Compare and collect changes
-	for k, newVal := range newData {
-		if oldVal, exists := oldData[k]; !exists || !reflect.DeepEqual(oldVal, newVal) {
-			changes[k] = newVal
-		}
-	}
-
-	return changes, nil
 }
 
 // UpdateAsync 异步更新数据，更改后安排延迟回写
