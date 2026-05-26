@@ -137,6 +137,7 @@ func makeTLSConfig(logger *zap.Logger, tlsCert, tlsKey string, clientCa string) 
 			return nil, err
 		}
 		tlsConfig := &tls.Config{
+			MinVersion: tls.VersionTLS12,
 			ClientAuth: tls.RequireAndVerifyClientCert,
 			GetCertificate: func(info *tls.ClientHelloInfo) (*tls.Certificate, error) {
 				c := tlsCertValue.Load()

@@ -2,7 +2,6 @@ package middlewares
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	"go.opentelemetry.io/otel/trace"
@@ -43,7 +42,7 @@ func interceptorLogger(l *zap.Logger) logging.Logger {
 		case logging.LevelError:
 			logger.Error(msg)
 		default:
-			panic(fmt.Sprintf("unknown level %v", lvl))
+			logger.Error(msg, zap.Any("unknown_level", lvl))
 		}
 	})
 }

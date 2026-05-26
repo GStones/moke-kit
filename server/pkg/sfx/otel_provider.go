@@ -46,8 +46,8 @@ func (otel *OTelProviderResult) init(appSetting mfx.AppParams, enable bool) (err
 	return
 }
 
-func initResource(appSetting mfx.AppParams) *sdkresource.Resource {
-	extraResources, _ := sdkresource.New(
+func initResource(appSetting mfx.AppParams) (*sdkresource.Resource, error) {
+	extraResources, err := sdkresource.New(
 		context.Background(),
 		sdkresource.WithOS(),
 		sdkresource.WithProcess(),
@@ -60,11 +60,17 @@ func initResource(appSetting mfx.AppParams) *sdkresource.Resource {
 			semconv.ServiceNamespace(appSetting.Deployment),
 		),
 	)
-	resource, _ := sdkresource.Merge(
+	if err != nil {
+		return sdkresource.Default(), nil
+	}
+	resource, err := sdkresource.Merge(
 		sdkresource.Default(),
 		extraResources,
 	)
-	return resource
+	if err != nil {
+		return sdkresource.Default(), nil
+	}
+	return resource, nil
 }
 
 func initTracerProvider(appSetting mfx.AppParams) (*sdktrace.TracerProvider, error) {
@@ -73,11 +79,15 @@ func initTracerProvider(appSetting mfx.AppParams) (*sdktrace.TracerProvider, err
 	if err != nil {
 		return nil, err
 	}
+	resource, err := initResource(appSetting)
+	if err != nil {
+		return nil, err
+	}
 	bsp := sdktrace.NewBatchSpanProcessor(exporter)
 	tp := sdktrace.NewTracerProvider(
 		sdktrace.WithSampler(sdktrace.AlwaysSample()),
 		sdktrace.WithBatcher(exporter),
-		sdktrace.WithResource(initResource(appSetting)),
+		sdktrace.WithResource(resource),
 		sdktrace.WithSpanProcessor(bsp),
 	)
 	otel.SetTracerProvider(tp)
@@ -90,10 +100,14 @@ func initMeterProvider(appSetting mfx.AppParams) (*sdkmetric.MeterProvider, erro
 	if err != nil {
 		return nil, err
 	}
+	resource, err := initResource(appSetting)
+	if err != nil {
+		return nil, err
+	}
 
 	mp := sdkmetric.NewMeterProvider(
 		sdkmetric.WithReader(sdkmetric.NewPeriodicReader(exporter)),
-		sdkmetric.WithResource(initResource(appSetting)),
+		sdkmetric.WithResource(resource),
 	)
 	otel.SetMeterProvider(mp)
 	return mp, nil
