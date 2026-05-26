@@ -6,6 +6,7 @@ import (
 	"errors"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"go.uber.org/zap"
@@ -25,6 +26,12 @@ type WriteBackWorker struct {
 	dbProvider diface.IDocumentProvider
 	logger     *zap.Logger
 	wg         sync.WaitGroup
+
+	// Metrics fields
+	processedCount atomic.Int64
+	failedCount    atomic.Int64
+	totalLatency   atomic.Int64 // in nanoseconds
+	lastProcessed  atomic.Value // time.Time
 }
 
 // NewWriteBackWorker 创建一个新的回写工作器
@@ -53,18 +60,32 @@ type WriteBackMetrics struct {
 
 // GetMetrics 获取工作器指标
 func (w *WriteBackWorker) GetMetrics() WriteBackMetrics {
-	// 这里可以使用原子操作来保证线程安全
-	// 暂时简化实现
+	processed := w.processedCount.Load()
+	failed := w.failedCount.Load()
+	totalLatency := w.totalLatency.Load()
+
+	var avgLatency time.Duration
+	if processed > 0 {
+		avgLatency = time.Duration(totalLatency / processed)
+	}
+
+	var lastProcessed time.Time
+	if val := w.lastProcessed.Load(); val != nil {
+		lastProcessed = val.(time.Time)
+	}
+
 	return WriteBackMetrics{
-		ProcessedCount: 0, // TODO: 实现指标收集
-		FailedCount:    0,
-		AverageLatency: 0,
-		LastProcessed:  time.Now(),
+		ProcessedCount: processed,
+		FailedCount:    failed,
+		AverageLatency: avgLatency,
+		LastProcessed:  lastProcessed,
 	}
 }
 
 // handleError 处理回写错误并返回适当的消费代码
 func (w *WriteBackWorker) handleError(err error, payload WriteBackPayload) common.ConsumptionCode {
+	w.failedCount.Add(1)
+
 	w.logger.Error("WriteBack operation failed",
 		zap.Error(err),
 		zap.String("collection", payload.CollectionName),
@@ -101,10 +122,14 @@ func (w *WriteBackWorker) Start() error {
 			return common.ConsumeNackPersistentFailure
 		}
 
+		// Add timeout to database operation
+		dbCtx, dbCancel := context.WithTimeout(ctx, 30*time.Second)
+		defer dbCancel()
+
 		startTime := time.Now()
 		// 原始JSON数据可以直接用于Set操作
 		_, err = coll.Set(
-			ctx,
+			dbCtx,
 			key.NewKey(payload.Key),
 			noptions.WithSource(payload.Data),
 			noptions.WithVersion(payload.Version),
@@ -121,19 +146,17 @@ func (w *WriteBackWorker) Start() error {
 			return w.handleError(err, payload)
 		}
 
+		// Record successful metrics
+		w.processedCount.Add(1)
+		w.totalLatency.Add(int64(latency))
+		w.lastProcessed.Store(time.Now())
+
 		w.logger.Debug("Successfully wrote back document",
 			zap.String("key", payload.Key),
 			zap.String("collection", payload.CollectionName),
 			zap.Duration("latency", latency),
 		)
-		
-		
-		w.logger.Debug("Successfully wrote back document",
-			zap.String("key", payload.Key),
-			zap.String("collection", payload.CollectionName),
-			zap.Duration("latency", latency),
-		)
-		
+
 		return common.ConsumeAck
 	}
 

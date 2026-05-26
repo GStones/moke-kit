@@ -11,7 +11,7 @@ import (
 	"github.com/gstones/moke-kit/orm/nosql/diface"
 )
 
-// WriteBackManager 管理多個回寫工作器
+// WriteBackManager 管理多个回写工作器
 type WriteBackManager struct {
 	config     WriteBackConfig
 	workers    []*WriteBackWorker
@@ -25,7 +25,7 @@ type WriteBackManager struct {
 	metrics    WriteBackManagerMetrics
 }
 
-// WriteBackManagerMetrics 管理器指標
+// WriteBackManagerMetrics 管理器指标
 type WriteBackManagerMetrics struct {
 	TotalProcessed int64         `json:"total_processed"`
 	TotalFailed    int64         `json:"total_failed"`
@@ -47,7 +47,7 @@ func NewWriteBackManager(
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
-	
+
 	manager := &WriteBackManager{
 		config:     config,
 		mqClient:   mqClient,
@@ -63,7 +63,7 @@ func NewWriteBackManager(
 	return manager, nil
 }
 
-// Start 啟動管理器
+// Start 启动管理器
 func (m *WriteBackManager) Start() error {
 	if !m.config.Enabled {
 		m.logger.Info("WriteBack is disabled, skipping start")
@@ -82,10 +82,10 @@ func (m *WriteBackManager) Start() error {
 	for i := 0; i < m.config.WorkerCount; i++ {
 		worker := NewWriteBackWorker(m.mqClient, m.dbProvider, m.logger.With(zap.Int("worker_id", i)))
 		m.workers = append(m.workers, worker)
-		
+
 		if err := worker.Start(); err != nil {
 			m.logger.Error("Failed to start worker", zap.Int("worker_id", i), zap.Error(err))
-			// 停止已啟動的工作器
+			// 停止已启动的工作器
 			m.stopWorkers()
 			return err
 		}
@@ -93,7 +93,7 @@ func (m *WriteBackManager) Start() error {
 
 	m.metrics.WorkerCount = len(m.workers)
 	m.logger.Info("WriteBack manager started successfully", zap.Int("workers", len(m.workers)))
-	
+
 	return nil
 }
 
@@ -104,35 +104,41 @@ func (m *WriteBackManager) Stop() error {
 
 	m.logger.Info("Stopping WriteBack manager")
 	m.cancel()
-	
+
 	m.stopWorkers()
-	
+
 	m.logger.Info("WriteBack manager stopped")
 	return nil
 }
 
-// stopWorkers 停止所有工作器
+// stopWorkers 停止所有工作器（并发停止以提高效率）
 func (m *WriteBackManager) stopWorkers() {
+	var wg sync.WaitGroup
 	for i, worker := range m.workers {
-		worker.Stop()
-		m.logger.Debug("Stopped worker", zap.Int("worker_id", i))
+		wg.Add(1)
+		go func(id int, w *WriteBackWorker) {
+			defer wg.Done()
+			w.Stop()
+			m.logger.Debug("Stopped worker", zap.Int("worker_id", id))
+		}(i, worker)
 	}
+	wg.Wait()
 	m.workers = nil
 }
 
-// GetMetrics 獲取管理器指標
+// GetMetrics 获取管理器指标
 func (m *WriteBackManager) GetMetrics() WriteBackManagerMetrics {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
 	metrics := m.metrics
 	metrics.Uptime = time.Since(metrics.StartTime)
-	
-	// 聚合工作器指標
+
+	// 聚合工作器指标
 	var totalProcessed, totalFailed int64
 	var totalLatency time.Duration
 	workerCount := 0
-	
+
 	for _, worker := range m.workers {
 		workerMetrics := worker.GetMetrics()
 		totalProcessed += workerMetrics.ProcessedCount
@@ -140,14 +146,14 @@ func (m *WriteBackManager) GetMetrics() WriteBackManagerMetrics {
 		totalLatency += workerMetrics.AverageLatency
 		workerCount++
 	}
-	
+
 	if workerCount > 0 {
 		metrics.AverageLatency = totalLatency / time.Duration(workerCount)
 	}
-	
+
 	metrics.TotalProcessed = totalProcessed
 	metrics.TotalFailed = totalFailed
-	
+
 	return metrics
 }
 
