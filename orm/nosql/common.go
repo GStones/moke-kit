@@ -27,6 +27,10 @@ func isBasicType(k reflect.Kind) bool {
 func marshalAnyMap(m map[string]any) (map[string]any, error) {
 	res := make(map[string]any)
 	for k, v := range m {
+		if v == nil {
+			res[k] = nil
+			continue
+		}
 		if !isBasicType(reflect.TypeOf(v).Kind()) {
 			if js, err := json.Marshal(v); err != nil {
 				return nil, fmt.Errorf("failed to marshal: %w", err)
@@ -68,7 +72,7 @@ func map2StructShallow(m map[string]any, obj any) error {
 			field.Set(mv1.Convert(field.Type()))
 			continue
 		}
-		
+
 		// 处理需要 JSON 反序列化的情况
 		var jsonData []byte
 		switch v := v1.(type) {
@@ -84,7 +88,7 @@ func map2StructShallow(m map[string]any, obj any) error {
 				return fmt.Errorf("failed to marshal value for field %s: %w", k1, err)
 			}
 		}
-		
+
 		if err := json.Unmarshal(jsonData, field.Addr().Interface()); err != nil {
 			return fmt.Errorf("failed to unmarshal field %s: %w", k1, err)
 		}
