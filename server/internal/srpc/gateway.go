@@ -85,10 +85,12 @@ func allowCORS(h http.Handler) http.Handler {
 	})
 }
 
-func preflightHandler(w http.ResponseWriter, _ *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
+func preflightHandler(w http.ResponseWriter, r *http.Request) {
+	if origin := r.Header.Get("Origin"); origin != "" {
+		w.Header().Set("Access-Control-Allow-Origin", origin)
+	}
 
-	headers := []string{"*"}
+	headers := []string{"Content-Type", "Accept", "Authorization"}
 	w.Header().Set("Access-Control-Allow-Headers", strings.Join(headers, ","))
 
 	methods := []string{"GET", "HEAD", "POST", "PUT", "DELETE"}

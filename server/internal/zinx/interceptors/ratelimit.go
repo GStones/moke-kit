@@ -26,7 +26,8 @@ func NewRateLimitInterceptor(logger *zap.Logger, rateLimit int32) *RateLimitInte
 // Intercept intercept
 func (r *RateLimitInterceptor) Intercept(chain ziface.IChain) ziface.IcResp {
 	if err := r.rl.Limit(context.Background()); err != nil {
-		r.logger.Error("rate limit exceeded", zap.Error(err))
+		r.logger.Warn("rate limit exceeded", zap.Error(err))
+		return nil
 	}
 	return chain.Proceed(chain.Request())
 }

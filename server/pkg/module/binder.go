@@ -63,8 +63,13 @@ func (sb *ServiceBinder) otelProvider(logger *zap.Logger) ([]LifecycleHook, erro
 		func(lc fx.Lifecycle) {
 			lc.Append(fx.Hook{
 				OnStop: func(ctx context.Context) error {
-					_ = sb.TracerProvider.Shutdown(ctx)
-					return sb.MetricProvider.Shutdown(ctx)
+					if sb.TracerProvider != nil {
+						_ = sb.TracerProvider.Shutdown(ctx)
+					}
+					if sb.MetricProvider != nil {
+						return sb.MetricProvider.Shutdown(ctx)
+					}
+					return nil
 				},
 			})
 		},

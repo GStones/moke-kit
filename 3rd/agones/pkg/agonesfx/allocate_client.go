@@ -58,7 +58,7 @@ var AllocateClientModule = fx.Provide(
 				out.AllocateClient = cli
 			}
 		} else {
-			if cli, e := NewAllocateClientMock(sSetting.MockAllocateUrl); err != nil {
+			if cli, e := NewAllocateClientMock(sSetting.MockAllocateUrl); e != nil {
 				err = e
 			} else {
 				out.AllocateClient = cli

@@ -54,7 +54,9 @@ func loadFromVault(spec any) error {
 	for i := 0; i < num; i++ {
 		key := t.Field(i).Tag.Get("vault")
 		if key != "" && m[key] != nil {
-			reflect.ValueOf(spec).Elem().FieldByName(t.Field(i).Name).SetString(m[key].(string))
+			if strVal, ok := m[key].(string); ok {
+				reflect.ValueOf(spec).Elem().FieldByName(t.Field(i).Name).SetString(strVal)
+			}
 		}
 	}
 	return nil

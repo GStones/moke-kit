@@ -37,9 +37,11 @@ func NewMessageQueue(logger *zap.Logger, address string) (*MessageQueue, error) 
 	} else {
 		mq := &MessageQueue{logger: logger}
 		if err := mq.newSubscribe(conn); err != nil {
+			conn.Close()
 			return nil, err
 		}
 		if err := mq.newPublisher(conn); err != nil {
+			conn.Close()
 			return nil, err
 		}
 		return mq, nil
