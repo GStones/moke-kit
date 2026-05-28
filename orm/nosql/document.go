@@ -181,9 +181,13 @@ func (d *DocumentBase) Update(f func() bool) error {
 	if atomicCache, ok := d.cache.(diface.IAtomicVersionCache); ok {
 		if err := d.doUpdate(f, func() error {
 			nextVersion := d.version + 1
+			snapshot, err := cloneAny(d.data)
+			if err != nil {
+				return err
+			}
 			cacheSnapshot := &VersionCache{
 				Version: nextVersion,
-				Data:    d.data,
+				Data:    snapshot,
 			}
 			if _, err := atomicCache.CompareAndSwapCache(
 				d.ctx,
@@ -192,10 +196,6 @@ func (d *DocumentBase) Update(f func() bool) error {
 				cacheSnapshot,
 				DefaultCacheTTL,
 			); err != nil {
-				return err
-			}
-			snapshot, err := cloneAny(d.data)
-			if err != nil {
 				return err
 			}
 			prevVersion := d.version
@@ -222,8 +222,10 @@ func (d *DocumentBase) Delete() error {
 	return nil
 }
 
+// asyncWriteBack persists a cache-applied update to the database in background.
+// It retries CAS write-back with exponential backoff and invalidates cache on exhaustion.
 func (d *DocumentBase) asyncWriteBack(snapshot any, expectedVersion noptions.Version) {
-	ctx := context.WithoutCancel(d.ctx)
+	ctx := context.Background()
 	var lastErr error
 	for r := 0; r < MaxRetries; r++ {
 		if _, err := d.DocumentStore.Set(
@@ -245,6 +247,7 @@ func (d *DocumentBase) asyncWriteBack(snapshot any, expectedVersion noptions.Ver
 	}
 }
 
+// cloneAny deep-copies payload via JSON marshal/unmarshal for async persistence snapshots.
 func cloneAny(src any) (any, error) {
 	if src == nil {
 		return nil, nil
