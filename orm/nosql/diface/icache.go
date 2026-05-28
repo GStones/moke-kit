@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/gstones/moke-kit/orm/nosql/key"
+	"github.com/gstones/moke-kit/orm/nosql/noptions"
 )
 
 // ICache provides a cache for Document objects.
@@ -16,6 +17,18 @@ type ICache interface {
 	// DeleteCache Delete deletes a Document from the cache.
 	DeleteCache(ctx context.Context, key key.Key)
 }
+
+// IAtomicVersionCache provides atomic version-checked cache updates.
+type IAtomicVersionCache interface {
+	CompareAndSwapCache(
+		ctx context.Context,
+		key key.Key,
+		expectedVersion noptions.Version,
+		doc any,
+		expire time.Duration,
+	) (noptions.Version, error)
+}
+
 type defaultDocumentCache struct {
 }
 
