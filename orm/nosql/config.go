@@ -65,7 +65,7 @@ func (c WriteBackConfig) ToWriteBackOptions(mq miface.MessageQueue) WriteBackOpt
 	}
 }
 
-// DefaultWriteBackConfig 返回默認配置
+// DefaultWriteBackConfig 返回默认配置
 func DefaultWriteBackConfig() WriteBackConfig {
 	return WriteBackConfig{
 		Enabled:     false,
