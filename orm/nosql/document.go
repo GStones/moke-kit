@@ -2,8 +2,10 @@ package nosql
 
 import (
 	"context"
+	"encoding/json"
 	"math"
 	"math/rand"
+	"reflect"
 	"time"
 
 	"github.com/pkg/errors"
@@ -172,17 +174,43 @@ func (d *DocumentBase) doUpdate(f func() bool, u func() error) error {
 	return errors.Wrap(nerrors.ErrTooManyRetries, "no underlying error")
 }
 
-// Update change the data with the given function and CAS(compare and swap) save it to the database.
-// If the function returns false, the update will be aborted.
+// Update changes the data with optimistic concurrency.
+// When cache supports atomic CAS, Redis is updated first and database write-back is async.
 // If the update CAS fails, the function will be retried up to MaxRetries times with a randomized backoff.
 func (d *DocumentBase) Update(f func() bool) error {
-	if err := d.doUpdate(f, func() error {
-		return d.Save()
-	}); err != nil {
-		return err
-	} else {
+	if atomicCache, ok := d.cache.(diface.IAtomicVersionCache); ok {
+		if err := d.doUpdate(f, func() error {
+			nextVersion := d.version + 1
+			snapshot, err := cloneAny(d.data)
+			if err != nil {
+				return err
+			}
+			cacheSnapshot := &VersionCache{
+				Version: nextVersion,
+				Data:    snapshot,
+			}
+			if _, err := atomicCache.CompareAndSwapCache(
+				d.ctx,
+				d.Key,
+				d.version,
+				cacheSnapshot,
+				DefaultCacheTTL,
+			); err != nil {
+				return err
+			}
+			prevVersion := d.version
+			d.version = nextVersion
+			go d.asyncWriteBack(snapshot, prevVersion)
+			return nil
+		}); err != nil {
+			return err
+		}
 		return nil
 	}
+	if err := d.doUpdate(f, func() error { return d.Save() }); err != nil {
+		return err
+	}
+	return nil
 }
 
 // Delete delete data from the database.
@@ -192,4 +220,52 @@ func (d *DocumentBase) Delete() error {
 	}
 	d.cache.DeleteCache(d.ctx, d.Key)
 	return nil
+}
+
+// asyncWriteBack persists a cache-applied update to the database in background.
+// It retries CAS write-back with exponential backoff and invalidates cache on exhaustion.
+func (d *DocumentBase) asyncWriteBack(snapshot any, expectedVersion noptions.Version) {
+	ctx := context.Background()
+	var lastErr error
+	for r := 0; r < MaxRetries; r++ {
+		if _, err := d.DocumentStore.Set(
+			ctx,
+			d.Key,
+			noptions.WithSource(snapshot),
+			noptions.WithVersion(expectedVersion),
+		); err == nil {
+			return
+		} else {
+			lastErr = err
+			backoff := time.Duration(math.Pow(2, float64(r))) * time.Millisecond
+			jitter := time.Duration(rand.Float64() * float64(backoff))
+			time.Sleep(backoff + jitter)
+		}
+	}
+	if lastErr != nil {
+		d.cache.DeleteCache(ctx, d.Key)
+	}
+}
+
+// cloneAny deep-copies payload via JSON marshal/unmarshal for async persistence snapshots.
+func cloneAny(src any) (any, error) {
+	if src == nil {
+		return nil, nil
+	}
+	b, err := json.Marshal(src)
+	if err != nil {
+		return nil, err
+	}
+	t := reflect.TypeOf(src)
+	dst := reflect.New(t)
+	if t.Kind() == reflect.Ptr {
+		dst = reflect.New(t.Elem())
+	}
+	if err := json.Unmarshal(b, dst.Interface()); err != nil {
+		return nil, err
+	}
+	if t.Kind() == reflect.Ptr {
+		return dst.Interface(), nil
+	}
+	return dst.Elem().Interface(), nil
 }
