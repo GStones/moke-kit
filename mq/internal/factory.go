@@ -127,8 +127,8 @@ func (m *MessageQueue) Publish(topic string, opts ...miface.PubOption) error {
 }
 
 // topic string should follow the syntax of:
-// kafka://topic-name
 // nats://some-other-topic
+// local://some-other-topic
 func parseTopic(topic string) (mqType, string, error) {
 	sep := "://"
 

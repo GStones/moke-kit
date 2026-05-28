@@ -44,12 +44,10 @@ func (dd *DatabaseDriver) Set(ctx context.Context, key key.Key, opts ...noptions
 	} else {
 		opt.SetUpsert(true)
 	}
-
 	update := bson.M{
-		"$set": bson.M{"data": o.Source},
+		"$set": o.Source,
 		"$inc": bson.M{"version": 1},
 	}
-
 	res, err := coll.UpdateOne(ctx, filter, update, opt)
 	if err != nil {
 		return 0, err
