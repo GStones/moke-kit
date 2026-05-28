@@ -191,3 +191,136 @@ func BenchmarkMap2StructShallow_MultipleFields(b *testing.B) {
 		}
 	}
 }
+
+// ========== marshalAnyMap 基准测试 ==========
+
+// BenchmarkMarshalAnyMap_BasicTypes 测试纯基本类型的性能
+func BenchmarkMarshalAnyMap_BasicTypes(b *testing.B) {
+	testMap := map[string]any{
+		"int":    42,
+		"string": "hello",
+		"bool":   true,
+		"float":  3.14,
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, err := marshalAnyMap(testMap)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+// BenchmarkMarshalAnyMap_MixedTypes 测试混合类型的性能
+func BenchmarkMarshalAnyMap_MixedTypes(b *testing.B) {
+	testMap := map[string]any{
+		"int":    42,
+		"string": "hello",
+		"slice":  []string{"a", "b", "c"},
+		"map":    map[string]int{"x": 1, "y": 2},
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, err := marshalAnyMap(testMap)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+// BenchmarkMarshalAnyMap_ComplexStructs 测试复杂结构体的性能
+func BenchmarkMarshalAnyMap_ComplexStructs(b *testing.B) {
+	testMap := map[string]any{
+		"id":   "12345",
+		"name": "test",
+		"data": benchStruct{
+			ID:       "nested",
+			Name:     "nested name",
+			Age:      25,
+			IsActive: true,
+			Tags:     []string{"tag1", "tag2"},
+			SubData: &benchSubData{
+				SubField1: "sub1",
+				SubField2: 100,
+			},
+		},
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, err := marshalAnyMap(testMap)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+// BenchmarkMarshalAnyMap_ManyFields 测试大量字段的性能
+func BenchmarkMarshalAnyMap_ManyFields(b *testing.B) {
+	testMap := make(map[string]any, 50)
+	for i := 0; i < 50; i++ {
+		key := fmt.Sprintf("field_%d", i)
+		if i%3 == 0 {
+			// 1/3 是复杂类型
+			testMap[key] = []int{i, i + 1, i + 2}
+		} else {
+			// 2/3 是基本类型
+			testMap[key] = i
+		}
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, err := marshalAnyMap(testMap)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+// BenchmarkMarshalAnyMap_WithNils 测试包含 nil 值的性能
+func BenchmarkMarshalAnyMap_WithNils(b *testing.B) {
+	testMap := map[string]any{
+		"field1": 42,
+		"field2": nil,
+		"field3": "hello",
+		"field4": nil,
+		"field5": true,
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, err := marshalAnyMap(testMap)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+// BenchmarkMarshalAnyMap_EmptyMap 测试空map的性能
+func BenchmarkMarshalAnyMap_EmptyMap(b *testing.B) {
+	testMap := map[string]any{}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, err := marshalAnyMap(testMap)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+// BenchmarkMarshalAnyMap_NilMap 测试 nil map 的性能
+func BenchmarkMarshalAnyMap_NilMap(b *testing.B) {
+	var testMap map[string]any
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, err := marshalAnyMap(testMap)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+}

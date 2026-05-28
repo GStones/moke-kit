@@ -25,20 +25,31 @@ func isBasicType(k reflect.Kind) bool {
 // marshalAnyMap 将map中的非基本类型转换为json字符串
 // 用于redis HASH 存储
 func marshalAnyMap(m map[string]any) (map[string]any, error) {
-	res := make(map[string]any)
+	if m == nil {
+		return make(map[string]any), nil
+	}
+
+	// 预分配容量，减少扩容开销
+	res := make(map[string]any, len(m))
+
 	for k, v := range m {
 		if v == nil {
 			res[k] = nil
 			continue
 		}
-		if !isBasicType(reflect.TypeOf(v).Kind()) {
-			if js, err := json.Marshal(v); err != nil {
-				return nil, fmt.Errorf("failed to marshal: %w", err)
-			} else {
-				res[k] = js
-			}
-		} else {
+
+		// 缓存 TypeOf 结果，减少重复调用
+		vType := reflect.TypeOf(v)
+		if isBasicType(vType.Kind()) {
+			// 基本类型直接赋值，无需序列化
 			res[k] = v
+		} else {
+			// 非基本类型需要序列化为JSON
+			js, err := json.Marshal(v)
+			if err != nil {
+				return nil, fmt.Errorf("failed to marshal: %w", err)
+			}
+			res[k] = js
 		}
 	}
 	return res, nil
