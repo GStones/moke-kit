@@ -19,13 +19,14 @@ Templates live in `assets/template/`. Placeholders:
   buf.yaml
   buf.gen.yaml
   README.md
+  .env.example                # AUTH/TLS/CORS/NATS/Mongo/Redis
   api/<name>/<name>.proto
   api/gen/...                 # from buf generate
-  cmd/<name>/service/main.go
+  cmd/<name>/service/main.go  # gRPC+HTTP + AuthModule stub (TCP opt-in)
   cmd/<name>/client/main.go
-  internal/services/<name>/...
+  internal/services/<name>/...  # no WithoutAuth; shared ServiceInstance
   internal/clients/<name>/...
-  pkg/dfx/...
+  pkg/dfx/...                 # AuthModule stub (prefer platform middleware later)
   pkg/modules/<name>_module.go
   deployment/docker-compose/...
   build/package/docker/Dockerfile
