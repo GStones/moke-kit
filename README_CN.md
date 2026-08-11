@@ -10,11 +10,16 @@
 
 ## 快速开始
 
-1. 用 [Cursor](https://cursor.com) 打开本仓库。
-2. 在 Agent 对话里执行 **`/create-game`**（或直接说：*基于 moke-kit 创建一个 game*）。
-3. 告诉 Agent 你的 Go module 路径和服务名（例如 `github.com/example/arena`、`arena`）。
+任意支持 [Agent Skills](https://agentskills.io) 的 AI 编程助手均可（Cursor、Claude Code、Codex、Windsurf 等）：
 
-[`create-game`](./.cursor/skills/create-game/SKILL.md) Skill 会自动脚手架、拉起本地 Redis/Mongo/NATS，并启动服务。
+1. 在 AI 工具中打开本仓库。
+2. 让它创建游戏，例如：
+   - *基于 moke-kit 创建一个 game*
+   - *使用 create-game skill*
+   - `/create-game`（若工具支持 Skill 斜杠命令）
+3. 提供 Go module 路径和服务名（例如 `github.com/example/arena`、`arena`）。
+
+[`create-game`](./.agents/skills/create-game/SKILL.md) Skill 会脚手架、拉起本地 Redis/Mongo/NATS，并启动服务。
 
 本机需具备：Go（见 [`go.mod`](./go.mod)）、[Docker](https://docs.docker.com/get-docker/)、[buf](https://buf.build/docs/installation)。
 
@@ -28,12 +33,12 @@
 | [`mq`](./mq) | NATS + 本地 MQ |
 | [`3rd`](./3rd) | Auth、IAP、Agones 等 |
 
-参考项目：[moke-game/game](https://github.com/moke-game/game)、[moke-game/platform](https://github.com/moke-game/platform)。版本矩阵：[COMPATIBILITY.md](./COMPATIBILITY.md)。
+Skill 位于 [`.agents/skills/`](./.agents/skills)（[Agent Skills](https://agentskills.io) 标准布局）。参考项目：[moke-game/game](https://github.com/moke-game/game)、[moke-game/platform](https://github.com/moke-game/platform)。版本矩阵：[COMPATIBILITY.md](./COMPATIBILITY.md)。
 
 ## 接下来
 
-- 加 RPC：`/add-game-rpc` · [`add-game-rpc`](./.cursor/skills/add-game-rpc/SKILL.md)
-- 组装更多模块：`/compose-moke-modules` · [`compose-moke-modules`](./.cursor/skills/compose-moke-modules/SKILL.md)
+- 加 RPC — 让 AI 执行 / [`add-game-rpc`](./.agents/skills/add-game-rpc/SKILL.md)
+- 组装更多模块 — 让 AI 执行 / [`compose-moke-modules`](./.agents/skills/compose-moke-modules/SKILL.md)
 - 开发本仓库：`go test -race ./...`
 
 ## 许可证

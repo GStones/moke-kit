@@ -10,11 +10,16 @@ Go toolkit for assembling game / microservice backends (gRPC, HTTP gateway, TCP,
 
 ## Quick start
 
-1. Open this repo in [Cursor](https://cursor.com).
-2. In Agent chat, run **`/create-game`** (or say: *create a game based on moke-kit*).
-3. Tell the agent your Go module path and service name (e.g. `github.com/example/arena`, `arena`).
+Use any AI coding agent that supports [Agent Skills](https://agentskills.io) (Cursor, Claude Code, Codex, Windsurf, …):
 
-The [`create-game`](./.cursor/skills/create-game/SKILL.md) skill scaffolds the game, starts local Redis/Mongo/NATS, and runs the service for you.
+1. Open this repository in your AI tool.
+2. Ask it to create a game, for example:
+   - *create a game based on moke-kit*
+   - *use the create-game skill*
+   - `/create-game` (if your tool supports skill slash commands)
+3. Give a Go module path and service name (e.g. `github.com/example/arena`, `arena`).
+
+The [`create-game`](./.agents/skills/create-game/SKILL.md) skill scaffolds the game, starts local Redis/Mongo/NATS, and runs the service.
 
 Needs on the machine: Go (see [`go.mod`](./go.mod)), [Docker](https://docs.docker.com/get-docker/), [buf](https://buf.build/docs/installation).
 
@@ -28,12 +33,12 @@ Needs on the machine: Go (see [`go.mod`](./go.mod)), [Docker](https://docs.docke
 | [`mq`](./mq) | NATS + local MQ |
 | [`3rd`](./3rd) | Auth, IAP, Agones, … |
 
-Reference apps: [moke-game/game](https://github.com/moke-game/game), [moke-game/platform](https://github.com/moke-game/platform). Version matrix: [COMPATIBILITY.md](./COMPATIBILITY.md).
+Skills live under [`.agents/skills/`](./.agents/skills) ([Agent Skills](https://agentskills.io) layout). Reference apps: [moke-game/game](https://github.com/moke-game/game), [moke-game/platform](https://github.com/moke-game/platform). Version matrix: [COMPATIBILITY.md](./COMPATIBILITY.md).
 
 ## Next steps
 
-- Add RPCs: `/add-game-rpc` · [`add-game-rpc`](./.cursor/skills/add-game-rpc/SKILL.md)
-- Wire more modules: `/compose-moke-modules` · [`compose-moke-modules`](./.cursor/skills/compose-moke-modules/SKILL.md)
+- Add RPCs — ask your AI / [`add-game-rpc`](./.agents/skills/add-game-rpc/SKILL.md)
+- Wire more modules — ask your AI / [`compose-moke-modules`](./.agents/skills/compose-moke-modules/SKILL.md)
 - Kit self-test: `go test -race ./...`
 
 ## License
