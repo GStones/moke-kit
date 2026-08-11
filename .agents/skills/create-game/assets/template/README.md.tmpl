@@ -7,11 +7,12 @@ Game server scaffolded from the [moke-kit create-game](https://github.com/GStone
 
 | Entry | Use |
 |-------|-----|
-| `cmd/__NAME__/service` | Local aggregate: game + AuthModule stub |
+| `cmd/__NAME__/service` | Local aggregate: `AllModule` + `dfx.AuthModule` stub |
 | TCP | Opt-in only (`AllWithTCPModule`) — **not** auth-protected |
 
 For production-style split (game-only + remote platform auth), see moke-game/game
-`cmd/game0/service-thin` and platform `AuthMiddlewareModule`.
+`cmd/game0/service-thin` and platform `AuthMiddlewareModule`. Swap the stub in
+`main` — do not provide stub + platform auth together (duplicate `AuthMiddleware`).
 
 ## Run
 
@@ -21,13 +22,13 @@ docker compose -f ./deployment/docker-compose/infrastructure.yaml up -d
 go run ./cmd/__NAME__/service/main.go
 ```
 
-Public APIs require a bearer token (stub AuthModule). Smoke with auth header:
+Public APIs require a bearer token. The stub treats the bearer as uid. Smoke:
 
 ```bash
 curl -s -X POST localhost:8081/v1/hello/hi \
   -H 'Content-Type: application/json' \
-  -H 'Authorization: bearer test' \
-  -d '{"uid":"10000","message":"hello","topic":"__NAME__"}'
+  -H 'Authorization: bearer 10000' \
+  -d '{"message":"hello","topic":"__NAME__"}'
 ```
 
 Interactive client:

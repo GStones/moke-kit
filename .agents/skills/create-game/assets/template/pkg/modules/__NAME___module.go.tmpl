@@ -31,21 +31,20 @@ var TcpModule = fx.Module("tcpService",
 	__NAME__.TcpService,
 )
 
-// AllModule starts authenticated gRPC + HTTP gateway (TCP omitted by default).
-// Pair AuthModule here, or replace with platform auth.AuthMiddlewareModule /
-// auth.AuthAllModule when integrating moke-game/platform.
+// AllModule starts game gRPC + HTTP gateway (TCP omitted by default).
+// Auth is not included here — pair dfx.AuthModule in main, or replace with
+// platform auth.AuthMiddlewareModule / auth.AuthAllModule (do not provide both).
 var AllModule = fx.Module("allService",
 	dfx.SettingsModule,
-	dfx.AuthModule,
 	__NAME__.ServiceInstance,
 	__NAME__.GrpcService,
 	__NAME__.HttpService,
 )
 
 // AllWithTCPModule adds unauthenticated TCP (zinx). Do not expose publicly.
+// Pair auth in main the same way as AllModule.
 var AllWithTCPModule = fx.Module("allServiceWithTcp",
 	dfx.SettingsModule,
-	dfx.AuthModule,
 	__NAME__.ServiceInstance,
 	__NAME__.GrpcService,
 	__NAME__.HttpService,

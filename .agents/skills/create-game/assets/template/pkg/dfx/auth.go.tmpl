@@ -26,9 +26,9 @@ func (d *Author) Auth(ctx context.Context) (context.Context, error) {
 	if err != nil {
 		return ctx, err
 	}
-	// Replace with real validation, or use platform AuthMiddlewareModule.
-	_ = token
-	return ctx, nil
+	// Demo only: treat bearer token as uid so handlers read UIDContextKey.
+	// Real games: platform AuthMiddlewareModule sets UID after ValidateToken.
+	return context.WithValue(ctx, utility.UIDContextKey, token), nil
 }
 
 func (d *Author) AddUnAuthMethod(method string) {
@@ -39,6 +39,8 @@ func (d *Author) AddUnAuthMethod(method string) {
 }
 
 // AuthModule provides the stub AuthMiddleware used by the scaffold by default.
+// Pair with AllModule / AllWithTCPModule in main — do not also provide platform
+// AuthMiddlewareModule / AuthAllModule (duplicate AuthMiddleware).
 var AuthModule = fx.Provide(
 	func(_ *zap.Logger) (out sfx.AuthMiddlewareResult, err error) {
 		out.AuthMiddleware = &Author{
