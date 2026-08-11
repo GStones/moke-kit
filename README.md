@@ -103,6 +103,9 @@ flowchart TD
 * **Security**: 
   * Built-in TLS and mTLS support for [Zero Trust security](https://www.wikiwand.com/en/Zero_trust_security_model)
   * Built-in [Token-based authentication](https://www.okta.com/identity-101/what-is-token-based-authentication/) with JWT support
+  * Production startup fails closed when gRPC or gateway services are exposed without auth middleware
+  * Gateway CORS allowlists are configured explicitly with `CORS_ALLOW_ORIGINS` in production
+  * Reference architecture: [moke-game/platform](https://github.com/moke-game/platform) and [moke-game/game](https://github.com/moke-game/game)
 * **Built-in Middleware**: Rate limiting, OpenTelemetry, authentication, logging, panic recovery, and more
 * **Caching**: 
   * Built-in [Cache-Aside pattern](https://learn.microsoft.com/en-us/azure/architecture/patterns/cache-aside) for ORM and NoSQL
