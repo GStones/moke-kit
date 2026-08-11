@@ -18,7 +18,10 @@ func TestConcurrentPublishAndUnsubscribe(t *testing.T) {
 	mq := NewMessageQueue(zap.NewNop(), 64, false, false)
 
 	var received atomic.Int32
+	started := make(chan struct{})
+	var once sync.Once
 	sub, err := mq.Subscribe(context.Background(), "race-topic", func(msg miface.Message, err error) common.ConsumptionCode {
+		once.Do(func() { close(started) })
 		received.Add(1)
 		return common.ConsumeAck
 	})
@@ -27,14 +30,23 @@ func TestConcurrentPublishAndUnsubscribe(t *testing.T) {
 	}
 
 	const publishers = 8
-	const messages = 20
+	const messages = 40
 	var wg sync.WaitGroup
-	wg.Add(publishers + 1)
+	wg.Add(publishers)
+
+	// Unsubscribe only after the first message is observed, so publish/unsub overlap under -race.
+	unsubDone := make(chan struct{})
 	go func() {
-		defer wg.Done()
-		time.Sleep(5 * time.Millisecond)
+		defer close(unsubDone)
+		select {
+		case <-started:
+		case <-time.After(2 * time.Second):
+			t.Error("timed out waiting for first message before Unsubscribe")
+			return
+		}
 		_ = sub.Unsubscribe()
 	}()
+
 	for i := 0; i < publishers; i++ {
 		go func() {
 			defer wg.Done()
@@ -44,11 +56,12 @@ func TestConcurrentPublishAndUnsubscribe(t *testing.T) {
 		}()
 	}
 	wg.Wait()
+	<-unsubDone
 
-	// Drain briefly; goal is race-detector cleanliness, not exact delivery count.
-	time.Sleep(50 * time.Millisecond)
-	_ = received.Load()
 	if sub.IsValid() {
 		t.Fatal("expected subscription invalid after Unsubscribe")
+	}
+	if received.Load() == 0 {
+		t.Fatal("expected at least one message before Unsubscribe")
 	}
 }
