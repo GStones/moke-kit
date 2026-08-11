@@ -20,4 +20,10 @@ jobs:
     - name: Test
       run: go test -v -race -coverpkg=./... -coverprofile=coverage.txt ./...
 
+    - name: Vet
+      run: go vet ./...
+
+    - name: Critical package race tests
+      run: go test -race ./utility/... ./server/middlewares/... ./mq/internal/... ./orm/nosql/cache/...
+
     - uses: codecov/codecov-action@v3

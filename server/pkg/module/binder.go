@@ -2,6 +2,8 @@ package module
 
 import (
 	"context"
+	"errors"
+	"strings"
 
 	"go.uber.org/fx"
 	"go.uber.org/zap"
@@ -11,6 +13,7 @@ import (
 	"github.com/gstones/moke-kit/server/internal/zinx"
 	"github.com/gstones/moke-kit/server/pkg/sfx"
 	"github.com/gstones/moke-kit/server/siface"
+	"github.com/gstones/moke-kit/utility"
 )
 
 type LifecycleHook = func(lc fx.Lifecycle)
@@ -33,8 +36,35 @@ type ServiceBinder struct {
 	sfx.OTelProviderParams   // opentelemetry provider injected
 }
 
+// SecurityConfig captures startup security posture for services exposed over
+// gRPC or HTTP gateway.
+type SecurityConfig struct {
+	Deployment       utility.Deployments
+	HasGrpcServices  bool
+	HasGateway       bool
+	HasAuth          bool
+	CorsAllowOrigins string
+}
+
+// ValidateSecurityConfig fails closed for production deployments.
+func ValidateSecurityConfig(config SecurityConfig) error {
+	if !config.Deployment.IsProd() {
+		return nil
+	}
+	if (config.HasGrpcServices || config.HasGateway) && !config.HasAuth {
+		return errors.New("auth middleware is required in production when grpc or gateway services are enabled")
+	}
+	if config.HasGateway && strings.TrimSpace(config.CorsAllowOrigins) == "" {
+		return errors.New("CORS_ALLOW_ORIGINS must be set explicitly in production when gateway services are enabled")
+	}
+	return nil
+}
+
 // Bind all types service to the specified server
 func (sb *ServiceBinder) Bind(l *zap.Logger, lc fx.Lifecycle) error {
+	if err := sb.checkSecurityConfig(l); err != nil {
+		return err
+	}
 	if hooks, err := bind(
 		l,
 		sb.bindGrpcServices,
@@ -50,6 +80,27 @@ func (sb *ServiceBinder) Bind(l *zap.Logger, lc fx.Lifecycle) error {
 		for _, h := range hooks {
 			h(lc)
 		}
+	}
+	return nil
+}
+
+func (sb *ServiceBinder) checkSecurityConfig(l *zap.Logger) error {
+	deployment := utility.ParseDeployments(sb.Deployment)
+	config := SecurityConfig{
+		Deployment:       deployment,
+		HasGrpcServices:  len(sb.GrpcServices) > 0,
+		HasGateway:       len(sb.GatewayServices) > 0,
+		HasAuth:          sb.AuthMiddleware != nil,
+		CorsAllowOrigins: sb.CorsAllowOrigins,
+	}
+	if err := ValidateSecurityConfig(config); err != nil {
+		return err
+	}
+	if !deployment.IsProd() && (config.HasGrpcServices || config.HasGateway) && !config.HasAuth {
+		l.Warn(
+			"auth middleware is not configured for grpc/gateway services",
+			zap.String("deployment", deployment.String()),
+		)
 	}
 	return nil
 }

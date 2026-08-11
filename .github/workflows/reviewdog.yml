@@ -21,7 +21,8 @@ jobs:
         with:
           go-version-file: "go.mod"
 
-      - name: Install linters
+      - name: Install legacy linters
+        # golint is legacy and informational here; staticcheck is the primary lint gate.
         run: go install golang.org/x/lint/golint@latest
 
       - name: Setup reviewdog
@@ -37,6 +38,7 @@ jobs:
           reviewdog -reporter=github-pr-check -runners=golint,govet -fail-on-error
 
       - name: Run reviewdog (github-pr-review with tee)
+        continue-on-error: true
         env:
           REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -47,6 +49,7 @@ jobs:
           golint ./... | reviewdog -f=golint -name=golint-pr-review -reporter=github-pr-review -tee
 
       - name: Run reviewdog (github-pr-check with -filter-mode=file)
+        continue-on-error: true
         env:
           REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -65,7 +68,7 @@ jobs:
       contents: read
       pull-requests: write
     if: github.event_name == 'pull_request'
-    name: runner / staticcheck
+    name: runner / staticcheck (primary)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
