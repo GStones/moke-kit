@@ -3,15 +3,14 @@
 Use this matrix to track which `moke-kit` versions are validated with the
 reference platform and game repositories.
 
-| moke-kit version | platform version | game version | Notes |
+| moke-kit version | platform | game | Notes |
 | --- | --- | --- | --- |
-| main (post #221) | pending upgrade | pending upgrade | Subscribe/CAS/CORS/TLS/Auth hardening |
-| vX.Y.Z | vX.Y.Z | vX.Y.Z | Replace with validated release set |
+| `v1.0.5-0.20260811094419-bcdfe55515cd` (#224) | [platform#24](https://github.com/moke-game/platform/pull/24)+ | [game#19](https://github.com/moke-game/game/pull/19)+ | Subscribe/CAS/CORS/TLS/Auth + binder fail-closed |
+| `v1.0.5-0.20260811085843-60e104db6db7` (#221) | platform#24 base | game#19 base | Request-path auth fail-closed only |
+| `v1.0.4` | older | older | Pre-hardening |
 
-`platform` and `game` should track compatible `moke-kit` versions together:
-
-- Platform: https://github.com/moke-game/platform
-- Game: https://github.com/moke-game/game
+`create-game` skill templates follow game secure defaults (no `WithoutAuth` on public
+services, AuthModule stub, gRPC+HTTP default, TCP opt-in, cancelable Watch).
 
 ## Tracking issues
 

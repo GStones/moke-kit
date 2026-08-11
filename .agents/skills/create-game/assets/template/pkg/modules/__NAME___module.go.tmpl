@@ -7,30 +7,46 @@ import (
 	"__MODULE__/pkg/dfx"
 )
 
-// GrpcModule starts the game gRPC service.
+// GrpcModule starts the game gRPC service with AuthModule.
 var GrpcModule = fx.Module("grpcService",
 	dfx.SettingsModule,
 	dfx.AuthModule,
+	__NAME__.ServiceInstance,
 	__NAME__.GrpcService,
 )
 
-// HttpModule starts gRPC + grpc-gateway.
+// HttpModule starts gRPC + grpc-gateway with AuthModule.
 var HttpModule = fx.Module("httpService",
 	dfx.SettingsModule,
 	dfx.AuthModule,
+	__NAME__.ServiceInstance,
 	__NAME__.GrpcService,
 	__NAME__.HttpService,
 )
 
-// TcpModule starts the zinx TCP service.
+// TcpModule starts the zinx TCP service (no gRPC auth — trusted networks only).
 var TcpModule = fx.Module("tcpService",
 	dfx.SettingsModule,
+	__NAME__.ServiceInstance,
 	__NAME__.TcpService,
 )
 
-// AllModule starts gRPC, gateway, and TCP.
+// AllModule starts authenticated gRPC + HTTP gateway (TCP omitted by default).
+// Pair AuthModule here, or replace with platform auth.AuthMiddlewareModule /
+// auth.AuthAllModule when integrating moke-game/platform.
 var AllModule = fx.Module("allService",
 	dfx.SettingsModule,
+	dfx.AuthModule,
+	__NAME__.ServiceInstance,
+	__NAME__.GrpcService,
+	__NAME__.HttpService,
+)
+
+// AllWithTCPModule adds unauthenticated TCP (zinx). Do not expose publicly.
+var AllWithTCPModule = fx.Module("allServiceWithTcp",
+	dfx.SettingsModule,
+	dfx.AuthModule,
+	__NAME__.ServiceInstance,
 	__NAME__.GrpcService,
 	__NAME__.HttpService,
 	__NAME__.TcpService,

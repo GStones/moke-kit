@@ -11,7 +11,8 @@ import (
 	"google.golang.org/grpc"
 )
 
-// Author is a placeholder auth middleware. Replace CheckToken with real validation.
+// Author is an optional stub middleware (requires bearer presence only).
+// Prefer github.com/moke-game/platform AuthMiddlewareModule (ValidateToken) in real games.
 type Author struct {
 	unAuthMethods map[string]struct{}
 }
@@ -25,6 +26,7 @@ func (d *Author) Auth(ctx context.Context) (context.Context, error) {
 	if err != nil {
 		return ctx, err
 	}
+	// Replace with real validation, or use platform AuthMiddlewareModule.
 	_ = token
 	return ctx, nil
 }
@@ -36,8 +38,7 @@ func (d *Author) AddUnAuthMethod(method string) {
 	d.unAuthMethods[method] = struct{}{}
 }
 
-// AuthModule checks every RPC/HTTP request unless the service embeds utility.WithoutAuth
-// or a method is added via AddUnAuthMethod.
+// AuthModule provides the stub AuthMiddleware used by the scaffold by default.
 var AuthModule = fx.Provide(
 	func(_ *zap.Logger) (out sfx.AuthMiddlewareResult, err error) {
 		out.AuthMiddleware = &Author{
