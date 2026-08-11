@@ -46,12 +46,41 @@ func TestValidateSecurityConfig(t *testing.T) {
 			wantErr: "CORS_ALLOW_ORIGINS",
 		},
 		{
+			name: "prod gateway rejects commas-only cors allowlist",
+			config: SecurityConfig{
+				Deployment:       utility.ParseDeployments("prod"),
+				HasGateway:       true,
+				HasAuth:          true,
+				CorsAllowOrigins: " , ",
+			},
+			wantErr: "CORS_ALLOW_ORIGINS",
+		},
+		{
+			name: "prod gateway rejects whitespace-only cors allowlist",
+			config: SecurityConfig{
+				Deployment:       utility.ParseDeployments("prod"),
+				HasGateway:       true,
+				HasAuth:          true,
+				CorsAllowOrigins: "   ",
+			},
+			wantErr: "CORS_ALLOW_ORIGINS",
+		},
+		{
 			name: "prod gateway allows wildcard cors when explicit",
 			config: SecurityConfig{
 				Deployment:       utility.ParseDeployments("prod"),
 				HasGateway:       true,
 				HasAuth:          true,
 				CorsAllowOrigins: "*",
+			},
+		},
+		{
+			name: "prod gateway accepts comma-separated origins with spaces",
+			config: SecurityConfig{
+				Deployment:       utility.ParseDeployments("prod"),
+				HasGateway:       true,
+				HasAuth:          true,
+				CorsAllowOrigins: " https://a.example , https://b.example ",
 			},
 		},
 		{
