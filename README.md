@@ -13,9 +13,9 @@ moke-kit is a toolkit for building microservices or monolithic applications in G
 ## Ecosystem
 
 ```text
-moke-kit                         → reusable infra modules (fxmain, server, orm, mq, 3rd)
+moke-kit (+ create-game skill)   → infra modules + scaffold a game repo directly
         ↓
-moke-layout / moke-game/game     → game server template (compose modules into a binary)
+your game binary                 → fxmain.Main composes kit (+ optional platform) modules
         ↓ optional
 moke-game/platform               → shared services (auth, profile, mail, …) as fx modules
 ```
@@ -23,9 +23,10 @@ moke-game/platform               → shared services (auth, profile, mail, …) 
 | Repo | Role |
 | --- | --- |
 | [moke-kit](https://github.com/GStones/moke-kit) | LEGO bricks: DI, servers, storage, MQ, integrations |
-| [moke-layout](https://github.com/gstones/moke-layout) | Minimal game/service scaffold (`demo`) via `gonew` |
-| [moke-game/game](https://github.com/moke-game/game) | Full game template (`game0`) with platform composition |
+| [moke-game/game](https://github.com/moke-game/game) | Reference game (`game0`) with platform composition |
 | [moke-game/platform](https://github.com/moke-game/platform) | Shared platform services imported into games |
+
+New games should be created with the [`create-game`](./.cursor/skills/create-game/SKILL.md) skill / `scaffold.sh` in this repo.
 
 See [COMPATIBILITY.md](./COMPATIBILITY.md) for validated version sets across kit / platform / game.
 
@@ -169,29 +170,30 @@ flowchart TD
 
 Requirements: Go version from [`go.mod`](./go.mod), [Docker](https://docs.docker.com/get-docker/) (for local infra), [buf](https://buf.build/docs/installation) (for protobuf).
 
-### 1. Create a project from the layout
+### 1. Scaffold a game with the create-game skill
+
+Create a new game **directly from this repo’s templates** (no `gonew` / `moke-layout`):
 
 ```bash
-go install golang.org/x/tools/cmd/gonew@latest
-gonew github.com/gstones/moke-layout your.domain/myprog
-cd myprog
+# from the moke-kit repository root
+chmod +x .cursor/skills/create-game/scripts/scaffold.sh
+
+.cursor/skills/create-game/scripts/scaffold.sh \
+  --module github.com/<org>/<game> \
+  --name <name> \
+  --out ./<name>
 ```
 
-The template service is named `demo`. Rename it to your game/service name across `cmd/`, `api/`, `internal/`, `pkg/`, and `tests/`, then update the proto package and `buf.yaml` module name if you publish to the Buf Schema Registry.
+This writes a full game repo (proto, `fxmain` entrypoint, domain/DAO, client CLI, docker-compose), runs `go mod tidy`, and `buf generate` when `buf` is available.
 
-For a fuller reference that already composes [platform](https://github.com/moke-game/platform) modules, see [moke-game/game](https://github.com/moke-game/game) (`game0`).
+In Cursor, you can also run `/create-game` or ask “create a game based on moke-kit”.
 
-### 2. Generate APIs
+Reference games that compose [platform](https://github.com/moke-game/platform) modules: [moke-game/game](https://github.com/moke-game/game).
 
-```bash
-buf generate
-```
-
-### 3. Start local infrastructure
-
-In the game template:
+### 2. Start local infrastructure
 
 ```bash
+cd <name>
 docker compose -f ./deployment/docker-compose/infrastructure.yaml up -d
 ```
 
@@ -206,20 +208,20 @@ Typical defaults (override with env vars):
 | `NATS_URL` | `nats://localhost:4222` |
 | `DEPLOYMENT` | `local` |
 
-### 4. Run the service
+### 3. Run the service
 
 ```bash
-go run ./cmd/{name}/service/main.go
+go run ./cmd/<name>/service/main.go
 ```
 
 Smoke test with the interactive client:
 
 ```bash
-go build -o {name} ./cmd/{name}/client/main.go
-./{name} grpc   # or: tcp — HTTP via Postman on localhost:8081
+go build -o <name> ./cmd/<name>/client/main.go
+./<name> grpc   # or: tcp — HTTP via Postman on localhost:8081
 ```
 
-### 5. Compose modules in `fxmain.Main`
+### 4. Compose modules in `fxmain.Main`
 
 `fxmain.Main` always loads `AppModule` (server, orm, logging, mq settings) and binds registered services. Pass only the extra modules you need:
 
@@ -247,7 +249,7 @@ Project skills under [`.cursor/skills/`](./.cursor/skills) help agents scaffold 
 
 | Skill | Use when |
 | --- | --- |
-| [`create-game`](./.cursor/skills/create-game/SKILL.md) | Create a new game from `moke-layout` / `game0` |
+| [`create-game`](./.cursor/skills/create-game/SKILL.md) | Scaffold a new game from built-in templates (`scaffold.sh`) |
 | [`add-game-rpc`](./.cursor/skills/add-game-rpc/SKILL.md) | Add a protobuf RPC and wire gRPC / gateway / zinx |
 | [`compose-moke-modules`](./.cursor/skills/compose-moke-modules/SKILL.md) | Assemble moke-kit + platform modules in `fxmain.Main` |
 

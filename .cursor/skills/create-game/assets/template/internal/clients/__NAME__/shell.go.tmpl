@@ -1,0 +1,52 @@
+package __NAME__
+
+import (
+	"net"
+
+	"github.com/abiosoft/ishell"
+
+	"github.com/gstones/moke-kit/logging/slogger"
+	"github.com/gstones/moke-kit/server/tools"
+)
+
+func RunGrpc(url string) {
+	sh := ishell.New()
+	slogger.Info(sh, "interactive __NAME__ connect to "+url)
+	conn, err := tools.DialInsecure(url)
+	if err != nil {
+		slogger.Die(sh, err)
+	}
+	cli := NewGrpcCli(conn)
+	sh.AddCmd(cli.GetCmd())
+	sh.Interrupt(func(c *ishell.Context, count int, input string) {
+		if count >= 2 {
+			c.Stop()
+		}
+		if count == 1 {
+			_ = conn.Close()
+			slogger.Done(c, "interrupted, press again to exit")
+		}
+	})
+	sh.Run()
+}
+
+func RunTcp(url string) {
+	sh := ishell.New()
+	slogger.Info(sh, "interactive __NAME__ tcp connect to "+url)
+	conn, err := net.Dial("tcp", url)
+	if err != nil {
+		slogger.Die(sh, err)
+	}
+	cli := NewTcpCli(conn)
+	sh.AddCmd(cli.GetCmd())
+	sh.Interrupt(func(c *ishell.Context, count int, input string) {
+		if count >= 2 {
+			c.Stop()
+		}
+		if count == 1 {
+			_ = conn.Close()
+			slogger.Done(c, "interrupted, press again to exit")
+		}
+	})
+	sh.Run()
+}

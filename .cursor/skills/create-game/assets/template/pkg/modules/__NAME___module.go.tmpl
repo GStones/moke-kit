@@ -1,0 +1,43 @@
+package modules
+
+import (
+	"go.uber.org/fx"
+
+	"__MODULE__/internal/services/__NAME__"
+	"__MODULE__/pkg/dfx"
+)
+
+// GrpcModule starts the game gRPC service.
+var GrpcModule = fx.Module("grpcService",
+	dfx.SettingsModule,
+	dfx.AuthModule,
+	__NAME__.GrpcService,
+)
+
+// HttpModule starts gRPC + grpc-gateway.
+var HttpModule = fx.Module("httpService",
+	dfx.SettingsModule,
+	dfx.AuthModule,
+	__NAME__.GrpcService,
+	__NAME__.HttpService,
+)
+
+// TcpModule starts the zinx TCP service.
+var TcpModule = fx.Module("tcpService",
+	dfx.SettingsModule,
+	__NAME__.TcpService,
+)
+
+// AllModule starts gRPC, gateway, and TCP.
+var AllModule = fx.Module("allService",
+	dfx.SettingsModule,
+	__NAME__.GrpcService,
+	__NAME__.HttpService,
+	__NAME__.TcpService,
+)
+
+// GrpcClientModule provides an outbound gRPC client.
+var GrpcClientModule = fx.Module("grpcClient",
+	dfx.SettingsModule,
+	dfx.__NAME_TITLE__ClientModule,
+)

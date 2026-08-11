@@ -1,0 +1,6 @@
+/.idea/*
+/.vscode/*
+/logs/*
+*.exe
+/api/gen/
+/third_party/OpenAPI/

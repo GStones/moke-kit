@@ -1,0 +1,85 @@
+package __NAME__
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/abiosoft/ishell"
+	mm "github.com/grpc-ecosystem/go-grpc-middleware/v2/metadata"
+	"github.com/gstones/moke-kit/logging/slogger"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
+
+	pb "__MODULE__/api/gen/__NAME__/api"
+)
+
+type GrpcCli struct {
+	client pb.__NAME_TITLE__ServiceClient
+	cmd    *ishell.Cmd
+}
+
+func NewGrpcCli(conn *grpc.ClientConn) *GrpcCli {
+	cmd := &ishell.Cmd{
+		Name:    "__NAME__",
+		Help:    "__NAME__ interactive",
+		Aliases: []string{"g"},
+	}
+	p := &GrpcCli{
+		client: pb.New__NAME_TITLE__ServiceClient(conn),
+		cmd:    cmd,
+	}
+	p.initSubShells()
+	return p
+}
+
+func (p *GrpcCli) GetCmd() *ishell.Cmd { return p.cmd }
+
+func (p *GrpcCli) initSubShells() {
+	p.cmd.AddCmd(&ishell.Cmd{Name: "hi", Help: "say hi", Aliases: []string{"hi"}, Func: p.sayHi})
+	p.cmd.AddCmd(&ishell.Cmd{Name: "watch", Help: "watch topic", Aliases: []string{"w"}, Func: p.watch})
+}
+
+func (p *GrpcCli) sayHi(c *ishell.Context) {
+	c.ShowPrompt(false)
+	defer c.ShowPrompt(true)
+	msg := "hello"
+	if in := slogger.ReadLine(c, "message(default:hello): "); in != "" {
+		msg = in
+	}
+	topic := "__NAME__"
+	if t := slogger.ReadLine(c, "topic(default:__NAME__): "); t != "" {
+		topic = t
+	}
+	md := metadata.Pairs("authorization", fmt.Sprintf("%s %v", "bearer", "test"))
+	ctx := mm.MD(md).ToOutgoing(context.Background())
+	resp, err := p.client.Hi(ctx, &pb.HiRequest{Uid: "10000", Message: msg, Topic: topic})
+	if err != nil {
+		slogger.Warn(c, err)
+		return
+	}
+	slogger.Infof(c, "Response: %s", resp.Message)
+}
+
+func (p *GrpcCli) watch(c *ishell.Context) {
+	c.ShowPrompt(false)
+	defer c.ShowPrompt(true)
+	topic := "__NAME__"
+	if t := slogger.ReadLine(c, "topic(default:__NAME__): "); t != "" {
+		topic = t
+	}
+	md := metadata.Pairs("authorization", fmt.Sprintf("%s %v", "bearer", "test"))
+	ctx := mm.MD(md).ToOutgoing(context.Background())
+	stream, err := p.client.Watch(ctx, &pb.WatchRequest{Topic: topic})
+	if err != nil {
+		slogger.Warn(c, err)
+		return
+	}
+	for {
+		resp, err := stream.Recv()
+		if err != nil {
+			slogger.Warn(c, err)
+			return
+		}
+		slogger.Infof(c, "Watch: %s", resp.Message)
+	}
+}

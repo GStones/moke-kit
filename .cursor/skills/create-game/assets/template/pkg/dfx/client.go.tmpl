@@ -1,0 +1,60 @@
+package dfx
+
+import (
+	"go.uber.org/fx"
+	"go.uber.org/zap"
+
+	pb "__MODULE__/api/gen/__NAME__/api"
+
+	"github.com/gstones/moke-kit/server/pkg/sfx"
+	"github.com/gstones/moke-kit/server/tools"
+)
+
+type __NAME_TITLE__ClientParams struct {
+	fx.In
+
+	__NAME_TITLE__Client pb.__NAME_TITLE__ServiceClient `name:"__NAME_TITLE__Client"`
+}
+
+type __NAME_TITLE__ClientResult struct {
+	fx.Out
+
+	__NAME_TITLE__Client pb.__NAME_TITLE__ServiceClient `name:"__NAME_TITLE__Client"`
+}
+
+func New__NAME_TITLE__Client(host string, _ *zap.Logger, sSetting sfx.SecuritySettingsParams) (pb.__NAME_TITLE__ServiceClient, error) {
+	if sSetting.MTLSEnable {
+		conn, err := tools.DialWithSecurity(
+			host,
+			sSetting.ClientCert,
+			sSetting.ClientKey,
+			sSetting.ServerName,
+			sSetting.ServerCaCert,
+		)
+		if err != nil {
+			return nil, err
+		}
+		return pb.New__NAME_TITLE__ServiceClient(conn), nil
+	}
+	conn, err := tools.DialInsecure(host)
+	if err != nil {
+		return nil, err
+	}
+	return pb.New__NAME_TITLE__ServiceClient(conn), nil
+}
+
+var __NAME_TITLE__ClientModule = fx.Provide(
+	func(
+		setting SettingsParams,
+		sSetting sfx.SecuritySettingsParams,
+		logger *zap.Logger,
+	) (out __NAME_TITLE__ClientResult, err error) {
+		cli, e := New__NAME_TITLE__Client(setting.GameUrl, logger, sSetting)
+		if e != nil {
+			err = e
+			return
+		}
+		out.__NAME_TITLE__Client = cli
+		return
+	},
+)

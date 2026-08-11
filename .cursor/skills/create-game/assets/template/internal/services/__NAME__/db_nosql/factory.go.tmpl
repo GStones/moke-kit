@@ -1,0 +1,46 @@
+package db_nosql
+
+import (
+	"errors"
+
+	"github.com/gstones/moke-kit/orm/nerrors"
+	"github.com/gstones/moke-kit/orm/nosql/diface"
+	"go.uber.org/zap"
+
+	model "__MODULE__/internal/services/__NAME__/db_nosql/__NAME__"
+)
+
+type Database struct {
+	logger *zap.Logger
+	coll   diface.ICollection
+}
+
+func OpenDatabase(l *zap.Logger, coll diface.ICollection) Database {
+	return Database{logger: l, coll: coll}
+}
+
+func (db *Database) LoadOrCreatePlayer(id string) (*model.Dao, error) {
+	dm, err := model.NewPlayerModel(id, db.coll)
+	if err != nil {
+		return nil, err
+	}
+	if err = dm.Load(); errors.Is(err, nerrors.ErrNotFound) {
+		dm, err = model.NewPlayerModel(id, db.coll)
+		if err != nil {
+			return nil, err
+		}
+		if err := dm.InitDefault(); err != nil {
+			return nil, err
+		}
+		if err = dm.Create(); err != nil {
+			if err = dm.Load(); err != nil {
+				return nil, err
+			}
+			return dm, nil
+		}
+		return dm, nil
+	} else if err != nil {
+		return nil, err
+	}
+	return dm, nil
+}
