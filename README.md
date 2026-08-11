@@ -41,7 +41,7 @@ Or use the interactive client:
 ```bash
 cd ../arena
 go run ./cmd/arena/client/main.go grpc
-# then: game → hi
+# then: arena → hi
 ```
 
 In Cursor: `/create-game` (or ask “create a game based on moke-kit”).

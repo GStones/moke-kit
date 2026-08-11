@@ -41,7 +41,7 @@ curl -s -X POST localhost:8081/v1/hello/hi \
 ```bash
 cd ../arena
 go run ./cmd/arena/client/main.go grpc
-# 然后: game → hi
+# 然后: arena → hi
 ```
 
 在 Cursor 里：`/create-game`，或直接说「基于 moke-kit 创建一个 game」。
