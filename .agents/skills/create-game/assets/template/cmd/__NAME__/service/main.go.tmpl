@@ -8,14 +8,15 @@ import (
 	"__MODULE__/pkg/modules"
 )
 
+// Aggregate-style entry: game transports + local infra.
+// AuthModule (stub) is included via AllModule; swap for platform AuthAllModule when ready.
 func main() {
 	fxmain.Main(
-		// infrastructures beyond AppModule
 		mfx.NatsModule,
 		mfx.LocalModule,
 		ofx.RedisCacheModule,
 
-		// game service (gRPC + gateway + TCP)
+		// gRPC + HTTP (TCP opt-in via modules.AllWithTCPModule)
 		modules.AllModule,
 	)
 }
