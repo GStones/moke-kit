@@ -13,7 +13,7 @@ func TestParseDeploymentsNormalization(t *testing.T) {
 
 func TestDeploymentMatchers(t *testing.T) {
 	cases := []struct {
-		value        string
+		value            string
 		prod, dev, local bool
 	}{
 		{"prod", true, false, false},
