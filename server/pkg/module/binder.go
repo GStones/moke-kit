@@ -54,8 +54,17 @@ func ValidateSecurityConfig(config SecurityConfig) error {
 	if (config.HasGrpcServices || config.HasGateway) && !config.HasAuth {
 		return errors.New("auth middleware is required in production when grpc or gateway services are enabled")
 	}
-	if config.HasGateway && strings.TrimSpace(config.CorsAllowOrigins) == "" {
-		return errors.New("CORS_ALLOW_ORIGINS must be set explicitly in production when gateway services are enabled")
+	if config.HasGateway {
+		hasOrigin := false
+		for _, p := range strings.Split(config.CorsAllowOrigins, ",") {
+			if strings.TrimSpace(p) != "" {
+				hasOrigin = true
+				break
+			}
+		}
+		if !hasOrigin {
+			return errors.New("CORS_ALLOW_ORIGINS must contain at least one origin (or '*') in production when gateway services are enabled")
+		}
 	}
 	return nil
 }
