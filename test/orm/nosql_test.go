@@ -151,6 +151,59 @@ func TestMockCollection(t *testing.T) {
 		helper.RequireNoError(err)
 		helper.AssertEqual(int64(8), newValue)
 	})
+
+	t.Run("CASWithVersion", func(t *testing.T) {
+		k, err := key.NewKeyFromParts("test", "document", "cas")
+		helper.RequireNoError(err)
+
+		v1, err := collection.Set(helper.Context(), k, noptions.WithSource(&TestData{Message: "a", Count: 1}))
+		helper.RequireNoError(err)
+
+		v2, err := collection.Set(
+			helper.Context(),
+			k,
+			noptions.WithSource(&TestData{Message: "b", Count: 2}),
+			noptions.WithVersion(v1),
+		)
+		helper.RequireNoError(err)
+		helper.AssertTrue(v2 > v1)
+
+		_, err = collection.Set(
+			helper.Context(),
+			k,
+			noptions.WithSource(&TestData{Message: "stale", Count: 99}),
+			noptions.WithVersion(v1),
+		)
+		helper.AssertNotNil(err, "stale version must fail CAS")
+
+		var got TestData
+		_, err = collection.Get(helper.Context(), k, noptions.WithDestination(&got))
+		helper.RequireNoError(err)
+		helper.AssertEqual("b", got.Message)
+		helper.AssertEqual(2, got.Count)
+	})
+
+	t.Run("AnyVersionOverwrite", func(t *testing.T) {
+		k, err := key.NewKeyFromParts("test", "document", "any-version")
+		helper.RequireNoError(err)
+
+		_, err = collection.Set(helper.Context(), k, noptions.WithSource(&TestData{Message: "old", Count: 1}))
+		helper.RequireNoError(err)
+
+		_, err = collection.Set(
+			helper.Context(),
+			k,
+			noptions.WithSource(&TestData{Message: "new", Count: 7}),
+			noptions.WithAnyVersion(),
+		)
+		helper.RequireNoError(err)
+
+		var got TestData
+		_, err = collection.Get(helper.Context(), k, noptions.WithDestination(&got))
+		helper.RequireNoError(err)
+		helper.AssertEqual("new", got.Message)
+		helper.AssertEqual(7, got.Count)
+	})
 }
 
 // TestNoSQLOptions tests the NoSQL options
