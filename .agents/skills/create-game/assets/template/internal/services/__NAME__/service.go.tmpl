@@ -40,15 +40,12 @@ func (s *Service) Watch(request *pb.WatchRequest, server pb.__NAME_TITLE__Servic
 	})
 }
 
-// Hi handles the authenticated hello RPC.
+// Hi handles the authenticated hello RPC. UID must come from auth context
+// (stub AuthModule sets UIDContextKey from the bearer; never trust request.uid).
 func (s *Service) Hi(ctx context.Context, request *pb.HiRequest) (*pb.HiResponse, error) {
 	uid, ok := ctx.Value(utility.UIDContextKey).(string)
 	if !ok || uid == "" {
-		// Stub AuthModule does not set UID; fall back to request for local demos only.
-		uid = request.GetUid()
-	}
-	if uid == "" {
-		return nil, status.Error(codes.Unauthenticated, "missing uid")
+		return nil, status.Error(codes.Unauthenticated, "missing uid in context")
 	}
 	message := request.GetMessage()
 	s.logger.Info("Hi", zap.String("uid", uid), zap.String("message", message))

@@ -49,7 +49,8 @@ Run the service in the background / a dedicated terminal so it keeps listening. 
 ```bash
 curl -s -X POST localhost:8081/v1/hello/hi \
   -H 'Content-Type: application/json' \
-  -d '{"uid":"10000","message":"hello","topic":"<name>"}'
+  -H 'Authorization: bearer 10000' \
+  -d '{"message":"hello","topic":"<name>"}'
 ```
 
 Tell the user the output path, ports, and the curl/client commands.
