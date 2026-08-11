@@ -10,41 +10,13 @@ Go toolkit for assembling game / microservice backends (gRPC, HTTP gateway, TCP,
 
 ## Quick start
 
-Needs: Go (see [`go.mod`](./go.mod)), [Docker](https://docs.docker.com/get-docker/), [buf](https://buf.build/docs/installation).
+1. Open this repo in [Cursor](https://cursor.com).
+2. In Agent chat, run **`/create-game`** (or say: *create a game based on moke-kit*).
+3. Tell the agent your Go module path and service name (e.g. `github.com/example/arena`, `arena`).
 
-```bash
-# 1) From this repo: scaffold a game (uses this moke-kit checkout)
-chmod +x .cursor/skills/create-game/scripts/scaffold.sh
-MOKE_KIT_REPLACE="$PWD" .cursor/skills/create-game/scripts/scaffold.sh \
-  --module github.com/example/arena \
-  --name arena \
-  --out ../arena
+The [`create-game`](./.cursor/skills/create-game/SKILL.md) skill scaffolds the game, starts local Redis/Mongo/NATS, and runs the service for you.
 
-# 2) Start Redis / Mongo / NATS
-cd ../arena
-docker compose -f ./deployment/docker-compose/infrastructure.yaml up -d
-
-# 3) Run the service (gRPC+HTTP :8081, TCP :8888)
-go run ./cmd/arena/service/main.go
-```
-
-In another terminal, call the HTTP API:
-
-```bash
-curl -s -X POST localhost:8081/v1/hello/hi \
-  -H 'Content-Type: application/json' \
-  -d '{"uid":"10000","message":"hello","topic":"arena"}'
-```
-
-Or use the interactive client:
-
-```bash
-cd ../arena
-go run ./cmd/arena/client/main.go grpc
-# then: arena → hi
-```
-
-In Cursor: `/create-game` (or ask “create a game based on moke-kit”).
+Needs on the machine: Go (see [`go.mod`](./go.mod)), [Docker](https://docs.docker.com/get-docker/), [buf](https://buf.build/docs/installation).
 
 ## What you get
 
@@ -60,8 +32,8 @@ Reference apps: [moke-game/game](https://github.com/moke-game/game), [moke-game/
 
 ## Next steps
 
-- Add RPCs: Cursor skill [`add-game-rpc`](./.cursor/skills/add-game-rpc/SKILL.md)
-- Wire more modules: [`compose-moke-modules`](./.cursor/skills/compose-moke-modules/SKILL.md)
+- Add RPCs: `/add-game-rpc` · [`add-game-rpc`](./.cursor/skills/add-game-rpc/SKILL.md)
+- Wire more modules: `/compose-moke-modules` · [`compose-moke-modules`](./.cursor/skills/compose-moke-modules/SKILL.md)
 - Kit self-test: `go test -race ./...`
 
 ## License
