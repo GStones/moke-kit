@@ -35,7 +35,7 @@ Templates live in `assets/template/`. Placeholders:
 ## Preferred creation command
 
 ```bash
-.cursor/skills/create-game/scripts/scaffold.sh \
+.agents/skills/create-game/scripts/scaffold.sh \
   --module github.com/acme/arena \
   --name arena \
   --out ./arena
