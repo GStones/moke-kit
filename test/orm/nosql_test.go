@@ -2,12 +2,14 @@ package orm
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zaptest"
 
+	"github.com/gstones/moke-kit/orm/nerrors"
 	"github.com/gstones/moke-kit/orm/nosql/diface"
 	"github.com/gstones/moke-kit/orm/nosql/key"
 	"github.com/gstones/moke-kit/orm/nosql/mock"
@@ -174,7 +176,7 @@ func TestMockCollection(t *testing.T) {
 			noptions.WithSource(&TestData{Message: "stale", Count: 99}),
 			noptions.WithVersion(v1),
 		)
-		helper.AssertNotNil(err, "stale version must fail CAS")
+		helper.AssertTrue(errors.Is(err, nerrors.ErrVersionNotMatch), "stale version must fail CAS")
 
 		var got TestData
 		_, err = collection.Get(helper.Context(), k, noptions.WithDestination(&got))

@@ -39,6 +39,7 @@ func (gs *GrpcServer) StartServing(_ context.Context) error {
 
 // StopServing stops the grpc server.
 // Honors ctx: if the deadline/cancel fires before GracefulStop finishes, force Stop().
+// When GracefulStop and ctx fire together, prefer success (nil) over ctx.Err().
 func (gs *GrpcServer) StopServing(ctx context.Context) error {
 	stopped := make(chan struct{})
 	go func() {
@@ -49,6 +50,12 @@ func (gs *GrpcServer) StopServing(ctx context.Context) error {
 	case <-stopped:
 		return nil
 	case <-ctx.Done():
+		// Prefer graceful success if it completed in the same instant.
+		select {
+		case <-stopped:
+			return nil
+		default:
+		}
 		gs.server.Stop()
 		<-stopped
 		return ctx.Err()
