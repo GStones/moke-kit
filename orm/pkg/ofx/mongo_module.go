@@ -10,6 +10,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/gstones/moke-kit/orm/nosql/mongo"
+	"github.com/gstones/moke-kit/utility"
 )
 
 type MongoParams struct {
@@ -51,7 +52,7 @@ func (mr *MongoResult) init(
 		}
 		cOptions.Auth.Password = n.DatabasePassword
 	}
-	l.Info("Connecting mongodb", zap.String("url", n.DatabaseURL))
+	l.Info("Connecting mongodb", zap.String("url", utility.RedactURL(n.DatabaseURL)))
 	client, err := mongo.NewMongoClient(cOptions)
 	if err != nil {
 		l.Error("Failed to connect mongodb", zap.Error(err))

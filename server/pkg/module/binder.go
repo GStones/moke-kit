@@ -142,6 +142,15 @@ func (sb *ServiceBinder) bindGatewayServices(
 	} else if gatewayServer, err := srpc.NewGatewayServer(
 		l,
 		hLis,
+		srpc.GatewaySecurity{
+			TLSEnable:    sb.TLSEnable,
+			MTLSEnable:   sb.MTLSEnable,
+			ClientCert:   sb.ClientCert,
+			ClientKey:    sb.ClientKey,
+			ServerCaCert: sb.ServerCaCert,
+			ServerName:   sb.ServerName,
+		},
+		sb.CorsAllowOrigins,
 	); err != nil {
 		return nil, err
 	} else {

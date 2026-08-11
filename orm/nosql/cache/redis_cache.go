@@ -31,6 +31,9 @@ func CreateRedisCache(logger *zap.Logger, client *redis.Client) *RedisCache {
 
 // GetCache gets cache
 func (c *RedisCache) GetCache(ctx context.Context, key key.Key, doc any) bool {
+	if c == nil || c.Client == nil {
+		return false
+	}
 	if res := c.Get(ctx, key.String()); res.Err() != nil {
 		return false
 	} else if data, err := res.Bytes(); err != nil {
@@ -43,6 +46,9 @@ func (c *RedisCache) GetCache(ctx context.Context, key key.Key, doc any) bool {
 
 // SetCache sets cache
 func (c *RedisCache) SetCache(ctx context.Context, key key.Key, doc any, expire time.Duration) {
+	if c == nil || c.Client == nil {
+		return
+	}
 	if data, err := json.Marshal(doc); err != nil {
 		return
 	} else if res := c.Set(ctx, key.String(), data, expire); res.Err() != nil {
@@ -52,6 +58,9 @@ func (c *RedisCache) SetCache(ctx context.Context, key key.Key, doc any, expire 
 
 // DeleteCache deletes cache
 func (c *RedisCache) DeleteCache(ctx context.Context, key key.Key) {
+	if c == nil || c.Client == nil {
+		return
+	}
 	if res := c.Del(ctx, key.String()); res.Err() != nil {
 		return
 	}

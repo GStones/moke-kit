@@ -25,6 +25,10 @@ func (c *RedisCacheResult) init(
 	l *zap.Logger,
 	rParams RedisParams,
 ) error {
+	if rParams.Cache == nil {
+		c.RedisCache = diface.DefaultDocumentCache()
+		return nil
+	}
 	c.RedisCache = cache.CreateRedisCache(l, rParams.Cache)
 	return nil
 }

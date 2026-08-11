@@ -10,10 +10,11 @@ import (
 type SettingsParams struct {
 	fx.In
 
-	Port       int32 `name:"Port"`       // grpc/http port
-	Timeout    int32 `name:"Timeout"`    // tcp service heartbeat timeout
-	RateLimit  int32 `name:"RateLimit"`  // all server type rate limit per second
-	OtelEnable bool  `name:"OtelEnable"` // open telemetry enable
+	Port             int32  `name:"Port"`             // grpc/http port
+	Timeout          int32  `name:"Timeout"`          // tcp service heartbeat timeout
+	RateLimit        int32  `name:"RateLimit"`        // all server type rate limit per second
+	OtelEnable       bool   `name:"OtelEnable"`       // open telemetry enable
+	CorsAllowOrigins string `name:"CorsAllowOrigins"` // comma-separated CORS origins; empty disables CORS; "*" allows all
 
 	//--------------------- zinx settings ---------------------
 	// pure tcp port
@@ -34,10 +35,11 @@ type SettingsParams struct {
 type SettingsResult struct {
 	fx.Out
 
-	Port       int32 `name:"Port"  envconfig:"PORT" default:"8081"`
-	Timeout    int32 `name:"Timeout" envconfig:"TIMEOUT" default:"10"`
-	RateLimit  int32 `name:"RateLimit" envconfig:"RATE_LIMIT" default:"1000"`
-	OtelEnable bool  `name:"OtelEnable" envconfig:"OTEL_ENABLE" default:"false"`
+	Port             int32  `name:"Port"  envconfig:"PORT" default:"8081"`
+	Timeout          int32  `name:"Timeout" envconfig:"TIMEOUT" default:"10"`
+	RateLimit        int32  `name:"RateLimit" envconfig:"RATE_LIMIT" default:"1000"`
+	OtelEnable       bool   `name:"OtelEnable" envconfig:"OTEL_ENABLE" default:"false"`
+	CorsAllowOrigins string `name:"CorsAllowOrigins" envconfig:"CORS_ALLOW_ORIGINS" default:""`
 
 	// --------------------- zinx settings ---------------------
 	ZinxTcpPort int32 `name:"ZinxTcpPort" envconfig:"ZINX_TCP_PORT" default:"8888"`

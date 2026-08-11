@@ -14,22 +14,33 @@ func (d Deployments) String() string {
 	return string(d)
 }
 
-// IsProd returns true if the deployment contains "prod", e.g. "prod", "prod_gcp", "prod_aws"... etc
+// matchDeployment reports whether d equals name or uses name as a prefix
+// followed by '_' or '-' (e.g. prod, prod_gcp, prod-aws).
+func matchDeployment(d Deployments, name string) bool {
+	s := d.String()
+	if s == name {
+		return true
+	}
+	return strings.HasPrefix(s, name+"_") || strings.HasPrefix(s, name+"-")
+}
+
+// IsProd returns true for "prod" and variants like "prod_gcp", "prod-aws".
 func (d Deployments) IsProd() bool {
-	return strings.Contains(d.String(), DeploymentsProd.String())
+	return matchDeployment(d, DeploymentsProd.String())
 }
 
-// IsDev returns true if the deployment contains "dev", e.g. "dev", "dev_test", "dev_load"... etc
+// IsDev returns true for "dev" and variants like "dev_test", "dev-load".
 func (d Deployments) IsDev() bool {
-	return strings.Contains(d.String(), DeploymentsDev.String())
+	return matchDeployment(d, DeploymentsDev.String())
 }
 
-// IsLocal returns true if the deployment contains "local", e.g. "local", "local_67", "local_name"... etc
+// IsLocal returns true for "local" and variants like "local_67", "local-name".
 func (d Deployments) IsLocal() bool {
-	return strings.Contains(d.String(), DeploymentsLocal.String())
+	return matchDeployment(d, DeploymentsLocal.String())
 }
 
 func ParseDeployments(value string) Deployments {
+	value = strings.ToLower(strings.TrimSpace(value))
 	switch Deployments(value) {
 	case DeploymentsLocal:
 		return DeploymentsLocal

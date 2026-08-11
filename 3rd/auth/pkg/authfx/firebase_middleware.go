@@ -2,6 +2,7 @@ package authfx
 
 import (
 	"context"
+	"sync"
 
 	firebase "firebase.google.com/go/v4"
 	auth2 "firebase.google.com/go/v4/auth"
@@ -20,6 +21,7 @@ import (
 // FirebaseAuthor is auth for grpc middleware
 type FirebaseAuthor struct {
 	client        *auth2.Client
+	mu            sync.RWMutex
 	unAuthMethods map[string]struct{}
 }
 
@@ -30,7 +32,10 @@ type FirebaseAuthor struct {
 // if you need to check the token has not been revoked please use VerifyIDTokenAndCheckRevoked to replace VerifyIDToken.
 func (d *FirebaseAuthor) Auth(ctx context.Context) (context.Context, error) {
 	method, _ := grpc.Method(ctx)
-	if _, ok := d.unAuthMethods[method]; ok {
+	d.mu.RLock()
+	_, skip := d.unAuthMethods[method]
+	d.mu.RUnlock()
+	if skip {
 		return context.WithValue(ctx, utility.WithOutTag, true), nil
 	} else if token, err := auth.AuthFromMD(ctx, string(utility.TokenContextKey)); err != nil {
 		return ctx, err
@@ -44,6 +49,8 @@ func (d *FirebaseAuthor) Auth(ctx context.Context) (context.Context, error) {
 
 // AddUnAuthMethod add unauth method
 func (d *FirebaseAuthor) AddUnAuthMethod(method string) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
 	if d.unAuthMethods == nil {
 		d.unAuthMethods = make(map[string]struct{})
 	}

@@ -2,15 +2,15 @@ package utility
 
 import (
 	"errors"
-	"log"
 	"reflect"
-	"strings"
 
 	"github.com/hashicorp/vault/api"
 	"github.com/kelseyhightower/envconfig"
 )
 
-// Load from environment and vault
+// Load from environment and vault.
+// When VaultAddr is configured, Vault read failures are returned (fail-closed).
+// When VaultAddr is empty, Vault is skipped and only environment config is used.
 func Load(spec any) error {
 	if err := envconfig.Process("", spec); err != nil {
 		return err
@@ -22,41 +22,64 @@ func Load(spec any) error {
 }
 
 func loadFromVault(spec any) error {
-	if !reflect.ValueOf(spec).Elem().FieldByName("VaultAddr").IsValid() {
+	rv := reflect.ValueOf(spec)
+	if rv.Kind() != reflect.Ptr || rv.IsNil() || rv.Elem().Kind() != reflect.Struct {
 		return nil
 	}
-	conf := &api.Config{
-		Address: reflect.ValueOf(spec).Elem().FieldByName("VaultAddr").String(),
+	elem := rv.Elem()
+	addrField := elem.FieldByName("VaultAddr")
+	if !addrField.IsValid() || addrField.Kind() != reflect.String {
+		return nil
 	}
+	vaultAddr := addrField.String()
+	if vaultAddr == "" {
+		return nil
+	}
+
+	tokenField := elem.FieldByName("VaultToken")
+	pathField := elem.FieldByName("VaultPath")
+	if !tokenField.IsValid() || tokenField.Kind() != reflect.String ||
+		!pathField.IsValid() || pathField.Kind() != reflect.String {
+		return errors.New("vault config requires VaultToken and VaultPath string fields")
+	}
+	vaultToken := tokenField.String()
+	vaultPath := pathField.String()
+	if vaultToken == "" || vaultPath == "" {
+		return errors.New("vault token and path are required when VaultAddr is set")
+	}
+
+	conf := &api.Config{Address: vaultAddr}
 	client, err := api.NewClient(conf)
 	if err != nil {
 		return err
 	}
-	client.SetToken(reflect.ValueOf(spec).Elem().FieldByName("VaultToken").String())
-	secret, err := client.Logical().Read(reflect.ValueOf(spec).Elem().FieldByName("VaultPath").String())
+	client.SetToken(vaultToken)
+	secret, err := client.Logical().Read(vaultPath)
 	if err != nil {
-		if strings.Contains(err.Error(), "connect: connection refused") ||
-			strings.Contains(err.Error(), "connect: connection timed out") {
-			log.Println("vault address cannot be connected, only environment configuration available")
-			return nil
-		} else if strings.Contains(err.Error(), "permission denied") {
-			log.Println("vault token is invalid, only environment configuration available")
-			return nil
-		}
 		return err
 	}
-	m, ok := secret.Data["data"].(map[string]any)
-	if !ok {
-		return errors.New("can't read from vault")
+	if secret == nil || secret.Data == nil {
+		return errors.New("can't read from vault: empty secret")
 	}
-	t := reflect.TypeOf(spec).Elem()
+
+	data := secret.Data
+	if nested, ok := secret.Data["data"].(map[string]any); ok {
+		data = nested
+	}
+
+	t := elem.Type()
 	num := t.NumField()
 	for i := 0; i < num; i++ {
 		key := t.Field(i).Tag.Get("vault")
-		if key != "" && m[key] != nil {
-			if strVal, ok := m[key].(string); ok {
-				reflect.ValueOf(spec).Elem().FieldByName(t.Field(i).Name).SetString(strVal)
-			}
+		if key == "" || data[key] == nil {
+			continue
+		}
+		field := elem.FieldByName(t.Field(i).Name)
+		if !field.IsValid() || !field.CanSet() || field.Kind() != reflect.String {
+			continue
+		}
+		if strVal, ok := data[key].(string); ok {
+			field.SetString(strVal)
 		}
 	}
 	return nil

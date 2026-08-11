@@ -2,6 +2,7 @@ package authfx
 
 import (
 	"context"
+	"sync"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/auth"
 	"github.com/supabase-community/supabase-go"
@@ -19,13 +20,17 @@ import (
 // SupabaseAuthor is auth for grpc middleware
 type SupabaseAuthor struct {
 	client        *supabase.Client
+	mu            sync.RWMutex
 	unAuthMethods map[string]struct{}
 }
 
 // Auth will auth every grpc request with supabase
 func (d *SupabaseAuthor) Auth(ctx context.Context) (context.Context, error) {
 	method, _ := grpc.Method(ctx)
-	if _, ok := d.unAuthMethods[method]; ok {
+	d.mu.RLock()
+	_, skip := d.unAuthMethods[method]
+	d.mu.RUnlock()
+	if skip {
 		return context.WithValue(ctx, utility.WithOutTag, true), nil
 	} else if token, err := auth.AuthFromMD(ctx, string(utility.TokenContextKey)); err != nil {
 		return ctx, err
@@ -39,6 +44,8 @@ func (d *SupabaseAuthor) Auth(ctx context.Context) (context.Context, error) {
 
 // AddUnAuthMethod add unauth method
 func (d *SupabaseAuthor) AddUnAuthMethod(method string) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
 	if d.unAuthMethods == nil {
 		d.unAuthMethods = make(map[string]struct{})
 	}

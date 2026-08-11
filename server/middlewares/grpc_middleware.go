@@ -28,9 +28,10 @@ func MakeServerOptions(
 ) []grpc.ServerOption {
 
 	rl := CreateRateLimiter(int(rateLimit))
+	af := authFunc(authClient, deployments)
 	ui := []grpc.UnaryServerInterceptor{
 		ratelimit.UnaryServerInterceptor(rl),
-		selector.UnaryServerInterceptor(auth.UnaryServerInterceptor(authFunc(authClient)), selector.MatchFunc(allBut)),
+		selector.UnaryServerInterceptor(auth.UnaryServerInterceptor(af), selector.MatchFunc(allBut)),
 		logging.UnaryServerInterceptor(
 			interceptorLogger(logger),
 			logging.WithLevels(logging.DefaultServerCodeToLevel),
@@ -40,7 +41,7 @@ func MakeServerOptions(
 	}
 	si := []grpc.StreamServerInterceptor{
 		ratelimit.StreamServerInterceptor(rl),
-		selector.StreamServerInterceptor(auth.StreamServerInterceptor(authFunc(authClient)), selector.MatchFunc(allBut)),
+		selector.StreamServerInterceptor(auth.StreamServerInterceptor(af), selector.MatchFunc(allBut)),
 		logging.StreamServerInterceptor(
 			interceptorLogger(logger),
 			logging.WithLevels(logging.DefaultServerCodeToLevel),

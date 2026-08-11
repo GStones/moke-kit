@@ -6,6 +6,7 @@ import (
 
 	"github.com/gstones/moke-kit/mq/internal/nats"
 	"github.com/gstones/moke-kit/mq/miface"
+	"github.com/gstones/moke-kit/utility"
 )
 
 type NatsResult struct {
@@ -18,7 +19,7 @@ func (k *NatsResult) init(logger *zap.Logger, s SettingsParams) error {
 	if err != nil {
 		logger.Error("Nats message queue connect failure:",
 			zap.Error(err),
-			zap.String("address", s.NatsUrl))
+			zap.String("address", utility.RedactURL(s.NatsUrl)))
 		return err
 	}
 	k.NatsMQ = mq

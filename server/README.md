@@ -28,17 +28,27 @@
 
 ### TLS:
 
-| ENV            | Description               | Default                           |
-|----------------|---------------------------|-----------------------------------|
-| MTLS_ENABLE    | enable mTLS mod           | false                             |
-| TLS_ENABLE     | enable server tls         | false                             |
-| TCP_TLS_ENABLE | enable TCP tls            | false                             |
-| CLIENT_CA_CERT | client ca cert path(mTls) | "./configs/tls-client/ca.crt"     |
-| CLIENT_CERT    | client cert path(mTls)    | "./configs/tls-client/client.crt" |
-| CLIENT_KEY     | client key path(mTls)     | "./configs/tls-client/client.key" |
-| SERVER_CA_CERT | server ca cert path       | "./configs/tls-server/ca.crt"     |
-| SERVER_CERT    | server cert path          | "./configs/tls-server/server.crt" |
-| SERVER_KEY     | server key path           | "./configs/tls-server/server.key" |
-| SERVER_NAME    | sever name                | ""                                |   
+| ENV            | Description                                                                 | Default                           |
+|----------------|-----------------------------------------------------------------------------|-----------------------------------|
+| MTLS_ENABLE    | enable mTLS (server TLS + require client certs). Implies TLS for cmux.       | false                             |
+| TLS_ENABLE     | enable server TLS for grpc/http (cmux). Does **not** require client certs.  | false                             |
+| TCP_TLS_ENABLE | enable TCP tls                                                              | false                             |
+| CLIENT_CA_CERT | client ca cert path (required when `MTLS_ENABLE=true`)                      | "./configs/tls-client/ca.crt"     |
+| CLIENT_CERT    | client cert path (used by mTLS clients / gateway dial)                      | "./configs/tls-client/tls.crt"    |
+| CLIENT_KEY     | client key path (used by mTLS clients / gateway dial)                       | "./configs/tls-client/tls.key"    |
+| SERVER_CA_CERT | server ca cert path (used by clients verifying the server)                  | "./configs/tls-server/ca.crt"     |
+| SERVER_CERT    | server cert path                                                            | "./configs/tls-server/tls.crt"    |
+| SERVER_KEY     | server key path                                                             | "./configs/tls-server/tls.key"    |
+| SERVER_NAME    | server name                                                                 | ""                                |
+
+### CORS / Auth:
+
+| ENV                | Description                                                                 | Default |
+|--------------------|-----------------------------------------------------------------------------|---------|
+| CORS_ALLOW_ORIGINS | comma-separated allowed Origins; empty disables CORS; `*` allows any origin | ""      |
+
+Notes:
+* Auth middleware is optional in local/dev. In **prod** deployments (`prod`, `prod_*`, `prod-*`), missing auth middleware fails closed (Unauthenticated).
+* Gateway dials gRPC with TLS/mTLS credentials when `TLS_ENABLE` or `MTLS_ENABLE` is set.
 
 
