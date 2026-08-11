@@ -15,7 +15,7 @@ Usage: scaffold.sh --module <go-module> --name <service-name> [--out <dir>] [--b
   -h, --help       Show help
 
 Example (from moke-kit repo root):
-  .cursor/skills/create-game/scripts/scaffold.sh \
+  .agents/skills/create-game/scripts/scaffold.sh \
     --module github.com/acme/arena --name arena --out ./arena
 EOF
 }

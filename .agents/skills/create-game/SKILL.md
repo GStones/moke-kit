@@ -21,10 +21,10 @@ Ask only if missing:
 From the **moke-kit repository root**:
 
 ```bash
-chmod +x .cursor/skills/create-game/scripts/scaffold.sh
+chmod +x .agents/skills/create-game/scripts/scaffold.sh
 
 # Prefer this checkout of moke-kit when scaffolding from source
-MOKE_KIT_REPLACE="$PWD" .cursor/skills/create-game/scripts/scaffold.sh \
+MOKE_KIT_REPLACE="$PWD" .agents/skills/create-game/scripts/scaffold.sh \
   --module <module> \
   --name <name> \
   --out <out>
