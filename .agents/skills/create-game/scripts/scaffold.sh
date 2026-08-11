@@ -96,8 +96,8 @@ done < <(find "$TEMPLATE_DIR" -type f -print0)
 service_main="$OUT/cmd/$NAME/service/main.go"
 if [[ "$WITH_PLATFORM" -eq 1 && -f "$service_main" ]]; then
   perl -i -pe 's#(\t"'"$MODULE"'/pkg/modules")#$1\n\n\t// Optional platform shared services:\n\t// auth "github.com/moke-game/platform/services/auth/pkg/module"\n\t// profile "github.com/moke-game/platform/services/profile/pkg/module"#' "$service_main"
-  # Replace stub auth with platform AuthAllModule (do not keep both AuthMiddleware providers).
-  perl -i -pe 's#\tdfx\.AuthModule,#\t\t// Replace dfx.AuthModule with platform auth (not both):\n\t\t// auth.AuthAllModule,\n\t\t// profile.ProfileModule,\n\t\tdfx.AuthModule,#' "$service_main"
+  # Optional swap hint: enable platform auth instead of stub — do not provide both.
+  perl -i -pe 's#^\t\tdfx\.AuthModule,$#\t\t// Optional swap — do not enable both AuthMiddleware providers:\n\t\t// auth.AuthAllModule,\n\t\t// profile.ProfileModule,\n\t\tdfx.AuthModule,#' "$service_main"
 fi
 
 echo "scaffolded game at: $OUT"

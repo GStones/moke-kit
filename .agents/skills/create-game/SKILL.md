@@ -42,7 +42,8 @@ docker compose -f ./deployment/docker-compose/infrastructure.yaml up -d
 go run ./cmd/<name>/service/main.go
 ```
 
-Run the service in the background / a dedicated terminal so it keeps listening. Defaults: HTTP/gRPC `:8081`, TCP `:8888`.
+Run the service in the background / a dedicated terminal so it keeps listening.
+Defaults: HTTP/gRPC `:8081`. TCP `:8888` only with `AllWithTCPModule`.
 
 ## 3) Smoke
 

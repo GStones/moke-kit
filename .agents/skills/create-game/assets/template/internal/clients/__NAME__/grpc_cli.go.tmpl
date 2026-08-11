@@ -50,9 +50,10 @@ func (p *GrpcCli) sayHi(c *ishell.Context) {
 	if t := slogger.ReadLine(c, "topic(default:__NAME__): "); t != "" {
 		topic = t
 	}
-	md := metadata.Pairs("authorization", fmt.Sprintf("%s %v", "bearer", "test"))
+	// Stub AuthModule sets UID from bearer; request.uid is ignored by the server.
+	md := metadata.Pairs("authorization", fmt.Sprintf("%s %s", "bearer", "10000"))
 	ctx := mm.MD(md).ToOutgoing(context.Background())
-	resp, err := p.client.Hi(ctx, &pb.HiRequest{Uid: "10000", Message: msg, Topic: topic})
+	resp, err := p.client.Hi(ctx, &pb.HiRequest{Message: msg, Topic: topic})
 	if err != nil {
 		slogger.Warn(c, err)
 		return
@@ -67,7 +68,7 @@ func (p *GrpcCli) watch(c *ishell.Context) {
 	if t := slogger.ReadLine(c, "topic(default:__NAME__): "); t != "" {
 		topic = t
 	}
-	md := metadata.Pairs("authorization", fmt.Sprintf("%s %v", "bearer", "test"))
+	md := metadata.Pairs("authorization", fmt.Sprintf("%s %s", "bearer", "10000"))
 	ctx := mm.MD(md).ToOutgoing(context.Background())
 	stream, err := p.client.Watch(ctx, &pb.WatchRequest{Topic: topic})
 	if err != nil {
