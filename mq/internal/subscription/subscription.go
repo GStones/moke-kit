@@ -7,9 +7,9 @@ import (
 // CancelSubscription implements miface.Subscription by cancelling a per-subscribe
 // context instead of closing a shared Watermill subscriber.
 type CancelSubscription struct {
-	cancel  func()
-	valid   atomic.Bool
-	closed  atomic.Bool
+	cancel func()
+	valid  atomic.Bool
+	closed atomic.Bool
 }
 
 // NewCancelSubscription creates a valid subscription that cancels via cancel.
@@ -19,10 +19,12 @@ func NewCancelSubscription(cancel func()) *CancelSubscription {
 	return s
 }
 
+// IsValid reports whether the subscription is still active.
 func (s *CancelSubscription) IsValid() bool {
 	return s != nil && s.valid.Load()
 }
 
+// Unsubscribe cancels the subscription. It is safe to call more than once.
 func (s *CancelSubscription) Unsubscribe() error {
 	if s == nil {
 		return nil

@@ -17,12 +17,14 @@ type docEntry struct {
 	version noptions.Version
 }
 
+// MockCollection is an in-memory ICollection used for tests.
 type MockCollection struct {
 	mock.Mock
 	mu   sync.Mutex
 	docs map[string]*docEntry
 }
 
+// NewMockCollection creates a MockCollection with the given name.
 func NewMockCollection(name string) *MockCollection {
 	mc := &MockCollection{
 		docs: make(map[string]*docEntry),
@@ -35,11 +37,13 @@ func NewMockCollection(name string) *MockCollection {
 	return mc
 }
 
+// GetName returns the collection name.
 func (m *MockCollection) GetName() string {
 	ret := m.Called()
 	return ret.Get(0).(string)
 }
 
+// Set stores a document using create/CAS/any-version semantics.
 func (m *MockCollection) Set(ctx context.Context, k key.Key, opts ...noptions.Option) (noptions.Version, error) {
 	m.Called(ctx, k, opts)
 	options, err := noptions.NewOptions(opts...)
@@ -83,6 +87,7 @@ func (m *MockCollection) Set(ctx context.Context, k key.Key, opts ...noptions.Op
 	return entry.version, nil
 }
 
+// Get loads a document into the destination option and returns its version.
 func (m *MockCollection) Get(
 	ctx context.Context,
 	k key.Key,
@@ -111,6 +116,7 @@ func (m *MockCollection) Get(
 	return entry.version, nil
 }
 
+// Delete removes a document. It returns ErrNotFound if the key does not exist.
 func (m *MockCollection) Delete(ctx context.Context, k key.Key) error {
 	m.Called(ctx, k)
 	m.mu.Lock()
@@ -122,6 +128,7 @@ func (m *MockCollection) Delete(ctx context.Context, k key.Key) error {
 	return nil
 }
 
+// Incr increments a numeric field and returns the new value.
 func (m *MockCollection) Incr(ctx context.Context, k key.Key, field string, amount int32) (int64, error) {
 	m.Called(ctx, k, field, amount)
 	m.mu.Lock()
