@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package __NAME__.pb;
+
+import "google/api/annotations.proto";
+
+option go_package = "__NAME__/api;pb";
+
+service __NAME_TITLE__Service {
+  // Publish a message to a topic (persists player doc + publishes to MQ).
+  rpc Hi(HiRequest) returns (HiResponse) {
+    option (google.api.http) = {
+      post: "/v1/hello/hi"
+      body: "*"
+    };
+  }
+  // Watch topic messages (NATS + local MQ).
+  rpc Watch(WatchRequest) returns (stream WatchResponse) {
+    option (google.api.http) = {get: "/v1/hello/watch"};
+  }
+}
+
+message HiRequest {
+  string uid = 1;
+  string message = 2;
+  string topic = 3;
+}
+
+message HiResponse {
+  string message = 1;
+}
+
+message WatchRequest {
+  string uid = 1;
+  string topic = 2;
+}
+
+message WatchResponse {
+  string message = 1;
+}

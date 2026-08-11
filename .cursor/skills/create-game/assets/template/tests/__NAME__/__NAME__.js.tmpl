@@ -1,0 +1,21 @@
+import grpc from "k6/net/grpc";
+import { check } from "k6";
+
+const client = new grpc.Client();
+client.load(["../../api/__NAME__"], "__NAME__.proto");
+
+export const options = {
+  vus: 1,
+  duration: "10s",
+};
+
+export default () => {
+  client.connect("localhost:8081", { plaintext: true });
+  const res = client.invoke("__NAME__.pb.__NAME_TITLE__Service/Hi", {
+    uid: "10000",
+    message: "hello",
+    topic: "__NAME__",
+  });
+  check(res, { "status is OK": (r) => r && r.status === grpc.StatusOK });
+  client.close();
+};

@@ -13,9 +13,9 @@ moke-kit 是一个用于构建微服务/单体应用的基础框架。可以按�
 ## 生态
 
 ```text
-moke-kit                         → 可复用基础设施模块（fxmain、server、orm、mq、3rd）
+moke-kit（+ create-game Skill）  → 基础设施模块 + 直接脚手架生成游戏仓库
         ↓
-moke-layout / moke-game/game     → 游戏服务模板（把模块组装成可运行二进制）
+你的游戏二进制                   → fxmain.Main 组装 kit（+ 可选 platform）模块
         ↓ 可选
 moke-game/platform               → 共享中台服务（auth、profile、mail 等），以 fx 模块形式引入
 ```
@@ -23,9 +23,10 @@ moke-game/platform               → 共享中台服务（auth、profile、mail 
 | 仓库 | 作用 |
 | --- | --- |
 | [moke-kit](https://github.com/GStones/moke-kit) | LEGO 积木：DI、服务器、存储、MQ、第三方集成 |
-| [moke-layout](https://github.com/gstones/moke-layout) | 最小化脚手架（服务名 `demo`），通过 `gonew` 创建 |
-| [moke-game/game](https://github.com/moke-game/game) | 完整游戏模板（`game0`），已组合 platform 模块 |
+| [moke-game/game](https://github.com/moke-game/game) | 参考游戏（`game0`），已组合 platform 模块 |
 | [moke-game/platform](https://github.com/moke-game/platform) | 可被游戏引入的共享中台服务 |
+
+新游戏请用本仓库的 [`create-game`](./.cursor/skills/create-game/SKILL.md) Skill / `scaffold.sh` 直接生成。
 
 版本兼容矩阵见 [COMPATIBILITY.md](./COMPATIBILITY.md)。
 
@@ -163,29 +164,30 @@ flowchart TD
 
 依赖：[`go.mod`](./go.mod) 中的 Go 版本、[Docker](https://docs.docker.com/get-docker/)（本地基础设施）、[buf](https://buf.build/docs/installation)（protobuf）。
 
-### 1. 从 layout 创建项目
+### 1. 用 create-game Skill 直接脚手架
+
+**直接从本仓库模板生成游戏**（不使用 `gonew` / `moke-layout`）：
 
 ```bash
-go install golang.org/x/tools/cmd/gonew@latest
-gonew github.com/gstones/moke-layout your.domain/myprog
-cd myprog
+# 在 moke-kit 仓库根目录执行
+chmod +x .cursor/skills/create-game/scripts/scaffold.sh
+
+.cursor/skills/create-game/scripts/scaffold.sh \
+  --module github.com/<org>/<game> \
+  --name <name> \
+  --out ./<name>
 ```
 
-模板服务名为 `demo`。请在 `cmd/`、`api/`、`internal/`、`pkg/`、`tests/` 中重命名为你的游戏/服务名，并同步修改 proto package；若发布到 Buf Schema Registry，还需更新 `buf.yaml` 的 module name。
+脚本会生成完整游戏仓库（proto、`fxmain` 入口、domain/DAO、客户端、docker-compose），并执行 `go mod tidy`；若已安装 `buf` 还会运行 `buf generate`。
 
-若需要已组合 [platform](https://github.com/moke-game/platform) 的完整示例，参考 [moke-game/game](https://github.com/moke-game/game)（`game0`）。
+在 Cursor 中也可执行 `/create-game`，或直接说「基于 moke-kit 创建一个 game」。
 
-### 2. 生成协议代码
+已组合 [platform](https://github.com/moke-game/platform) 的参考实现见 [moke-game/game](https://github.com/moke-game/game)。
 
-```bash
-buf generate
-```
-
-### 3. 启动本地基础设施
-
-在游戏模板仓库中：
+### 2. 启动本地基础设施
 
 ```bash
+cd <name>
 docker compose -f ./deployment/docker-compose/infrastructure.yaml up -d
 ```
 
@@ -200,20 +202,20 @@ docker compose -f ./deployment/docker-compose/infrastructure.yaml up -d
 | `NATS_URL` | `nats://localhost:4222` |
 | `DEPLOYMENT` | `local` |
 
-### 4. 运行服务
+### 3. 运行服务
 
 ```bash
-go run ./cmd/{name}/service/main.go
+go run ./cmd/<name>/service/main.go
 ```
 
 用交互式客户端做冒烟测试：
 
 ```bash
-go build -o {name} ./cmd/{name}/client/main.go
-./{name} grpc   # 或 tcp；HTTP 可用 Postman 访问 localhost:8081
+go build -o <name> ./cmd/<name>/client/main.go
+./<name> grpc   # 或 tcp；HTTP 可用 Postman 访问 localhost:8081
 ```
 
-### 5. 在 `fxmain.Main` 中组装模块
+### 4. 在 `fxmain.Main` 中组装模块
 
 `fxmain.Main` 会加载 `AppModule`（server、orm、logging、mq settings）并绑定已注册服务。只需传入额外需要的模块：
 
@@ -241,7 +243,7 @@ fxmain.Main(
 
 | Skill | 适用场景 |
 | --- | --- |
-| [`create-game`](./.cursor/skills/create-game/SKILL.md) | 从 `moke-layout` / `game0` 创建新游戏 |
+| [`create-game`](./.cursor/skills/create-game/SKILL.md) | 用内置模板 / `scaffold.sh` 直接生成新游戏 |
 | [`add-game-rpc`](./.cursor/skills/add-game-rpc/SKILL.md) | 新增 protobuf RPC，并接入 gRPC / gateway / zinx |
 | [`compose-moke-modules`](./.cursor/skills/compose-moke-modules/SKILL.md) | 在 `fxmain.Main` 中组装 moke-kit 与 platform 模块 |
 

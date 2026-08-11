@@ -1,0 +1,27 @@
+# __NAME__
+
+Game server scaffolded from [moke-kit](https://github.com/GStones/moke-kit) via the `create-game` skill.
+
+Module: `__MODULE__`
+
+## Run
+
+```bash
+docker compose -f ./deployment/docker-compose/infrastructure.yaml up -d
+buf generate
+go run ./cmd/__NAME__/service/main.go
+```
+
+## Client
+
+```bash
+go build -o __NAME__ ./cmd/__NAME__/client/main.go
+./__NAME__ grpc
+```
+
+HTTP gateway: `POST http://localhost:8081/v1/hello/hi`
+
+## Compose modules
+
+`cmd/__NAME__/service/main.go` wires moke-kit infra + `pkg/modules.AllModule` (gRPC, gateway, TCP).
+Add platform modules only when you need shared services.

@@ -1,0 +1,37 @@
+version: "3.7"
+services:
+  game-redis:
+    container_name: game-redis
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    restart: always
+    networks:
+      - game-network
+  game-mongodb:
+    container_name: game-mongodb
+    image: mongo:latest
+    restart: always
+    volumes:
+      - mongo-data:/data/db
+    ports:
+      - "27017:27017"
+    networks:
+      - game-network
+  game-nats:
+    container_name: game-nats
+    image: nats:latest
+    ports:
+      - "4222:4222"
+      - "6222:6222"
+      - "8222:8222"
+    restart: always
+    command:
+      - "-js"
+    hostname: nats-server
+    networks:
+      - game-network
+volumes:
+  mongo-data:
+networks:
+  game-network:

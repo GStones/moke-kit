@@ -1,0 +1,65 @@
+package __NAME__
+
+import (
+	"net"
+
+	"github.com/abiosoft/ishell"
+	"github.com/gstones/moke-kit/logging/slogger"
+	"github.com/gstones/zinx/zpack"
+	"google.golang.org/protobuf/proto"
+
+	pb "__MODULE__/api/gen/__NAME__/api"
+)
+
+type TcpCli struct {
+	conn net.Conn
+	cmd  *ishell.Cmd
+}
+
+func NewTcpCli(conn net.Conn) *TcpCli {
+	cmd := &ishell.Cmd{
+		Name:    "__NAME__",
+		Help:    "__NAME__ interactive",
+		Aliases: []string{"t"},
+	}
+	p := &TcpCli{conn: conn, cmd: cmd}
+	p.initSubShells()
+	return p
+}
+
+func (dz *TcpCli) GetCmd() *ishell.Cmd { return dz.cmd }
+
+func (dz *TcpCli) initSubShells() {
+	dz.cmd.AddCmd(&ishell.Cmd{Name: "hi", Help: "say hi", Aliases: []string{"hi"}, Func: dz.sayHi})
+}
+
+func (dz *TcpCli) sayHi(c *ishell.Context) {
+	c.ShowPrompt(false)
+	defer c.ShowPrompt(true)
+
+	msg := "hello"
+	if in := slogger.ReadLine(c, "message(default:hello): "); in != "" {
+		msg = in
+	}
+	topic := "__NAME__"
+	if t := slogger.ReadLine(c, "topic(default:__NAME__): "); t != "" {
+		topic = t
+	}
+	req := &pb.HiRequest{Message: msg, Topic: topic, Uid: "10000"}
+	data, err := proto.Marshal(req)
+	if err != nil {
+		slogger.Warn(c, err)
+		return
+	}
+	dp := zpack.NewDataPack()
+	sendData, err := dp.Pack(zpack.NewMsgPackage(1, data))
+	if err != nil {
+		slogger.Warn(c, err)
+		return
+	}
+	if _, err := dz.conn.Write(sendData); err != nil {
+		slogger.Warn(c, err)
+		return
+	}
+	slogger.Info(c, "sent hi via tcp (msg id 1)")
+}

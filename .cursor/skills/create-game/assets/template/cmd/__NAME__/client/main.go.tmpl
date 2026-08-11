@@ -1,0 +1,47 @@
+package main
+
+import (
+	"context"
+
+	"github.com/spf13/cobra"
+
+	"__MODULE__/internal/clients/__NAME__"
+)
+
+var options struct {
+	host    string
+	tcpHost string
+}
+
+const (
+	defaultHost    = "localhost:8081"
+	defaultTcpHost = "localhost:8888"
+)
+
+func main() {
+	rootCmd := &cobra.Command{
+		Use:     "__NAME__",
+		Short:   "interactive client for __NAME__",
+		Aliases: []string{"cli"},
+	}
+	rootCmd.PersistentFlags().StringVar(&options.host, "host", defaultHost, "grpc service (<host>:<port>)")
+	rootCmd.PersistentFlags().StringVar(&options.tcpHost, "tcp_host", defaultTcpHost, "tcp service (<host>:<port>)")
+
+	rootCmd.AddCommand(
+		&cobra.Command{
+			Use:   "grpc",
+			Short: "Run an interactive grpc client",
+			Run: func(cmd *cobra.Command, args []string) {
+				__NAME__.RunGrpc(options.host)
+			},
+		},
+		&cobra.Command{
+			Use:   "tcp",
+			Short: "Run an interactive tcp client",
+			Run: func(cmd *cobra.Command, args []string) {
+				__NAME__.RunTcp(options.tcpHost)
+			},
+		},
+	)
+	_ = rootCmd.ExecuteContext(context.Background())
+}

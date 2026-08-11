@@ -1,0 +1,17 @@
+version: "3"
+services:
+  __NAME__:
+    environment:
+      - NATS_URL=nats://game-nats:4222
+      - DATABASE_URL=mongodb://game-mongodb:27017
+      - CACHE_URL=redis://game-redis:6379
+    container_name: __NAME__
+    image: ${REGISTRY:-localhost}/${GAME_NAME:-__NAME__}:latest
+    ports:
+      - "8081:8081"
+      - "8888:8888"
+    restart: always
+    networks:
+      - game-network
+networks:
+  game-network:

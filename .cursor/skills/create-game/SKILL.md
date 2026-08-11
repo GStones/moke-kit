@@ -1,131 +1,105 @@
 ---
 name: create-game
-description: Scaffold a new game server based on moke-kit (gonew moke-layout or fork game0). Use when the user asks to create a game, new game project, bootstrap from moke-kit, clone moke-layout, or start a game server template.
+description: Scaffold a new game server directly from moke-kit create-game templates (no gonew, no moke-layout). Use when the user asks to create a game, new game project, bootstrap from moke-kit, or generate a game server scaffold.
 ---
 
 # Create a game based on moke-kit
 
-moke-kit is LEGO bricks (`fxmain`, server, orm, mq). A game is a composed app. There is no in-repo generator — scaffold from the official layout, then rename and wire.
+Scaffold the project **from this skill’s templates**. Do **not** use `gonew`, clone `moke-layout`, or create a `demo` service then rename it.
 
 ## Mental model
 
 ```text
-moke-kit          → infra modules (always via fxmain.Main)
-moke-layout/game  → game server template (one named service)
-platform (opt)    → shared services imported as fx modules
+moke-kit create-game skill  → writes a ready game repo (templates + scaffold.sh)
+moke-kit modules            → runtime infra via fxmain.Main
+platform (optional)         → shared services imported later as fx modules
 ```
 
-Reference implementations:
-
-- Layout template: https://github.com/gstones/moke-layout (service name `demo`)
-- Full game example: https://github.com/moke-game/game (service name `game0`)
-- Platform modules: https://github.com/moke-game/platform
-
-When this workspace has `/agent/repos/game` or `/agent/repos/platform`, prefer reading those trees over guessing.
-
-## Gather requirements first
+## Gather requirements
 
 Ask only if missing:
 
 1. **Module path** — e.g. `github.com/acme/arena`
-2. **Service name** — short, lowercase, no spaces (e.g. `arena`; template defaults are `demo` / `game0`)
-3. **Scope** — minimal game only, or compose platform modules (auth, profile, mail, …)
-4. **Transports** — gRPC / HTTP gateway / TCP(zinx); default = all three like `AllModule`
+2. **Service name** — lowercase (`arena`); becomes paths, proto package, binary name
+3. **Output directory** — default `./{name}` (outside or beside this repo as the user prefers)
+4. **Platform stubs?** — default no; pass `--with-platform` only if requested
 
-## Path A — Greenfield (recommended)
+## Scaffold (required path)
 
-Documented in moke-kit README:
-
-```bash
-go install golang.org/x/tools/cmd/gonew@latest
-gonew github.com/gstones/moke-layout github.com/<org>/<game>
-cd <game>
-```
-
-Then rename `demo` → `{name}` across the tree. Read [references/template-map.md](references/template-map.md) for the file map.
-
-### Required renames
-
-- Paths: `cmd/demo` → `cmd/{name}`, `api/demo`, `internal/services/demo`, `internal/clients/demo`, `tests/demo`, `pkg/modules/*`
-- Proto: `package demo.pb` → `{name}.pb`, service/messages, `go_package`, HTTP routes
-- Go imports / fx module vars / env defaults (`GAME_URL`, `DB_NAME`, key namespaces)
-- `buf.yaml` `name:` if publishing to a new BSR module
-- k6 tests: fix RPC FQDN to the new service (game0’s k6 may still say `game.pb.DemoService` — correct it)
-
-### Wire entrypoint
-
-`cmd/{name}/service/main.go` should look like:
-
-```go
-fxmain.Main(
-    // infra beyond AppModule (include only what you use)
-    mfx.NatsModule,
-    mfx.LocalModule,
-    ofx.RedisCacheModule,
-
-    // game modules
-    modules.AllModule, // or GrpcModule / HttpModule / TcpModule
-
-    // optional platform shared services
-    // auth.AuthAllModule, profile.ProfileModule, ...
-)
-```
-
-`fxmain.Main` already injects `AppModule` (server + orm + logging + mq settings) and launches `ServiceBinder`.
-
-### Codegen and run
+From the **moke-kit repository root**:
 
 ```bash
-buf generate
+chmod +x .cursor/skills/create-game/scripts/scaffold.sh
 
+.cursor/skills/create-game/scripts/scaffold.sh \
+  --module github.com/<org>/<game> \
+  --name <name> \
+  --out ./<name>
+```
+
+Optional:
+
+```bash
+# keep commented platform import stubs in cmd/<name>/service/main.go
+--with-platform
+
+# override Buf Schema Registry module name
+--buf-module buf.build/<org>/<name>
+```
+
+The script:
+
+1. Copies [`assets/template/`](assets/template/) with `__NAME__` / `__MODULE__` / `__NAME_TITLE__` / `__BUF_MODULE__` substituted
+2. Runs `go get github.com/gstones/moke-kit@latest` + `go mod tidy`
+3. Runs `buf dep update` + `buf generate` when `buf` is installed
+
+If the script cannot run, manually copy `assets/template/`, rename `__NAME__` path segments, substitute placeholders (**`__NAME_TITLE__` before `__NAME__`**), then run `go mod tidy` and `buf generate`. See [references/template-map.md](references/template-map.md).
+
+## After scaffold
+
+```bash
+cd <out>
 docker compose -f ./deployment/docker-compose/infrastructure.yaml up -d
-go run ./cmd/{name}/service/main.go
+go run ./cmd/<name>/service/main.go
 ```
-
-Defaults: HTTP/gRPC `:8081`, TCP `:8888`, Mongo/Redis/NATS on localhost (see moke-kit orm/mq/server READMEs).
 
 Smoke:
 
 ```bash
-go build -o {name} ./cmd/{name}/client/main.go
-./{name} grpc   # or tcp; HTTP via Postman localhost:8081
+go build -o <name> ./cmd/<name>/client/main.go
+./<name> grpc
+# HTTP: POST localhost:8081/v1/hello/hi
 ```
 
-Docker image (template Dockerfile):
+## What gets generated
 
-```bash
-docker buildx build -t <registry>/<name>:latest \
-  --build-arg APP_NAME={name} \
-  --build-arg GIT_PWD=<git_token_if_private_deps> \
-  -f ./build/package/docker/Dockerfile . --push
-```
+| Area | Contents |
+| --- | --- |
+| `cmd/<name>/service` | `fxmain.Main` + NATS/local MQ + Redis cache + `AllModule` |
+| `cmd/<name>/client` | Interactive grpc/tcp CLI |
+| `api/<name>` | Proto with `Hi` + streaming `Watch` |
+| `internal/services/<name>` | Service registration (`sfx.*ServiceResult`), domain, nosql DAO |
+| `pkg/modules` | `GrpcModule` / `HttpModule` / `TcpModule` / `AllModule` / client |
+| `pkg/dfx` | Settings, auth middleware stub, grpc client provider |
+| `deployment/docker-compose` | Redis, Mongo, NATS |
+| `tests/<name>` | k6 smoke for `Hi` |
 
-## Path B — Copy from existing game0 in workspace
+Default transports: gRPC + gateway + TCP. Service embeds `utility.WithoutAuth` so local smoke works; wire real auth before prod.
 
-If `/agent/repos/game` is available and the user wants the platform-composed template:
+## Hard rules
 
-1. Copy the `game0` trees listed in [references/template-map.md](references/template-map.md)
-2. Rename packages/proto/modules/env as in Path A
-3. Trim platform imports in `main.go` unless needed
-4. `buf generate`, start infra, run service
-
-Do **not** put game-specific logic into platform; only add platform services when they are shared middleware.
-
-## Hard rules (do not invent)
-
-- Register services by implementing `siface.IGrpcService` / `IGatewayService` / `IZinxService` and returning `sfx.GrpcServiceResult` / `GatewayServiceResult` / `ZinxServiceResult` from `fx.Provide`
-- Export LEGO pieces from `pkg/modules` (`GrpcModule`, `HttpModule`, `TcpModule`, `AllModule`, client module)
-- Keep settings in `pkg/dfx` via `utility.Load` / envconfig
-- Persist with `nosql.DocumentBase` + key helpers when following the template DAO pattern
-- Embed `utility.WithoutAuth` only when intentionally skipping auth (prod fails closed without auth middleware)
+- **Never** call `gonew` or depend on `github.com/gstones/moke-layout` for this workflow
+- **Never** leave a `demo` / `game0` name unless the user chose that as `--name`
+- Do not hand-edit `api/gen/**`; only via `buf generate`
+- Register handlers via `sfx.GrpcServiceResult` / `GatewayServiceResult` / `ZinxServiceResult`
+- Do not add platform module deps unless the user asked
 
 ## Done checklist
 
-- [ ] Module path and `{name}` consistent in go.mod, imports, proto, paths
-- [ ] `buf generate` succeeds; no stale `demo`/`game0` references in new code
-- [ ] `fxmain.Main` wires needed moke-kit + optional platform modules
-- [ ] Infra compose up; `go run ./cmd/{name}/service/main.go` starts
-- [ ] Client or HTTP smoke works for at least one RPC
-- [ ] README run/build snippets use `{name}`
+- [ ] `scaffold.sh` succeeded (or equivalent manual render from `assets/template`)
+- [ ] No `moke-layout` / `gonew` / leftover `demo` rename steps
+- [ ] `buf generate` produced `api/gen`
+- [ ] `go build ./cmd/<name>/service` succeeds (after infra if runtime-tested)
+- [ ] README in the new repo matches `<name>` and module path
 
-If the user only wants a new RPC inside an existing game, use the `add-game-rpc` skill instead.
+For adding RPCs later, use `add-game-rpc`. For wiring more fx modules, use `compose-moke-modules`.

@@ -1,0 +1,21 @@
+package main
+
+import (
+	"github.com/gstones/moke-kit/fxmain"
+	"github.com/gstones/moke-kit/mq/pkg/mfx"
+	"github.com/gstones/moke-kit/orm/pkg/ofx"
+
+	"__MODULE__/pkg/modules"
+)
+
+func main() {
+	fxmain.Main(
+		// infrastructures beyond AppModule
+		mfx.NatsModule,
+		mfx.LocalModule,
+		ofx.RedisCacheModule,
+
+		// game service (gRPC + gateway + TCP)
+		modules.AllModule,
+	)
+}
