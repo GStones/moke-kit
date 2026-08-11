@@ -9,6 +9,7 @@ services:
     image: ${REGISTRY:-localhost}/${GAME_NAME:-__NAME__}:latest
     ports:
       - "8081:8081"
+      # 8888 only used when AllWithTCPModule / TcpModule is enabled
       - "8888:8888"
     restart: always
     networks:

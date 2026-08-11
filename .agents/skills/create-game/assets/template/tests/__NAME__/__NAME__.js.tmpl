@@ -4,6 +4,9 @@ import { check } from "k6";
 const client = new grpc.Client();
 client.load(["../../api/__NAME__"], "__NAME__.proto");
 
+// Stub AuthModule treats the bearer token as uid.
+const BEARER = __ENV.AUTH_TOKEN || "10000";
+
 export const options = {
   vus: 1,
   duration: "10s",
@@ -11,11 +14,18 @@ export const options = {
 
 export default () => {
   client.connect("localhost:8081", { plaintext: true });
-  const res = client.invoke("__NAME__.pb.__NAME_TITLE__Service/Hi", {
-    uid: "10000",
-    message: "hello",
-    topic: "__NAME__",
-  });
+  const res = client.invoke(
+    "__NAME__.pb.__NAME_TITLE__Service/Hi",
+    {
+      message: "hello",
+      topic: "__NAME__",
+    },
+    {
+      metadata: {
+        authorization: "bearer " + BEARER,
+      },
+    },
+  );
   check(res, { "status is OK": (r) => r && r.status === grpc.StatusOK });
   client.close();
 };
