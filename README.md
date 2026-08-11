@@ -10,6 +10,25 @@
 
 moke-kit is a toolkit for building microservices or monolithic applications in Go. You can develop your application as a monolithic service and deploy it as microservices. Like building with LEGO, you can assemble your services exactly how you want them.
 
+## Ecosystem
+
+```text
+moke-kit                         → reusable infra modules (fxmain, server, orm, mq, 3rd)
+        ↓
+moke-layout / moke-game/game     → game server template (compose modules into a binary)
+        ↓ optional
+moke-game/platform               → shared services (auth, profile, mail, …) as fx modules
+```
+
+| Repo | Role |
+| --- | --- |
+| [moke-kit](https://github.com/GStones/moke-kit) | LEGO bricks: DI, servers, storage, MQ, integrations |
+| [moke-layout](https://github.com/gstones/moke-layout) | Minimal game/service scaffold (`demo`) via `gonew` |
+| [moke-game/game](https://github.com/moke-game/game) | Full game template (`game0`) with platform composition |
+| [moke-game/platform](https://github.com/moke-game/platform) | Shared platform services imported into games |
+
+See [COMPATIBILITY.md](./COMPATIBILITY.md) for validated version sets across kit / platform / game.
+
 ## Diagram
 ```mermaid
 flowchart TD
@@ -96,7 +115,6 @@ flowchart TD
   click agones "https://github.com/gstones/moke-kit/tree/main/3rd/agones/pkg/agonesfx"
 ```
 
-
 ## Features
 
 * **Dependency Injection**: Uses [uber/fx](https://github.com/uber-go/fx) for inversion of control
@@ -113,6 +131,19 @@ flowchart TD
 * **Development Tools**:
   * Command-line client for independent testing
   * Single command generation of proto, gRPC, gateway, Swagger, and client code using [buf](https://buf.build/)
+
+## Repository layout
+
+| Path | Package |
+| --- | --- |
+| [`fxmain/`](./fxmain) | App entry: `fxmain.Main(...)` + `AppModule` |
+| [`server/`](./server) | gRPC, grpc-gateway, zinx (TCP/WS/KCP), middleware, TLS/mTLS |
+| [`orm/`](./orm) | Mongo document store, Redis/Dragonfly, GORM |
+| [`mq/`](./mq) | NATS and local in-process message queue |
+| [`logging/`](./logging) | Logging modules |
+| [`utility/`](./utility) | Config helpers, deployment helpers, auth opt-out |
+| [`3rd/`](./3rd) | Auth, IAP, Agones, cloud integrations |
+| [`test/`](./test) | Kit-level tests |
 
 ## Built-in Kits
 
@@ -136,12 +167,102 @@ flowchart TD
 
 ## Getting Started
 
-1. Install gonew:
+Requirements: Go version from [`go.mod`](./go.mod), [Docker](https://docs.docker.com/get-docker/) (for local infra), [buf](https://buf.build/docs/installation) (for protobuf).
+
+### 1. Create a project from the layout
+
 ```bash
 go install golang.org/x/tools/cmd/gonew@latest
+gonew github.com/gstones/moke-layout your.domain/myprog
+cd myprog
 ```
 
-2. Create a new project:
+The template service is named `demo`. Rename it to your game/service name across `cmd/`, `api/`, `internal/`, `pkg/`, and `tests/`, then update the proto package and `buf.yaml` module name if you publish to the Buf Schema Registry.
+
+For a fuller reference that already composes [platform](https://github.com/moke-game/platform) modules, see [moke-game/game](https://github.com/moke-game/game) (`game0`).
+
+### 2. Generate APIs
+
 ```bash
-gonew github.com/gstones/moke-layout your.domain/myprog
+buf generate
 ```
+
+### 3. Start local infrastructure
+
+In the game template:
+
+```bash
+docker compose -f ./deployment/docker-compose/infrastructure.yaml up -d
+```
+
+Typical defaults (override with env vars):
+
+| ENV | Default |
+| --- | --- |
+| `PORT` | `8081` |
+| `ZINX_TCP_PORT` | `8888` |
+| `DATABASE_URL` | `mongodb://localhost:27017` |
+| `CACHE_URL` | `redis://localhost:6379` |
+| `NATS_URL` | `nats://localhost:4222` |
+| `DEPLOYMENT` | `local` |
+
+### 4. Run the service
+
+```bash
+go run ./cmd/{name}/service/main.go
+```
+
+Smoke test with the interactive client:
+
+```bash
+go build -o {name} ./cmd/{name}/client/main.go
+./{name} grpc   # or: tcp — HTTP via Postman on localhost:8081
+```
+
+### 5. Compose modules in `fxmain.Main`
+
+`fxmain.Main` always loads `AppModule` (server, orm, logging, mq settings) and binds registered services. Pass only the extra modules you need:
+
+```go
+fxmain.Main(
+    // infra beyond AppModule
+    mfx.NatsModule,
+    mfx.LocalModule,
+    ofx.RedisCacheModule,
+
+    // your game modules (GrpcModule / HttpModule / TcpModule / AllModule)
+    modules.AllModule,
+
+    // optional shared platform services
+    // auth.AuthAllModule,
+    // profile.ProfileModule,
+)
+```
+
+Register game handlers by implementing `siface.IGrpcService` / `IGatewayService` / `IZinxService` and providing `sfx.GrpcServiceResult` / `GatewayServiceResult` / `ZinxServiceResult`.
+
+## Cursor Agent Skills
+
+Project skills under [`.cursor/skills/`](./.cursor/skills) help agents scaffold and extend games on this kit:
+
+| Skill | Use when |
+| --- | --- |
+| [`create-game`](./.cursor/skills/create-game/SKILL.md) | Create a new game from `moke-layout` / `game0` |
+| [`add-game-rpc`](./.cursor/skills/add-game-rpc/SKILL.md) | Add a protobuf RPC and wire gRPC / gateway / zinx |
+| [`compose-moke-modules`](./.cursor/skills/compose-moke-modules/SKILL.md) | Assemble moke-kit + platform modules in `fxmain.Main` |
+
+In Cursor, invoke with `/create-game` (or ask in natural language, e.g. “create a game based on moke-kit”).
+
+## Develop moke-kit itself
+
+```bash
+go test -race ./...
+go vet ./...
+gofmt -s -w .
+```
+
+CI also runs `staticcheck` via reviewdog on pull requests.
+
+## License
+
+See [LICENSE](./LICENSE).
