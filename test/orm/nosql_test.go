@@ -120,8 +120,23 @@ func TestMockCollection(t *testing.T) {
 		k, err := key.NewKeyFromParts("test", "document", "delete-me")
 		helper.RequireNoError(err)
 
+		_, err = collection.Set(helper.Context(), k, noptions.WithSource(&TestData{Message: "x"}))
+		helper.RequireNoError(err)
+
 		err = collection.Delete(helper.Context(), k)
 		helper.AssertNoError(err)
+
+		err = collection.Delete(helper.Context(), k)
+		helper.AssertNotNil(err, "deleting missing document should fail")
+	})
+
+	t.Run("CreateConflict", func(t *testing.T) {
+		k, err := key.NewKeyFromParts("test", "document", "create-once")
+		helper.RequireNoError(err)
+		_, err = collection.Set(helper.Context(), k, noptions.WithSource(&TestData{Message: "one"}))
+		helper.RequireNoError(err)
+		_, err = collection.Set(helper.Context(), k, noptions.WithSource(&TestData{Message: "two"}))
+		helper.AssertNotNil(err, "create without version should fail if document exists")
 	})
 
 	t.Run("Increment", func(t *testing.T) {
@@ -130,7 +145,11 @@ func TestMockCollection(t *testing.T) {
 
 		newValue, err := collection.Incr(helper.Context(), k, "count", 5)
 		helper.RequireNoError(err)
-		helper.AssertTrue(newValue >= 0)
+		helper.AssertEqual(int64(5), newValue)
+
+		newValue, err = collection.Incr(helper.Context(), k, "count", 3)
+		helper.RequireNoError(err)
+		helper.AssertEqual(int64(8), newValue)
 	})
 }
 

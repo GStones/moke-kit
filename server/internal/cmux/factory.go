@@ -17,22 +17,23 @@ func NewConnectionMux(
 }
 
 // NewTlsConnectionMux creates a new connection mux with TLS.
+// When mTLS is true, clients must present a certificate signed by clientsCA.
 func NewTlsConnectionMux(
 	logger *zap.Logger,
 	port int32,
 	tlsCert string,
 	tlsKey string,
 	clientsCA string,
+	mTLS bool,
 ) (result *ConnectionMux, err error) {
-	if config, e := makeTLSConfig(logger, tlsCert, tlsKey, clientsCA); e != nil {
-		err = e
-	} else {
-		result = &ConnectionMux{
-			logger:    logger,
-			port:      port,
-			tlsConfig: config,
-		}
+	config, cleanup, e := makeTLSConfig(logger, tlsCert, tlsKey, clientsCA, mTLS)
+	if e != nil {
+		return nil, e
 	}
-
-	return
+	return &ConnectionMux{
+		logger:     logger,
+		port:       port,
+		tlsConfig:  config,
+		tlsCleanup: cleanup,
+	}, nil
 }

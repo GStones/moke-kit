@@ -7,30 +7,28 @@ import (
 
 	"github.com/gstones/moke-kit/mq/common"
 	message2 "github.com/gstones/moke-kit/mq/internal/message"
+	"github.com/gstones/moke-kit/mq/internal/subscription"
 	"github.com/gstones/moke-kit/mq/miface"
 )
-
-type Subscription struct {
-	topic      string
-	handler    miface.SubResponseHandler
-	subscriber message.Subscriber
-}
 
 func CreateSubscription(
 	ctx context.Context,
 	topic string,
 	handler miface.SubResponseHandler,
 	subscriber message.Subscriber,
-) (*Subscription, error) {
-	sub := &Subscription{topic: topic, handler: handler, subscriber: subscriber}
-	msgIn, err := subscriber.Subscribe(ctx, topic)
+) (miface.Subscription, error) {
+	subCtx, cancel := context.WithCancel(ctx)
+	msgIn, err := subscriber.Subscribe(subCtx, topic)
 	if err != nil {
+		cancel()
 		return nil, err
 	}
+	sub := subscription.NewCancelSubscription(cancel)
 	go func() {
+		defer sub.Unsubscribe()
 		for msg := range msgIn {
 			m := message2.Msg2Message(topic, msg)
-			if code := sub.handler(m, nil); code == common.ConsumeNackTransientFailure {
+			if code := handler(m, nil); code == common.ConsumeNackTransientFailure {
 				msg.Nack()
 			} else {
 				msg.Ack()
@@ -38,16 +36,4 @@ func CreateSubscription(
 		}
 	}()
 	return sub, nil
-}
-
-func (s *Subscription) IsValid() bool {
-	return s.subscriber != nil
-}
-
-func (s *Subscription) Unsubscribe() error {
-	if err := s.subscriber.Close(); err != nil {
-		return err
-	}
-	s.subscriber = nil
-	return nil
 }

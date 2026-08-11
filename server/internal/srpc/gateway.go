@@ -15,11 +15,12 @@ import (
 
 // GatewayServer is the struct for the gateway server.
 type GatewayServer struct {
-	logger   *zap.Logger
-	server   *http.Server
-	mux      *runtime.ServeMux
-	listener net.Listener
-	opts     []grpc.DialOption
+	logger           *zap.Logger
+	server           *http.Server
+	mux              *runtime.ServeMux
+	listener         net.Listener
+	opts             []grpc.DialOption
+	corsAllowOrigins []string
 }
 
 // StartServing starts the gateway server.
@@ -72,12 +73,32 @@ func (gs *GatewayServer) Endpoint() string {
 	return gs.server.Addr
 }
 
-func allowCORS(h http.Handler) http.Handler {
+func allowCORS(h http.Handler, allowOrigins []string) http.Handler {
+	allowed := make(map[string]struct{}, len(allowOrigins))
+	allowAll := false
+	for _, o := range allowOrigins {
+		o = strings.TrimSpace(o)
+		if o == "" {
+			continue
+		}
+		if o == "*" {
+			allowAll = true
+			continue
+		}
+		allowed[o] = struct{}{}
+	}
+
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if origin := r.Header.Get("Origin"); origin != "" {
-			w.Header().Set("Access-Control-Allow-Origin", origin)
-			if r.Method == "OPTIONS" && r.Header.Get("Access-Control-Request-Method") != "" {
-				preflightHandler(w, r)
+		origin := r.Header.Get("Origin")
+		if origin != "" {
+			if allowAll {
+				w.Header().Set("Access-Control-Allow-Origin", "*")
+			} else if _, ok := allowed[origin]; ok {
+				w.Header().Set("Access-Control-Allow-Origin", origin)
+				w.Header().Add("Vary", "Origin")
+			}
+			if r.Method == http.MethodOptions && r.Header.Get("Access-Control-Request-Method") != "" {
+				preflightHandler(w, r, allowAll, allowed)
 				return
 			}
 		}
@@ -85,16 +106,25 @@ func allowCORS(h http.Handler) http.Handler {
 	})
 }
 
-func preflightHandler(w http.ResponseWriter, r *http.Request) {
-	if origin := r.Header.Get("Origin"); origin != "" {
+func preflightHandler(w http.ResponseWriter, r *http.Request, allowAll bool, allowed map[string]struct{}) {
+	origin := r.Header.Get("Origin")
+	if allowAll {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+	} else if _, ok := allowed[origin]; ok {
 		w.Header().Set("Access-Control-Allow-Origin", origin)
+		w.Header().Add("Vary", "Origin")
+	} else {
+		w.WriteHeader(http.StatusForbidden)
+		return
 	}
 
 	headers := []string{"Content-Type", "Accept", "Authorization"}
+	if reqHeaders := r.Header.Get("Access-Control-Request-Headers"); reqHeaders != "" {
+		headers = append(headers, reqHeaders)
+	}
 	w.Header().Set("Access-Control-Allow-Headers", strings.Join(headers, ","))
-
-	methods := []string{"GET", "HEAD", "POST", "PUT", "DELETE"}
-	w.Header().Set("Access-Control-Allow-Methods", strings.Join(methods, ","))
+	w.Header().Set("Access-Control-Allow-Methods", "GET, HEAD, POST, PUT, DELETE, OPTIONS")
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func withLogger(h http.Handler) http.Handler {

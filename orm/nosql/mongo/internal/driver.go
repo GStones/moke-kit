@@ -23,9 +23,10 @@ func (dd *DatabaseDriver) GetName() string {
 	return dd.database.Name()
 }
 
-// Set with a key and options
-// If the version is not noVersion, then the version must match the version in the database,
-// Or it will return error `ErrVersionNotMatch`
+// Set with a key and options.
+// - No version and not AnyVersion: create only (fails if document exists).
+// - WithVersion: CAS update (fails if version mismatches).
+// - WithAnyVersion: overwrite/create regardless of current version.
 func (dd *DatabaseDriver) Set(ctx context.Context, key key.Key, opts ...noptions.Option) (noptions.Version, error) {
 	o, err := noptions.NewOptions(opts...)
 	if err != nil {
@@ -36,30 +37,53 @@ func (dd *DatabaseDriver) Set(ctx context.Context, key key.Key, opts ...noptions
 	}
 
 	coll := dd.database.Collection(key.Prefix())
-	filter := bson.M{"_id": key.String()}
-	opt := options.Update()
 
-	if o.Version != noptions.NoVersion {
+	// Create-only: document must not already exist.
+	if !o.AnyVersion && o.Version == noptions.NoVersion {
+		doc := bson.M{
+			"_id":     key.String(),
+			"data":    o.Source,
+			"version": int64(1),
+		}
+		if _, err := coll.InsertOne(ctx, doc); err != nil {
+			if mongo.IsDuplicateKeyError(err) {
+				return noptions.NoVersion, nerrors.ErrVersionNotMatch
+			}
+			return noptions.NoVersion, err
+		}
+		return 1, nil
+	}
+
+	filter := bson.M{"_id": key.String()}
+	if !o.AnyVersion {
 		filter["version"] = o.Version
-	} else {
-		opt.SetUpsert(true)
 	}
 
 	update := bson.M{
 		"$set": bson.M{"data": o.Source},
 		"$inc": bson.M{"version": 1},
 	}
-
-	res, err := coll.UpdateOne(ctx, filter, update, opt)
-	if err != nil {
-		return 0, err
+	opt := options.FindOneAndUpdate().SetReturnDocument(options.After)
+	if o.AnyVersion {
+		// $inc treats a missing field as 0, so upsert inserts version=1.
+		opt.SetUpsert(true)
 	}
 
-	if res.MatchedCount == 0 && o.Version != noptions.NoVersion {
-		return 0, nerrors.ErrVersionNotMatch
+	res := coll.FindOneAndUpdate(ctx, filter, update, opt)
+	if res.Err() != nil {
+		if errors.Is(res.Err(), mongo.ErrNoDocuments) {
+			return noptions.NoVersion, nerrors.ErrVersionNotMatch
+		}
+		return noptions.NoVersion, res.Err()
 	}
 
-	return o.Version + 1, nil
+	var out struct {
+		Version noptions.Version `bson:"version"`
+	}
+	if err := res.Decode(&out); err != nil {
+		return noptions.NoVersion, err
+	}
+	return out.Version, nil
 }
 
 // Get data from mongoDB
@@ -97,11 +121,12 @@ func (dd *DatabaseDriver) Get(ctx context.Context, key key.Key, opts ...noptions
 func (dd *DatabaseDriver) Delete(ctx context.Context, key key.Key) error {
 	coll := dd.database.Collection(key.Prefix())
 	filter := bson.M{"_id": key.String()}
-	if _, err := coll.DeleteOne(ctx, filter); err != nil {
-		if errors.Is(err, mongo.ErrNoDocuments) {
-			return nerrors.ErrNotFound
-		}
+	res, err := coll.DeleteOne(ctx, filter)
+	if err != nil {
 		return err
+	}
+	if res.DeletedCount == 0 {
+		return nerrors.ErrNotFound
 	}
 	return nil
 }
@@ -111,8 +136,9 @@ func (dd *DatabaseDriver) Incr(ctx context.Context, key key.Key, field string, a
 	coll := dd.database.Collection(key.Prefix())
 	filter := bson.M{"_id": key.String()}
 	update := bson.M{"$inc": bson.M{field: amount}}
-	opt := options.FindOneAndUpdate()
-	opt.SetUpsert(true)
+	opt := options.FindOneAndUpdate().
+		SetUpsert(true).
+		SetReturnDocument(options.After)
 	res := coll.FindOneAndUpdate(ctx, filter, update, opt)
 	if res.Err() != nil {
 		if errors.Is(res.Err(), mongo.ErrNoDocuments) {

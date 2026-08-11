@@ -10,6 +10,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/gstones/moke-kit/orm/nerrors"
+	"github.com/gstones/moke-kit/utility"
 )
 
 // RedisParams provides the RedisParams to the mfx dependency graph.
@@ -41,7 +42,7 @@ func (rr *RedisResult) init(
 	} else if u, e := url.Parse(n.CacheURL); e != nil {
 		return e
 	} else if u.Scheme != "redis" {
-		l.Error("Invalid redis url", zap.String("url", n.CacheURL))
+		l.Error("Invalid redis url", zap.String("url", utility.RedactURL(n.CacheURL)))
 		return nerrors.ErrInvalidNosqlURL
 	} else {
 		username := u.User.Username()
@@ -65,7 +66,7 @@ func (rr *RedisResult) init(
 			DB:       1,
 		})
 	}
-	l.Info("Connecting redis", zap.String("url", n.CacheURL))
+	l.Info("Connecting redis", zap.String("url", utility.RedactURL(n.CacheURL)))
 	if rr.Redis != nil {
 		lc.Append(fx.Hook{
 			OnStop: func(ctx context.Context) error {

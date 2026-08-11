@@ -28,8 +28,16 @@ func (cmr *ConnectionMuxResult) init(
 	g SettingsParams,
 	s SecuritySettingsParams,
 ) error {
-	if s.TLSEnable {
-		mux, err := cmux.NewTlsConnectionMux(l, g.Port, s.ServerCert, s.ServerKey, s.ClientCaCert)
+	// MTLS implies TLS. TLS alone does not require client certificates.
+	if s.TLSEnable || s.MTLSEnable {
+		mux, err := cmux.NewTlsConnectionMux(
+			l,
+			g.Port,
+			s.ServerCert,
+			s.ServerKey,
+			s.ClientCaCert,
+			s.MTLSEnable,
+		)
 		if err != nil {
 			return err
 		}

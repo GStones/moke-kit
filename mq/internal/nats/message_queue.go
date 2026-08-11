@@ -15,6 +15,7 @@ import (
 	"github.com/gstones/moke-kit/mq/internal/logger"
 	message2 "github.com/gstones/moke-kit/mq/internal/message"
 	"github.com/gstones/moke-kit/mq/internal/qerrors"
+	"github.com/gstones/moke-kit/mq/internal/subscription"
 	"github.com/gstones/moke-kit/mq/miface"
 )
 
@@ -86,20 +87,23 @@ func (m *MessageQueue) Subscribe(
 	ctx context.Context,
 	topic string,
 	handler miface.SubResponseHandler,
-	sOpts ...miface.SubOption,
+	_ ...miface.SubOption,
 ) (miface.Subscription, error) {
 	if topic == "" {
 		return nil, qerrors.ErrEmptyTopic
-	} else {
-		topic = common.NamespaceTopic(topic)
 	}
+	topic = common.NamespaceTopic(topic)
 
-	msgChan, err := m.subscribe.Subscribe(ctx, topic)
+	subCtx, cancel := context.WithCancel(ctx)
+	msgChan, err := m.subscribe.Subscribe(subCtx, topic)
 	if err != nil {
+		cancel()
 		return nil, err
 	}
 
+	sub := subscription.NewCancelSubscription(cancel)
 	go func() {
+		defer sub.Unsubscribe()
 		for msg := range msgChan {
 			ms := message2.Msg2Message(topic, msg)
 			if code := handler(ms, nil); code == common.ConsumeNackTransientFailure {
@@ -109,15 +113,14 @@ func (m *MessageQueue) Subscribe(
 			}
 		}
 	}()
-	return nil, nil
+	return sub, nil
 }
 
 func (m *MessageQueue) Publish(topic string, pOpts ...miface.PubOption) error {
 	if topic == "" {
 		return qerrors.ErrEmptyTopic
-	} else {
-		topic = common.NamespaceTopic(topic)
 	}
+	topic = common.NamespaceTopic(topic)
 
 	if options, err := miface.NewPubOptions(pOpts...); err != nil {
 		return err

@@ -32,11 +32,12 @@ func init() {
 // ConnectionMux is the struct for the connection mux.
 // https://github.com/soheilhy/cmux
 type ConnectionMux struct {
-	logger    *zap.Logger
-	listener  net.Listener
-	mux       cmux.CMux
-	port      int32
-	tlsConfig *tls.Config
+	logger     *zap.Logger
+	listener   net.Listener
+	mux        cmux.CMux
+	port       int32
+	tlsConfig  *tls.Config
+	tlsCleanup func()
 }
 
 // GrpcListener returns the grpc listener from the connection mux.
@@ -76,6 +77,7 @@ func (cm *ConnectionMux) init() error {
 		if cm.tlsConfig != nil {
 			listener = tls.NewListener(listener, cm.tlsConfig)
 		}
+		cm.listener = listener
 		cm.mux = cmux.New(listener)
 	}
 	return nil
@@ -105,51 +107,78 @@ func (cm *ConnectionMux) StartServing(_ context.Context) error {
 
 // StopServing stops the connection mux.
 func (cm *ConnectionMux) StopServing(_ context.Context) error {
-	cm.mux.Close()
+	if cm.tlsCleanup != nil {
+		cm.tlsCleanup()
+		cm.tlsCleanup = nil
+	}
+	if cm.mux != nil {
+		cm.mux.Close()
+	}
 	return nil
 }
 
-// NewConnectionMux creates a new connection mux.
-// Watch the tls certificate and reload it when it changes.
-func makeTLSConfig(logger *zap.Logger, tlsCert, tlsKey string, clientCa string) (*tls.Config, error) {
-	if cert, err := tls.LoadX509KeyPair(tlsCert, tlsKey); err != nil {
-		return nil, err
-	} else if caBytes, err := os.ReadFile(clientCa); err != nil {
-		return nil, err
-	} else {
-		ca := x509.NewCertPool()
-		if ok := ca.AppendCertsFromPEM(caBytes); !ok {
-			return nil, fmt.Errorf("failed to parse %v ", clientCa)
-		}
-
-		tlsCertValue := atomic.Value{}
-		tlsCertValue.Store(cert)
-		p, _ := path.Split(tlsCert)
-		if _, err := tools.Watch(logger, p, time.Second*10, func() {
-			logger.Info("service reloading x509 key pair")
-			c, err := tls.LoadX509KeyPair(tlsCert, tlsKey)
-			if err != nil {
-				logger.Error("service failed to load x509 key pair", zap.Error(err))
-				return
-			}
-			tlsCertValue.Store(c)
-		}); err != nil {
-			return nil, err
-		}
-		tlsConfig := &tls.Config{
-			MinVersion: tls.VersionTLS12,
-			ClientAuth: tls.RequireAndVerifyClientCert,
-			GetCertificate: func(info *tls.ClientHelloInfo) (*tls.Certificate, error) {
-				c := tlsCertValue.Load()
-				if c == nil {
-					return nil, fmt.Errorf("certificate not loaded")
-				}
-				res := c.(tls.Certificate)
-				return &res, nil
-			},
-			ClientCAs: ca,
-		}
-		return tlsConfig, nil
+// makeTLSConfig builds a TLS config for the connection mux.
+// When requireClientCert is true, clients must present a cert signed by clientCa.
+// When requireClientCert is false, only server TLS is enabled (clientCa may be empty).
+func makeTLSConfig(
+	logger *zap.Logger,
+	tlsCert, tlsKey string,
+	clientCa string,
+	requireClientCert bool,
+) (*tls.Config, func(), error) {
+	cert, err := tls.LoadX509KeyPair(tlsCert, tlsKey)
+	if err != nil {
+		return nil, nil, err
 	}
 
+	tlsCertValue := atomic.Value{}
+	tlsCertValue.Store(cert)
+	p, _ := path.Split(tlsCert)
+	destroy, err := tools.Watch(logger, p, time.Second*10, func() {
+		logger.Info("service reloading x509 key pair")
+		c, err := tls.LoadX509KeyPair(tlsCert, tlsKey)
+		if err != nil {
+			logger.Error("service failed to load x509 key pair", zap.Error(err))
+			return
+		}
+		tlsCertValue.Store(c)
+	})
+	if err != nil {
+		return nil, nil, err
+	}
+
+	tlsConfig := &tls.Config{
+		MinVersion: tls.VersionTLS12,
+		GetCertificate: func(info *tls.ClientHelloInfo) (*tls.Certificate, error) {
+			c := tlsCertValue.Load()
+			if c == nil {
+				return nil, fmt.Errorf("certificate not loaded")
+			}
+			res := c.(tls.Certificate)
+			return &res, nil
+		},
+	}
+
+	if requireClientCert {
+		if clientCa == "" {
+			destroy()
+			return nil, nil, fmt.Errorf("client CA certificate is required for mTLS")
+		}
+		caBytes, err := os.ReadFile(clientCa)
+		if err != nil {
+			destroy()
+			return nil, nil, err
+		}
+		ca := x509.NewCertPool()
+		if ok := ca.AppendCertsFromPEM(caBytes); !ok {
+			destroy()
+			return nil, nil, fmt.Errorf("failed to parse %v ", clientCa)
+		}
+		tlsConfig.ClientAuth = tls.RequireAndVerifyClientCert
+		tlsConfig.ClientCAs = ca
+	} else {
+		tlsConfig.ClientAuth = tls.NoClientCert
+	}
+
+	return tlsConfig, destroy, nil
 }
