@@ -64,17 +64,26 @@ func TestSubscribeCancelUnsubscribes(t *testing.T) {
 		t.Fatal("expected at least one message")
 	}
 
+	// Cancel only — do not call Unsubscribe explicitly. Cleanup must come from
+	// context cancellation closing the subscribe loop (defer Unsubscribe).
 	cancel()
-	_ = sub.Unsubscribe()
+
+	deadline = time.Now().Add(2 * time.Second)
+	for time.Now().Before(deadline) {
+		if !sub.IsValid() {
+			break
+		}
+		time.Sleep(5 * time.Millisecond)
+	}
+	if sub.IsValid() {
+		t.Fatal("expected subscription invalid after context cancel alone")
+	}
 
 	before := received.Load()
 	_ = mq.Publish("life-topic", miface.WithBytes([]byte("two")))
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(150 * time.Millisecond)
 	if received.Load() != before {
 		t.Fatalf("received after cancel: got %d want %d", received.Load(), before)
-	}
-	if sub.IsValid() {
-		t.Fatal("expected subscription invalid after Unsubscribe")
 	}
 }
 
