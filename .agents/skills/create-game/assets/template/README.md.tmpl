@@ -32,10 +32,16 @@ curl -s -X POST localhost:8081/v1/hello/hi \
   -d '{"message":"hello","topic":"__NAME__"}'
 ```
 
-Interactive client:
+Interactive client (default stub bearer `10000`; override with `__NAME__ token`):
 
 ```bash
 go run ./cmd/__NAME__/client/main.go grpc
+```
+
+k6 smoke (stub by default; set `USE_PLATFORM_AUTH=1` + `AUTH_HOST` for platform Authenticate):
+
+```bash
+k6 run ./tests/__NAME__/__NAME__.js
 ```
 
 Module: `__MODULE__`
