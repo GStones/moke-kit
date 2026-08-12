@@ -2,6 +2,7 @@ package nosql
 
 import (
 	"context"
+	"errors"
 	"sync"
 	"time"
 
@@ -79,16 +80,27 @@ func (m *WriteBackManager) Start() error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	m.logger.Info("Starting WriteBack manager",
-		zap.Int("worker_count", m.config.WorkerCount),
-		zap.Duration("delay", m.config.Delay),
-		zap.Bool("epoch_fence", m.cache != nil),
-	)
 	if m.cache == nil {
-		m.logger.Warn("WriteBack manager started without cache; delete/recreate epoch fencing is disabled")
+		return errors.New("WriteBack manager requires a document cache for epoch fencing")
 	}
 
-	for i := 0; i < m.config.WorkerCount; i++ {
+	// NATS Subscribe currently fans out to every subscriber (no queue group),
+	// so multiple workers would duplicate write-back applies.
+	workerCount := m.config.WorkerCount
+	if workerCount > 1 {
+		m.logger.Warn("WriteBack WorkerCount > 1 is unsupported without queue groups; clamping to 1",
+			zap.Int("configured", workerCount),
+		)
+		workerCount = 1
+	}
+
+	m.logger.Info("Starting WriteBack manager",
+		zap.Int("worker_count", workerCount),
+		zap.Duration("delay", m.config.Delay),
+		zap.Bool("epoch_fence", true),
+	)
+
+	for i := 0; i < workerCount; i++ {
 		worker := NewWriteBackWorker(
 			m.mqClient,
 			m.dbProvider,

@@ -110,6 +110,8 @@ func (d *DocumentBase) InitWithCache(
 	d.DocumentStore = store
 	d.Key = key
 	d.cache = cache
+	d.version = noptions.NoVersion
+	d.epoch = 0
 	d.writeBack = DefaultWriteBackOptions()
 }
 
@@ -135,6 +137,7 @@ func (d *DocumentBase) DisableWriteBack() {
 // Clear clears all data on this DocumentBase.
 func (d *DocumentBase) Clear() {
 	d.version = noptions.NoVersion
+	d.epoch = 0
 	d.clear()
 }
 
@@ -210,8 +213,9 @@ func scheduleWriteBack(
 
 var errWriteBackStale = errors.New("write-back snapshot is stale")
 
-// applyWriteBackSnapshot installs src when targetVersion is newer than the DB version.
-// payload.Version is the optimistic target version (cache version after SaveAsync).
+// applyWriteBackSnapshot installs src and advances the DB CAS version up to targetVersion.
+// Store Set only $inc version by 1, so a gapped target (e.g. 5 while DB is 1) is
+// fast-forwarded with the same payload until DB version == targetVersion.
 // Older/equal targets are dropped so out-of-order delayed messages cannot clobber newer data.
 func applyWriteBackSnapshot(
 	ctx context.Context,
@@ -220,21 +224,32 @@ func applyWriteBackSnapshot(
 	src any,
 	targetVersion noptions.Version,
 ) error {
-	var discard any
-	current, err := coll.Get(ctx, docKey, noptions.WithDestination(&discard))
-	if err != nil {
-		return err
+	for {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		var discard any
+		current, err := coll.Get(ctx, docKey, noptions.WithDestination(&discard))
+		if err != nil {
+			return err
+		}
+		if targetVersion <= current {
+			return errWriteBackStale
+		}
+		newVer, err := coll.Set(
+			ctx,
+			docKey,
+			noptions.WithSource(src),
+			noptions.WithVersion(current),
+		)
+		if err != nil {
+			return err
+		}
+		if newVer >= targetVersion {
+			return nil
+		}
+		// Version advanced but still behind the optimistic target; keep fast-forwarding.
 	}
-	if targetVersion <= current {
-		return errWriteBackStale
-	}
-	_, err = coll.Set(
-		ctx,
-		docKey,
-		noptions.WithSource(src),
-		noptions.WithVersion(current),
-	)
-	return err
 }
 
 // Create data and version in the database.
@@ -285,6 +300,9 @@ func (d *DocumentBase) Load() error {
 		return err
 	}
 	d.version = version
+	// DB has no persisted epoch; clear any prior HASH generation before rewrite.
+	d.epoch = 0
+	d.cache.DeleteCache(d.ctx, d.Key)
 	return d.updateCache()
 }
 

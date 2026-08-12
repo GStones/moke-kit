@@ -163,7 +163,49 @@ func TestWriteBackWorker_ApplyNewerTargetVersion(t *testing.T) {
 	ver, err := coll.Get(context.Background(), k, noptions.WithDestination(&got))
 	assert.NoError(t, err)
 	assert.Equal(t, "latest", got.Message)
-	assert.Equal(t, noptions.Version(2), ver)
+	// Fast-forward must land exactly on the optimistic target version.
+	assert.Equal(t, noptions.Version(5), ver)
+}
+
+func TestWriteBackWorker_OutOfOrderTargetsKeepNewest(t *testing.T) {
+	logger := zap.NewNop()
+	provider := mock.NewMockDriverProvider(logger)
+	coll, err := provider.OpenDbDriver("wb-ooo")
+	assert.NoError(t, err)
+
+	k, err := key.NewKeyFromParts("demo", "ooo-1")
+	assert.NoError(t, err)
+
+	_, err = coll.Set(context.Background(), k, noptions.WithSource(&docPayload{Message: "v1"}))
+	assert.NoError(t, err)
+
+	mq := &capturingMQ{}
+	worker := NewWriteBackWorker(mq, provider, logger)
+	assert.NoError(t, worker.Start())
+	defer worker.Stop()
+
+	assert.NoError(t, mq.Publish(WriteBackTopic, miface.WithJSON(&WriteBackPayload{
+		CollectionName: "wb-ooo",
+		Key:            k.String(),
+		Data:           json.RawMessage(`{"message":"latest"}`),
+		Version:        5,
+	})))
+	assert.NoError(t, mq.Publish(WriteBackTopic, miface.WithJSON(&WriteBackPayload{
+		CollectionName: "wb-ooo",
+		Key:            k.String(),
+		Data:           json.RawMessage(`{"message":"older"}`),
+		Version:        4,
+	})))
+
+	assert.Eventually(t, func() bool {
+		return worker.GetMetrics().ProcessedCount >= 1 && worker.GetMetrics().FailedCount >= 1
+	}, time.Second, 10*time.Millisecond)
+
+	var got docPayload
+	ver, err := coll.Get(context.Background(), k, noptions.WithDestination(&got))
+	assert.NoError(t, err)
+	assert.Equal(t, "latest", got.Message)
+	assert.Equal(t, noptions.Version(5), ver)
 }
 
 func TestWriteBackWorker_RejectEpochMismatch(t *testing.T) {
