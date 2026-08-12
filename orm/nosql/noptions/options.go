@@ -93,7 +93,7 @@ func WithDestination(dst any) Option {
 		if dst == nil {
 			return nerrors.ErrDestIsNil
 		}
-		if reflect.TypeOf(dst).Kind() != reflect.Ptr {
+		if reflect.TypeOf(dst).Kind() != reflect.Pointer {
 			return nerrors.ErrDestMustBePointer
 		}
 		o.Destination = dst

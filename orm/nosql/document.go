@@ -19,8 +19,6 @@ import (
 const (
 	// MaxRetries is the maximum number of retries for update operations.
 	MaxRetries = 5
-	// DefaultCacheTTL is the default cache TTL for read-through caching.
-	DefaultCacheTTL = 30 * time.Minute
 	// DefaultWriteBackDelay is the default async write-back delay.
 	DefaultWriteBackDelay = 500 * time.Millisecond
 	// ExpireRangeMin is the minimum jittered cache expiration.
@@ -33,10 +31,13 @@ const (
 
 // WriteBackPayload is the delayed write-back message payload.
 type WriteBackPayload struct {
-	CollectionName string           `json:"collection"`
-	Key            string           `json:"key"`
-	Data           json.RawMessage  `json:"data"`
-	Version        noptions.Version `json:"version"`
+	CollectionName string          `json:"collection"`
+	Key            string          `json:"key"`
+	Data           json.RawMessage `json:"data"`
+	// Version is the optimistic target version after SaveAsync (not the CAS base).
+	Version noptions.Version `json:"version"`
+	// Epoch fences delete/recreate generations when workers can read cache.
+	Epoch int64 `json:"epoch"`
 }
 
 // WriteBackOptions configures delayed write-back behavior.
@@ -73,6 +74,7 @@ type DocumentBase struct {
 	clear   func()
 	data    any
 	version noptions.Version
+	epoch   int64
 
 	DocumentStore diface.ICollection
 	cache         diface.ICache
@@ -145,10 +147,15 @@ func (d *DocumentBase) cacheEnvelope() (map[string]any, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to marshal document for cache")
 	}
-	return map[string]any{
+	envelope := map[string]any{
 		cacheFieldVersion: d.version,
 		cacheFieldData:    string(raw),
-	}, nil
+	}
+	// Omit zero epochs so Load-from-DB after restart does not fence in-flight write-backs.
+	if d.epoch != 0 {
+		envelope[cacheFieldEpoch] = d.epoch
+	}
+	return envelope, nil
 }
 
 func (d *DocumentBase) updateCache() error {
@@ -172,6 +179,11 @@ func (d *DocumentBase) loadFromCache(m map[string]any) error {
 		return errors.Wrap(err, "failed to unmarshal cached document")
 	}
 	d.version = ver
+	if ep, ok := parseCacheVersion(m[cacheFieldEpoch]); ok {
+		d.epoch = ep
+	} else {
+		d.epoch = 0
+	}
 	return nil
 }
 
@@ -181,6 +193,7 @@ func scheduleWriteBack(
 	keyStr string,
 	raw json.RawMessage,
 	version noptions.Version,
+	epoch int64,
 ) error {
 	if mq == nil {
 		return errors.New("MQ client is nil")
@@ -190,6 +203,7 @@ func scheduleWriteBack(
 		Key:            keyStr,
 		Data:           raw,
 		Version:        version,
+		Epoch:          epoch,
 	}
 	return mq.Publish(WriteBackTopic, miface.WithJSON(payload))
 }
@@ -224,17 +238,24 @@ func applyWriteBackSnapshot(
 }
 
 // Create data and version in the database.
+// Each Create bumps epoch so delayed write-backs from a prior delete/recreate generation can be fenced.
 func (d *DocumentBase) Create() error {
+	d.epoch++
 	version, err := d.DocumentStore.Set(
 		d.ctx,
 		d.Key,
 		noptions.WithSource(d.data),
 	)
 	if err != nil {
+		d.epoch--
 		return err
 	}
 	d.version = version
-	return d.updateCache()
+	if err := d.updateCache(); err != nil {
+		d.epoch--
+		return err
+	}
+	return nil
 }
 
 // Load implements Read-Through caching through Redis HASH fields.
@@ -309,12 +330,13 @@ func (d *DocumentBase) SaveAsync() error {
 	collectionName := store.GetName()
 	keyStr := docKey.String()
 	delay := d.writeBack.Delay
+	epoch := d.epoch
 	go func() {
 		if delay > 0 {
 			time.Sleep(delay)
 		}
 		// Version is the optimistic target version (next), not the CAS base.
-		if err := scheduleWriteBack(mq, collectionName, keyStr, raw, next); err != nil {
+		if err := scheduleWriteBack(mq, collectionName, keyStr, raw, next, epoch); err != nil {
 			// Publish failed: best-effort sync fallback so data is not stuck in cache only.
 			// Use a fresh timeout context; the request ctx is usually already cancelled.
 			var src any

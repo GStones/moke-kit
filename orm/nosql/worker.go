@@ -24,6 +24,7 @@ type WriteBackWorker struct {
 	cancel     context.CancelFunc
 	mqClient   miface.MessageQueue
 	dbProvider diface.IDocumentProvider
+	cache      diface.ICache
 	logger     *zap.Logger
 	wg         sync.WaitGroup
 
@@ -47,6 +48,13 @@ func NewWriteBackWorker(
 		dbProvider: dbProvider,
 		logger:     logger,
 	}
+}
+
+// WithCache attaches a document cache used to fence delete/recreate generations via __epoch.
+// When unset, workers rely only on target-version freshness checks.
+func (w *WriteBackWorker) WithCache(cache diface.ICache) *WriteBackWorker {
+	w.cache = cache
+	return w
 }
 
 // WriteBackMetrics exposes worker counters.
@@ -92,6 +100,19 @@ func isVersionMismatch(err error) bool {
 	return strings.Contains(msg, "version mismatch") || strings.Contains(msg, "ErrVersionNotMatch")
 }
 
+func (w *WriteBackWorker) epochMismatch(ctx context.Context, docKey key.Key, payload WriteBackPayload) bool {
+	if w.cache == nil || payload.Epoch == 0 {
+		return false
+	}
+	cached := w.cache.GetCache(ctx, docKey, cacheFieldEpoch)
+	ep, ok := parseCacheVersion(cached[cacheFieldEpoch])
+	if !ok {
+		// No cached epoch (e.g. Load-from-DB after restart): do not fence.
+		return false
+	}
+	return ep != payload.Epoch
+}
+
 func (w *WriteBackWorker) consumeWriteBack(
 	ctx context.Context,
 	coll diface.ICollection,
@@ -99,6 +120,16 @@ func (w *WriteBackWorker) consumeWriteBack(
 	src any,
 	payload WriteBackPayload,
 ) common.ConsumptionCode {
+	if w.epochMismatch(ctx, docKey, payload) {
+		w.failedCount.Add(1)
+		w.logger.Warn("WriteBack epoch mismatch; dropping message",
+			zap.String("key", payload.Key),
+			zap.Int64("payload_epoch", payload.Epoch),
+			zap.Int64("target_version", int64(payload.Version)),
+		)
+		return common.ConsumeNackPersistentFailure
+	}
+
 	err := applyWriteBackSnapshot(ctx, coll, docKey, src, payload.Version)
 	if err == nil {
 		w.processedCount.Add(1)

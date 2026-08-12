@@ -310,13 +310,14 @@ func TestDocumentBase_UpdateAsyncWriteBack(t *testing.T) {
 
 	cache := newMemoryHashCache()
 	mq := &capturingMQ{}
-	worker := NewWriteBackWorker(mq, provider, logger)
+	worker := NewWriteBackWorker(mq, provider, logger).WithCache(cache)
 	require.NoError(t, worker.Start())
 	defer worker.Stop()
 
 	td := &testDoc{ID: "wb-1", Data: &docPayload{Message: "hello"}}
 	td.InitWithCache(context.Background(), &td.Data, func() { td.Data = nil }, coll, k, cache)
 	require.NoError(t, td.Create())
+	require.Equal(t, int64(1), td.epoch)
 	require.NoError(t, td.EnableWriteBackWithMQ(mq, time.Millisecond))
 
 	require.NoError(t, td.UpdateAsync(func() bool {
@@ -334,6 +335,50 @@ func TestDocumentBase_UpdateAsyncWriteBack(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "async", retrieved.Message)
 	require.Equal(t, noptions.Version(2), ver)
+}
+
+func TestDocumentBase_DeleteRecreateFencesOldWriteBack(t *testing.T) {
+	t.Parallel()
+
+	logger := zaptest.NewLogger(t)
+	provider := mock.NewMockDriverProvider(logger)
+	coll, err := provider.OpenDbDriver("doc-epoch-fence")
+	require.NoError(t, err)
+
+	k, err := key.NewKeyFromParts("demo", "epoch-fence-1")
+	require.NoError(t, err)
+
+	cache := newMemoryHashCache()
+	mq := &capturingMQ{}
+	worker := NewWriteBackWorker(mq, provider, logger).WithCache(cache)
+	require.NoError(t, worker.Start())
+	defer worker.Stop()
+
+	td := &testDoc{ID: "epoch-fence-1", Data: &docPayload{Message: "gen1"}}
+	td.InitWithCache(context.Background(), &td.Data, func() { td.Data = nil }, coll, k, cache)
+	require.NoError(t, td.Create())
+	require.NoError(t, td.EnableWriteBackWithMQ(mq, 80*time.Millisecond))
+
+	require.NoError(t, td.UpdateAsync(func() bool {
+		td.Data.Message = "stale-gen1"
+		return true
+	}))
+
+	// Recreate under a new epoch before the delayed write-back lands.
+	require.NoError(t, td.Delete())
+	td.Data = &docPayload{Message: "gen2"}
+	require.NoError(t, td.Create())
+	require.Equal(t, int64(2), td.epoch)
+
+	require.Eventually(t, func() bool {
+		return worker.GetMetrics().FailedCount >= 1
+	}, 2*time.Second, 20*time.Millisecond)
+
+	var got docPayload
+	_, err = coll.Get(context.Background(), k, noptions.WithDestination(&got))
+	require.NoError(t, err)
+	require.Equal(t, "gen2", got.Message)
+	require.Equal(t, int64(0), worker.GetMetrics().ProcessedCount)
 }
 
 func TestDocumentBase_ConcurrentUpdates(t *testing.T) {

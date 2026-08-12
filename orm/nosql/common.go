@@ -13,6 +13,8 @@ import (
 const (
 	// cacheFieldVersion stores the document CAS version inside a HASH cache entry.
 	cacheFieldVersion = "__version"
+	// cacheFieldEpoch stores the document generation fence inside a HASH cache entry.
+	cacheFieldEpoch = "__epoch"
 	// cacheFieldData stores the JSON-encoded document payload inside a HASH cache entry.
 	cacheFieldData = "__data"
 )

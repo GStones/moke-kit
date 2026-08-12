@@ -166,6 +166,50 @@ func TestWriteBackWorker_ApplyNewerTargetVersion(t *testing.T) {
 	assert.Equal(t, noptions.Version(2), ver)
 }
 
+func TestWriteBackWorker_RejectEpochMismatch(t *testing.T) {
+	logger := zap.NewNop()
+	provider := mock.NewMockDriverProvider(logger)
+	coll, err := provider.OpenDbDriver("wb-epoch")
+	assert.NoError(t, err)
+
+	k, err := key.NewKeyFromParts("demo", "epoch-1")
+	assert.NoError(t, err)
+
+	// Recreated document at version 1 (old delayed write-back may carry a higher target).
+	_, err = coll.Set(context.Background(), k, noptions.WithSource(&docPayload{Message: "recreated"}))
+	assert.NoError(t, err)
+
+	cache := newMemoryHashCache()
+	assert.NoError(t, cache.SetCache(context.Background(), k, map[string]any{
+		cacheFieldVersion: noptions.Version(1),
+		cacheFieldEpoch:   int64(2),
+		cacheFieldData:    `{"message":"recreated"}`,
+	}, time.Minute))
+
+	mq := &capturingMQ{}
+	worker := NewWriteBackWorker(mq, provider, logger).WithCache(cache)
+	assert.NoError(t, worker.Start())
+	defer worker.Stop()
+
+	assert.NoError(t, mq.Publish(WriteBackTopic, miface.WithJSON(&WriteBackPayload{
+		CollectionName: "wb-epoch",
+		Key:            k.String(),
+		Data:           json.RawMessage(`{"message":"stale-generation"}`),
+		Version:        9,
+		Epoch:          1,
+	})))
+
+	assert.Eventually(t, func() bool {
+		return worker.GetMetrics().FailedCount >= 1
+	}, time.Second, 10*time.Millisecond)
+
+	var got docPayload
+	_, err = coll.Get(context.Background(), k, noptions.WithDestination(&got))
+	assert.NoError(t, err)
+	assert.Equal(t, "recreated", got.Message)
+	assert.Equal(t, int64(0), worker.GetMetrics().ProcessedCount)
+}
+
 func TestWriteBackWorker_RejectStaleTargetVersion(t *testing.T) {
 	logger := zap.NewNop()
 	provider := mock.NewMockDriverProvider(logger)
@@ -214,6 +258,7 @@ func TestWriteBackPayload_JSON(t *testing.T) {
 		Key:            "test_key",
 		Data:           json.RawMessage(`{"name":"John","age":30}`),
 		Version:        noptions.Version(1),
+		Epoch:          3,
 	}
 
 	data, err := json.Marshal(payload)
@@ -226,4 +271,5 @@ func TestWriteBackPayload_JSON(t *testing.T) {
 	assert.Equal(t, payload.CollectionName, decoded.CollectionName)
 	assert.Equal(t, payload.Key, decoded.Key)
 	assert.Equal(t, payload.Version, decoded.Version)
+	assert.Equal(t, payload.Epoch, decoded.Epoch)
 }
