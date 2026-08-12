@@ -14,7 +14,8 @@ reference platform and game repositories.
 `create-game` skill templates follow game secure defaults (`AllModule` + stub auth in
 `main`, no `WithoutAuth` on public services, gRPC+HTTP default, TCP opt-in, cancelable Watch).
 
-Consumers may still pin `go.mod` to `#224` while `#228` lands on `main`; bump when you need the StopServing deadline behavior or want CI parity.
+`create-game` also ships `service-thin` and keeps auth out of `GrpcModule` / `HttpModule` /
+`AllModule` (pair stub or platform middleware in `main` only).
 
 ## Tracking issues
 

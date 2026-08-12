@@ -22,12 +22,13 @@ Templates live in `assets/template/`. Placeholders:
   .env.example                # AUTH/TLS/CORS/NATS/Mongo/Redis
   api/<name>/<name>.proto
   api/gen/...                 # from buf generate
-  cmd/<name>/service/main.go  # AllModule + dfx.AuthModule stub (TCP opt-in)
+  cmd/<name>/service/main.go       # AllModule + dfx.AuthModule stub (TCP opt-in)
+  cmd/<name>/service-thin/main.go  # game-only thin topology (swap stub for platform middleware)
   cmd/<name>/client/main.go
   internal/services/<name>/...  # no WithoutAuth; UID from auth context only
   internal/clients/<name>/...
   pkg/dfx/...                 # AuthModule stub (swap for platform in main; not both)
-  pkg/modules/<name>_module.go  # AllModule has no auth provider
+  pkg/modules/<name>_module.go  # Grpc/Http/All modules have no auth provider
   deployment/docker-compose/...
   build/package/docker/Dockerfile
   tests/<name>/<name>.js
