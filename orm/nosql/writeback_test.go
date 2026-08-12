@@ -185,7 +185,7 @@ func (c *jumpOnSecondGetCollection) Get(
 		if err != nil {
 			return ver, err
 		}
-		_, err = c.ICollection.Set(
+		_, err = c.Set(
 			ctx,
 			k,
 			noptions.WithSource(&docPayload{Message: "external"}),

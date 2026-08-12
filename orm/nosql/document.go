@@ -247,13 +247,12 @@ func applyWriteBackSnapshot(
 		if err != nil {
 			return err
 		}
-		if targetVersion <= current {
-			if hasExpect && current >= targetVersion {
-				return nil
-			}
+		// An unexpected CAS jump means another writer advanced the chain; do not
+		// treat overshoot as a successful apply of this snapshot.
+		if hasExpect && current != expectCurrent {
 			return errWriteBackStale
 		}
-		if hasExpect && current != expectCurrent {
+		if targetVersion <= current {
 			return errWriteBackStale
 		}
 		newVer, err := coll.Set(
