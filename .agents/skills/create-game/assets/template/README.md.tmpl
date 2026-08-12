@@ -8,6 +8,7 @@ Game server scaffolded from the [moke-kit create-game](https://github.com/GStone
 | Entry | Use |
 |-------|-----|
 | `cmd/__NAME__/service` | Local aggregate: `AllModule` + `dfx.AuthModule` stub |
+| `cmd/__NAME__/service-thin` | Game-only thin entry (swap stub for platform middleware) |
 | TCP | Opt-in only (`AllWithTCPModule`) — **not** auth-protected |
 
 For production-style split (game-only + remote platform auth), see moke-game/game
