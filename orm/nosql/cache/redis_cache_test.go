@@ -2,6 +2,7 @@ package cache
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -23,4 +24,16 @@ func TestRedisCacheNilClientNoPanic(t *testing.T) {
 		t.Fatal(err)
 	}
 	c.DeleteCache(context.Background(), k)
+}
+
+func TestIsWrongType(t *testing.T) {
+	if !isWrongType(errors.New("WRONGTYPE Operation against a key holding the wrong kind of value")) {
+		t.Fatal("expected WRONGTYPE detection")
+	}
+	if isWrongType(errors.New("connection refused")) {
+		t.Fatal("did not expect WRONGTYPE detection")
+	}
+	if isWrongType(nil) {
+		t.Fatal("nil error should not be WRONGTYPE")
+	}
 }

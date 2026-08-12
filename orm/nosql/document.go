@@ -175,14 +175,23 @@ func (d *DocumentBase) loadFromCache(m map[string]any) error {
 	return nil
 }
 
-func (d *DocumentBase) scheduleWriteBack(raw json.RawMessage, version noptions.Version) error {
+func scheduleWriteBack(
+	mq miface.MessageQueue,
+	collectionName string,
+	keyStr string,
+	raw json.RawMessage,
+	version noptions.Version,
+) error {
+	if mq == nil {
+		return errors.New("MQ client is nil")
+	}
 	payload := &WriteBackPayload{
-		CollectionName: d.DocumentStore.GetName(),
-		Key:            d.Key.String(),
+		CollectionName: collectionName,
+		Key:            keyStr,
 		Data:           raw,
 		Version:        version,
 	}
-	return d.writeBack.MQ.Publish(WriteBackTopic, miface.WithJSON(payload))
+	return mq.Publish(WriteBackTopic, miface.WithJSON(payload))
 }
 
 // Create data and version in the database.
@@ -241,9 +250,14 @@ func (d *DocumentBase) Save() error {
 
 // SaveAsync optimistically updates the HASH cache and schedules a delayed DB write-back.
 // The DB CAS uses the previous version; the cache stores previous+1.
+// When write-back is disabled, SaveAsync falls back to synchronous Save().
 func (d *DocumentBase) SaveAsync() error {
 	if d.version == noptions.NoVersion {
 		return errors.New("cannot async-save a document without a version")
+	}
+
+	if !d.writeBack.Enabled || d.writeBack.MQ == nil {
+		return d.Save()
 	}
 
 	raw, err := json.Marshal(d.data)
@@ -258,16 +272,16 @@ func (d *DocumentBase) SaveAsync() error {
 		return err
 	}
 
-	if !d.writeBack.Enabled || d.writeBack.MQ == nil {
-		return nil
-	}
-
+	// Capture publish dependencies so DisableWriteBack cannot nil-deref the goroutine.
+	mq := d.writeBack.MQ
+	collectionName := d.DocumentStore.GetName()
+	keyStr := d.Key.String()
 	delay := d.writeBack.Delay
 	go func() {
 		if delay > 0 {
 			time.Sleep(delay)
 		}
-		_ = d.scheduleWriteBack(raw, prev)
+		_ = scheduleWriteBack(mq, collectionName, keyStr, raw, prev)
 	}()
 	return nil
 }

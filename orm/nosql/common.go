@@ -58,7 +58,33 @@ func marshalAnyMap(m map[string]any) (map[string]any, error) {
 	return res, nil
 }
 
+func structFieldIndex(v reflect.Value) map[string]reflect.Value {
+	t := v.Type()
+	index := make(map[string]reflect.Value, v.NumField()*2)
+	for i := 0; i < v.NumField(); i++ {
+		field := t.Field(i)
+		if !field.IsExported() {
+			continue
+		}
+		fv := v.Field(i)
+		if !fv.CanSet() {
+			continue
+		}
+		index[field.Name] = fv
+		jsonTag := field.Tag.Get("json")
+		if jsonTag == "" || jsonTag == "-" {
+			continue
+		}
+		name := strings.Split(jsonTag, ",")[0]
+		if name != "" {
+			index[name] = fv
+		}
+	}
+	return index
+}
+
 // map2StructShallow copies map values into exported struct fields.
+// Keys may be Go field names or json tag names produced by struct2MapShallow.
 func map2StructShallow(m map[string]any, obj any) error {
 	if obj == nil {
 		return nil
@@ -76,12 +102,14 @@ func map2StructShallow(m map[string]any, obj any) error {
 	if v.Kind() != reflect.Struct {
 		return fmt.Errorf("input obj is not a struct, but %T", obj)
 	}
+
+	fields := structFieldIndex(v)
 	for k1, v1 := range m {
 		if v1 == nil {
 			continue
 		}
-		field := v.FieldByName(k1)
-		if !field.IsValid() || !field.CanSet() {
+		field, ok := fields[k1]
+		if !ok {
 			continue
 		}
 		mv1 := reflect.ValueOf(v1)

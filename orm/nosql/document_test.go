@@ -190,6 +190,64 @@ func TestDocumentBase_HashCacheReadThrough(t *testing.T) {
 	require.Equal(t, noptions.Version(1), loaded.version)
 }
 
+func TestDocumentBase_SaveAsyncWithoutWriteBackPersists(t *testing.T) {
+	t.Parallel()
+
+	logger := zaptest.NewLogger(t)
+	provider := mock.NewMockDriverProvider(logger)
+	coll, err := provider.OpenDbDriver("doc-sync-fallback")
+	require.NoError(t, err)
+
+	k, err := key.NewKeyFromParts("demo", "sync-1")
+	require.NoError(t, err)
+
+	td := &testDoc{ID: "sync-1", Data: &docPayload{Message: "hello"}}
+	td.Init(context.Background(), &td.Data, func() { td.Data = nil }, coll, k)
+	require.NoError(t, td.Create())
+
+	require.NoError(t, td.UpdateAsync(func() bool {
+		td.Data.Message = "persisted"
+		return true
+	}))
+
+	var retrieved docPayload
+	ver, err := coll.Get(context.Background(), k, noptions.WithDestination(&retrieved))
+	require.NoError(t, err)
+	require.Equal(t, "persisted", retrieved.Message)
+	require.Equal(t, noptions.Version(2), ver)
+}
+
+func TestDocumentBase_SaveAsyncDisableWriteBackNoPanic(t *testing.T) {
+	t.Parallel()
+
+	logger := zaptest.NewLogger(t)
+	provider := mock.NewMockDriverProvider(logger)
+	coll, err := provider.OpenDbDriver("doc-disable-wb")
+	require.NoError(t, err)
+
+	k, err := key.NewKeyFromParts("demo", "disable-1")
+	require.NoError(t, err)
+
+	cache := newMemoryHashCache()
+	mq := &capturingMQ{}
+	td := &testDoc{ID: "disable-1", Data: &docPayload{Message: "hello"}}
+	td.InitWithCache(context.Background(), &td.Data, func() { td.Data = nil }, coll, k, cache)
+	require.NoError(t, td.Create())
+	require.NoError(t, td.EnableWriteBackWithMQ(mq, 30*time.Millisecond))
+
+	require.NoError(t, td.UpdateAsync(func() bool {
+		td.Data.Message = "async"
+		return true
+	}))
+	td.DisableWriteBack()
+
+	require.Eventually(t, func() bool {
+		mq.mu.Lock()
+		defer mq.mu.Unlock()
+		return len(mq.messages) >= 1
+	}, time.Second, 10*time.Millisecond)
+}
+
 func TestDocumentBase_UpdateAsyncWriteBack(t *testing.T) {
 	t.Parallel()
 

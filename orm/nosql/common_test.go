@@ -123,6 +123,29 @@ func TestMap2StructShallow(t *testing.T) {
 	}
 }
 
+func TestMap2StructShallowJSONTags(t *testing.T) {
+	type tagged struct {
+		DisplayName string `json:"display_name"`
+		Count       int    `json:"count"`
+	}
+	src := &tagged{DisplayName: "alice", Count: 3}
+	m, err := struct2MapShallow(src)
+	if err != nil {
+		t.Fatalf("struct2MapShallow: %v", err)
+	}
+	if _, ok := m["display_name"]; !ok {
+		t.Fatalf("expected json tag key, got %#v", m)
+	}
+
+	dst := &tagged{}
+	if err := map2StructShallow(m, dst); err != nil {
+		t.Fatalf("map2StructShallow: %v", err)
+	}
+	if dst.DisplayName != "alice" || dst.Count != 3 {
+		t.Fatalf("round-trip mismatch: %#v", dst)
+	}
+}
+
 func TestStruct2MapShallowDiff(t *testing.T) {
 	oldData := &helperTestData{
 		Message: "hello",

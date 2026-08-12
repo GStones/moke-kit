@@ -13,6 +13,7 @@ import (
 
 	"github.com/gstones/moke-kit/mq/common"
 	"github.com/gstones/moke-kit/mq/miface"
+	"github.com/gstones/moke-kit/orm/nerrors"
 	"github.com/gstones/moke-kit/orm/nosql/diface"
 	"github.com/gstones/moke-kit/orm/nosql/key"
 	"github.com/gstones/moke-kit/orm/nosql/noptions"
@@ -81,6 +82,63 @@ func (w *WriteBackWorker) GetMetrics() WriteBackMetrics {
 	}
 }
 
+func isVersionMismatch(err error) bool {
+	if err == nil {
+		return false
+	}
+	if errors.Is(err, nerrors.ErrVersionNotMatch) {
+		return true
+	}
+	msg := err.Error()
+	return strings.Contains(msg, "version mismatch") || strings.Contains(msg, "ErrVersionNotMatch")
+}
+
+func (w *WriteBackWorker) handleVersionMismatch(
+	ctx context.Context,
+	coll diface.ICollection,
+	docKey key.Key,
+	payload WriteBackPayload,
+	setErr error,
+) common.ConsumptionCode {
+	w.failedCount.Add(1)
+
+	var discard any
+	current, err := coll.Get(ctx, docKey, noptions.WithDestination(&discard))
+	if err != nil {
+		if errors.Is(err, nerrors.ErrNotFound) {
+			w.logger.Warn("WriteBack target missing; dropping message",
+				zap.String("key", payload.Key),
+				zap.Error(setErr),
+			)
+			return common.ConsumeNackPersistentFailure
+		}
+		w.logger.Warn("WriteBack version check failed; will retry",
+			zap.String("key", payload.Key),
+			zap.Error(err),
+		)
+		return common.ConsumeNackTransientFailure
+	}
+
+	// Stale snapshot: a newer write already landed.
+	if payload.Version < current {
+		w.logger.Warn("WriteBack snapshot is stale; dropping message",
+			zap.String("key", payload.Key),
+			zap.Int64("payload_version", int64(payload.Version)),
+			zap.Int64("current_version", int64(current)),
+		)
+		return common.ConsumeNackPersistentFailure
+	}
+
+	// Out-of-order delivery: an earlier write-back has not been applied yet.
+	w.logger.Warn("WriteBack arrived early; will retry",
+		zap.String("key", payload.Key),
+		zap.Int64("payload_version", int64(payload.Version)),
+		zap.Int64("current_version", int64(current)),
+		zap.Error(setErr),
+	)
+	return common.ConsumeNackTransientFailure
+}
+
 func (w *WriteBackWorker) handleError(err error, payload WriteBackPayload) common.ConsumptionCode {
 	w.failedCount.Add(1)
 	w.logger.Error("WriteBack operation failed",
@@ -92,9 +150,6 @@ func (w *WriteBackWorker) handleError(err error, payload WriteBackPayload) commo
 	switch {
 	case errors.Is(err, context.DeadlineExceeded):
 		return common.ConsumeNackTransientFailure
-	case strings.Contains(err.Error(), "version mismatch") ||
-		strings.Contains(err.Error(), "ErrVersionNotMatch"):
-		return common.ConsumeNackPersistentFailure
 	case strings.Contains(err.Error(), "connection"):
 		return common.ConsumeNackTransientFailure
 	default:
@@ -113,6 +168,15 @@ func (w *WriteBackWorker) Start() error {
 		var payload WriteBackPayload
 		if err := json.Unmarshal(msg.Data(), &payload); err != nil {
 			w.logger.Error("Failed to unmarshal message", zap.Error(err))
+			return common.ConsumeNackPersistentFailure
+		}
+
+		docKey, keyErr := key.NewKeyFromString(payload.Key)
+		if keyErr != nil {
+			w.logger.Error("Invalid write-back key",
+				zap.String("key", payload.Key),
+				zap.Error(keyErr),
+			)
 			return common.ConsumeNackPersistentFailure
 		}
 
@@ -137,7 +201,7 @@ func (w *WriteBackWorker) Start() error {
 		startTime := time.Now()
 		_, setErr := coll.Set(
 			dbCtx,
-			key.NewKey(payload.Key),
+			docKey,
 			noptions.WithSource(src),
 			noptions.WithVersion(payload.Version),
 		)
@@ -148,6 +212,9 @@ func (w *WriteBackWorker) Start() error {
 				zap.Error(setErr),
 				zap.Duration("latency", latency),
 			)
+			if isVersionMismatch(setErr) {
+				return w.handleVersionMismatch(dbCtx, coll, docKey, payload, setErr)
+			}
 			return w.handleError(setErr, payload)
 		}
 
@@ -157,14 +224,14 @@ func (w *WriteBackWorker) Start() error {
 		return common.ConsumeAck
 	}
 
+	consumer, err := w.mqClient.Subscribe(w.ctx, WriteBackTopic, handler)
+	if err != nil {
+		return err
+	}
+
 	w.wg.Add(1)
 	go func() {
 		defer w.wg.Done()
-		consumer, err := w.mqClient.Subscribe(w.ctx, WriteBackTopic, handler)
-		if err != nil {
-			w.logger.Error("Failed to subscribe to writeback topic", zap.Error(err))
-			return
-		}
 		<-w.ctx.Done()
 		if consumer != nil {
 			_ = consumer.Unsubscribe()

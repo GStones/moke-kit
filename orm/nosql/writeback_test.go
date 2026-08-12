@@ -1,6 +1,7 @@
 package nosql
 
 import (
+	"context"
 	"encoding/json"
 	"testing"
 	"time"
@@ -8,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
 
+	"github.com/gstones/moke-kit/mq/miface"
 	"github.com/gstones/moke-kit/orm/nosql/mock"
 	"github.com/gstones/moke-kit/orm/nosql/noptions"
 )
@@ -77,6 +79,48 @@ func TestWriteBackWorker_GetMetrics(t *testing.T) {
 	metrics := worker.GetMetrics()
 	assert.GreaterOrEqual(t, metrics.ProcessedCount, int64(0))
 	assert.GreaterOrEqual(t, metrics.FailedCount, int64(0))
+}
+
+func TestWriteBackWorker_InvalidKeyNoPanic(t *testing.T) {
+	mq := &capturingMQ{}
+	provider := mock.NewMockDriverProvider(zap.NewNop())
+	worker := NewWriteBackWorker(mq, provider, zap.NewNop())
+	assert.NoError(t, worker.Start())
+	defer worker.Stop()
+
+	assert.NoError(t, mq.Publish(WriteBackTopic, miface.WithJSON(&WriteBackPayload{
+		CollectionName: "c",
+		Key:            "not-a-valid-key",
+		Data:           json.RawMessage(`{}`),
+		Version:        1,
+	})))
+
+	// Invalid keys are nacked as persistent failures and must not crash the worker.
+	assert.Equal(t, int64(0), worker.GetMetrics().ProcessedCount)
+}
+
+type failSubscribeMQ struct{}
+
+func (m *failSubscribeMQ) Publish(topic string, opts ...miface.PubOption) error {
+	return nil
+}
+
+func (m *failSubscribeMQ) Subscribe(
+	ctx context.Context,
+	topic string,
+	handler miface.SubResponseHandler,
+	opts ...miface.SubOption,
+) (miface.Subscription, error) {
+	return nil, assert.AnError
+}
+
+func TestWriteBackWorker_StartSubscribeError(t *testing.T) {
+	worker := NewWriteBackWorker(
+		&failSubscribeMQ{},
+		mock.NewMockDriverProvider(zap.NewNop()),
+		zap.NewNop(),
+	)
+	assert.Error(t, worker.Start())
 }
 
 func TestWriteBackPayload_JSON(t *testing.T) {
