@@ -64,11 +64,11 @@ func map2StructShallow(m map[string]any, obj any) error {
 		return nil
 	}
 	v := reflect.ValueOf(obj)
-	for v.Kind() == reflect.Ptr {
+	for v.Kind() == reflect.Pointer {
 		if v.IsNil() {
 			return fmt.Errorf("input obj is a nil pointer")
 		}
-		if v.Elem().Kind() == reflect.Ptr && v.Elem().IsNil() {
+		if v.Elem().Kind() == reflect.Pointer && v.Elem().IsNil() {
 			v.Elem().Set(reflect.New(v.Elem().Type().Elem()))
 		}
 		v = v.Elem()
@@ -117,7 +117,7 @@ func struct2MapShallow(obj any) (map[string]any, error) {
 	}
 
 	v := reflect.ValueOf(obj)
-	for v.Kind() == reflect.Ptr {
+	for v.Kind() == reflect.Pointer {
 		if v.IsNil() {
 			return nil, fmt.Errorf("input obj is a nil pointer")
 		}

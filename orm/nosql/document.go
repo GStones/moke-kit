@@ -258,7 +258,7 @@ func (d *DocumentBase) SaveAsync() error {
 		return err
 	}
 
-	if !(d.writeBack.Enabled && d.writeBack.MQ != nil) {
+	if !d.writeBack.Enabled || d.writeBack.MQ == nil {
 		return nil
 	}
 
