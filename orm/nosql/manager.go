@@ -17,6 +17,7 @@ type WriteBackManager struct {
 	workers    []*WriteBackWorker
 	mqClient   miface.MessageQueue
 	dbProvider diface.IDocumentProvider
+	cache      diface.ICache
 	logger     *zap.Logger
 	ctx        context.Context
 	cancel     context.CancelFunc
@@ -35,11 +36,13 @@ type WriteBackManagerMetrics struct {
 }
 
 // NewWriteBackManager creates a write-back manager.
+// cache may be nil; when set, workers fence delete/recreate generations via __epoch.
 func NewWriteBackManager(
 	config WriteBackConfig,
 	mqClient miface.MessageQueue,
 	dbProvider diface.IDocumentProvider,
 	logger *zap.Logger,
+	cache diface.ICache,
 ) (*WriteBackManager, error) {
 	if err := config.Validate(); err != nil {
 		return nil, err
@@ -50,6 +53,7 @@ func NewWriteBackManager(
 		config:     config,
 		mqClient:   mqClient,
 		dbProvider: dbProvider,
+		cache:      cache,
 		logger:     logger,
 		ctx:        ctx,
 		cancel:     cancel,
@@ -57,6 +61,12 @@ func NewWriteBackManager(
 			StartTime: time.Now(),
 		},
 	}, nil
+}
+
+// WithCache attaches a document cache used by workers for epoch fencing.
+func (m *WriteBackManager) WithCache(cache diface.ICache) *WriteBackManager {
+	m.cache = cache
+	return m
 }
 
 // Start starts configured workers.
@@ -72,14 +82,18 @@ func (m *WriteBackManager) Start() error {
 	m.logger.Info("Starting WriteBack manager",
 		zap.Int("worker_count", m.config.WorkerCount),
 		zap.Duration("delay", m.config.Delay),
+		zap.Bool("epoch_fence", m.cache != nil),
 	)
+	if m.cache == nil {
+		m.logger.Warn("WriteBack manager started without cache; delete/recreate epoch fencing is disabled")
+	}
 
 	for i := 0; i < m.config.WorkerCount; i++ {
 		worker := NewWriteBackWorker(
 			m.mqClient,
 			m.dbProvider,
 			m.logger.With(zap.Int("worker_id", i)),
-		)
+		).WithCache(m.cache)
 		m.workers = append(m.workers, worker)
 		if err := worker.Start(); err != nil {
 			m.logger.Error("Failed to start worker", zap.Int("worker_id", i), zap.Error(err))

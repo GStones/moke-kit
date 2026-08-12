@@ -100,17 +100,19 @@ func isVersionMismatch(err error) bool {
 	return strings.Contains(msg, "version mismatch") || strings.Contains(msg, "ErrVersionNotMatch")
 }
 
-func (w *WriteBackWorker) epochMismatch(ctx context.Context, docKey key.Key, payload WriteBackPayload) bool {
-	if w.cache == nil || payload.Epoch == 0 {
+// cacheEpochMismatch reports whether payloadEpoch conflicts with the cached generation.
+// Returns false when cache is nil, epoch is 0, or the cache entry has no epoch field
+// (e.g. Load-from-DB after restart).
+func cacheEpochMismatch(ctx context.Context, cache diface.ICache, docKey key.Key, payloadEpoch int64) bool {
+	if cache == nil || payloadEpoch == 0 {
 		return false
 	}
-	cached := w.cache.GetCache(ctx, docKey, cacheFieldEpoch)
+	cached := cache.GetCache(ctx, docKey, cacheFieldEpoch)
 	ep, ok := parseCacheVersion(cached[cacheFieldEpoch])
 	if !ok {
-		// No cached epoch (e.g. Load-from-DB after restart): do not fence.
 		return false
 	}
-	return ep != payload.Epoch
+	return ep != payloadEpoch
 }
 
 func (w *WriteBackWorker) consumeWriteBack(
@@ -120,7 +122,7 @@ func (w *WriteBackWorker) consumeWriteBack(
 	src any,
 	payload WriteBackPayload,
 ) common.ConsumptionCode {
-	if w.epochMismatch(ctx, docKey, payload) {
+	if cacheEpochMismatch(ctx, w.cache, docKey, payload.Epoch) {
 		w.failedCount.Add(1)
 		w.logger.Warn("WriteBack epoch mismatch; dropping message",
 			zap.String("key", payload.Key),

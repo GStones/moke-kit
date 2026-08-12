@@ -238,21 +238,26 @@ func applyWriteBackSnapshot(
 }
 
 // Create data and version in the database.
-// Each Create bumps epoch so delayed write-backs from a prior delete/recreate generation can be fenced.
+// Each Create assigns a unique epoch so delayed write-backs from a prior
+// delete/recreate generation can be fenced across DocumentBase instances.
 func (d *DocumentBase) Create() error {
-	d.epoch++
+	prevEpoch := d.epoch
+	d.epoch = time.Now().UnixNano()
+	if d.epoch == prevEpoch {
+		d.epoch++
+	}
 	version, err := d.DocumentStore.Set(
 		d.ctx,
 		d.Key,
 		noptions.WithSource(d.data),
 	)
 	if err != nil {
-		d.epoch--
+		d.epoch = prevEpoch
 		return err
 	}
 	d.version = version
 	if err := d.updateCache(); err != nil {
-		d.epoch--
+		d.epoch = prevEpoch
 		return err
 	}
 	return nil
@@ -326,6 +331,7 @@ func (d *DocumentBase) SaveAsync() error {
 	// Capture publish dependencies so DisableWriteBack cannot nil-deref the goroutine.
 	mq := d.writeBack.MQ
 	store := d.DocumentStore
+	cache := d.cache
 	docKey := d.Key
 	collectionName := store.GetName()
 	keyStr := docKey.String()
@@ -345,6 +351,9 @@ func (d *DocumentBase) SaveAsync() error {
 			}
 			fbCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 			defer cancel()
+			if cacheEpochMismatch(fbCtx, cache, docKey, epoch) {
+				return
+			}
 			_ = applyWriteBackSnapshot(fbCtx, store, docKey, src, next)
 		}
 	}()

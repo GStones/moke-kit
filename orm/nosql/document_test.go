@@ -317,7 +317,7 @@ func TestDocumentBase_UpdateAsyncWriteBack(t *testing.T) {
 	td := &testDoc{ID: "wb-1", Data: &docPayload{Message: "hello"}}
 	td.InitWithCache(context.Background(), &td.Data, func() { td.Data = nil }, coll, k, cache)
 	require.NoError(t, td.Create())
-	require.Equal(t, int64(1), td.epoch)
+	require.NotZero(t, td.epoch)
 	require.NoError(t, td.EnableWriteBackWithMQ(mq, time.Millisecond))
 
 	require.NoError(t, td.UpdateAsync(func() bool {
@@ -357,6 +357,7 @@ func TestDocumentBase_DeleteRecreateFencesOldWriteBack(t *testing.T) {
 	td := &testDoc{ID: "epoch-fence-1", Data: &docPayload{Message: "gen1"}}
 	td.InitWithCache(context.Background(), &td.Data, func() { td.Data = nil }, coll, k, cache)
 	require.NoError(t, td.Create())
+	gen1Epoch := td.epoch
 	require.NoError(t, td.EnableWriteBackWithMQ(mq, 80*time.Millisecond))
 
 	require.NoError(t, td.UpdateAsync(func() bool {
@@ -364,11 +365,12 @@ func TestDocumentBase_DeleteRecreateFencesOldWriteBack(t *testing.T) {
 		return true
 	}))
 
-	// Recreate under a new epoch before the delayed write-back lands.
+	// Recreate on a fresh DocumentBase (normal request boundary) before write-back lands.
 	require.NoError(t, td.Delete())
-	td.Data = &docPayload{Message: "gen2"}
-	require.NoError(t, td.Create())
-	require.Equal(t, int64(2), td.epoch)
+	recreated := &testDoc{ID: "epoch-fence-1", Data: &docPayload{Message: "gen2"}}
+	recreated.InitWithCache(context.Background(), &recreated.Data, func() { recreated.Data = nil }, coll, k, cache)
+	require.NoError(t, recreated.Create())
+	require.NotEqual(t, gen1Epoch, recreated.epoch)
 
 	require.Eventually(t, func() bool {
 		return worker.GetMetrics().FailedCount >= 1
@@ -379,6 +381,42 @@ func TestDocumentBase_DeleteRecreateFencesOldWriteBack(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "gen2", got.Message)
 	require.Equal(t, int64(0), worker.GetMetrics().ProcessedCount)
+}
+
+func TestDocumentBase_SaveAsyncPublishFailureRespectsEpoch(t *testing.T) {
+	t.Parallel()
+
+	logger := zaptest.NewLogger(t)
+	provider := mock.NewMockDriverProvider(logger)
+	coll, err := provider.OpenDbDriver("doc-pub-fail-epoch")
+	require.NoError(t, err)
+
+	k, err := key.NewKeyFromParts("demo", "pub-fail-epoch-1")
+	require.NoError(t, err)
+
+	cache := newMemoryHashCache()
+	mq := &failPublishMQ{}
+	td := &testDoc{ID: "pub-fail-epoch-1", Data: &docPayload{Message: "gen1"}}
+	td.InitWithCache(context.Background(), &td.Data, func() { td.Data = nil }, coll, k, cache)
+	require.NoError(t, td.Create())
+	require.NoError(t, td.EnableWriteBackWithMQ(mq, 40*time.Millisecond))
+
+	require.NoError(t, td.UpdateAsync(func() bool {
+		td.Data.Message = "stale-fallback"
+		return true
+	}))
+
+	require.NoError(t, td.Delete())
+	recreated := &testDoc{ID: "pub-fail-epoch-1", Data: &docPayload{Message: "gen2"}}
+	recreated.InitWithCache(context.Background(), &recreated.Data, func() { recreated.Data = nil }, coll, k, cache)
+	require.NoError(t, recreated.Create())
+
+	time.Sleep(120 * time.Millisecond)
+
+	var got docPayload
+	_, err = coll.Get(context.Background(), k, noptions.WithDestination(&got))
+	require.NoError(t, err)
+	require.Equal(t, "gen2", got.Message)
 }
 
 func TestDocumentBase_ConcurrentUpdates(t *testing.T) {

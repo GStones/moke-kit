@@ -123,10 +123,12 @@ func TestNewWriteBackManager(t *testing.T) {
 		&capturingMQ{},
 		mock.NewMockDriverProvider(zap.NewNop()),
 		zap.NewNop(),
+		newMemoryHashCache(),
 	)
 	assert.NoError(t, err)
 	assert.NotNil(t, manager)
 	assert.Equal(t, config, manager.config)
+	assert.NotNil(t, manager.cache)
 }
 
 func TestNewWriteBackManager_InvalidConfig(t *testing.T) {
@@ -145,6 +147,7 @@ func TestNewWriteBackManager_InvalidConfig(t *testing.T) {
 		&capturingMQ{},
 		mock.NewMockDriverProvider(zap.NewNop()),
 		zap.NewNop(),
+		nil,
 	)
 	assert.Error(t, err)
 	assert.Nil(t, manager)
@@ -158,6 +161,7 @@ func TestWriteBackManager_DisabledStart(t *testing.T) {
 		&capturingMQ{},
 		mock.NewMockDriverProvider(zap.NewNop()),
 		zap.NewNop(),
+		nil,
 	)
 	assert.NoError(t, err)
 
@@ -174,6 +178,7 @@ func TestWriteBackManager_IsHealthy(t *testing.T) {
 		&capturingMQ{},
 		mock.NewMockDriverProvider(zap.NewNop()),
 		zap.NewNop(),
+		nil,
 	)
 	assert.NoError(t, err)
 	assert.True(t, manager.IsHealthy())
