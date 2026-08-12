@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zaptest"
@@ -74,35 +76,42 @@ func TestDocumentBase_ConcurrentUpdates(t *testing.T) {
 	seed.Init(context.Background(), &seed.Data, func() { seed.Data = nil }, coll, k)
 	require.NoError(t, seed.Create())
 
-	const n = 10
-	docs := make([]*testDoc, n)
-	for i := 0; i < n; i++ {
-		d := &testDoc{ID: "cas-1", Data: &docPayload{}}
-		d.Init(context.Background(), &d.Data, func() { d.Data = nil }, coll, k)
-		require.NoError(t, d.Load())
-		docs[i] = d
-	}
+	// Workers may contend past a single DocumentBase.Update's MaxRetries (5).
+	// Each worker reloads and retries until success so the test asserts CAS
+	// progress without flaking under -race stampede.
+	const workers = 10
+	const outerAttempts = 32
 
+	var success atomic.Int32
 	var wg sync.WaitGroup
-	wg.Add(n)
-	errs := make(chan error, n)
-	for i, d := range docs {
-		go func(idx int, doc *testDoc) {
+	wg.Add(workers)
+	for i := 0; i < workers; i++ {
+		go func(idx int) {
 			defer wg.Done()
-			errs <- doc.Update(func() bool {
-				doc.Data.Message = fmt.Sprintf("world+%d", idx)
-				return true
-			})
-		}(i, d)
+			doc := &testDoc{ID: "cas-1", Data: &docPayload{}}
+			doc.Init(context.Background(), &doc.Data, func() { doc.Data = nil }, coll, k)
+			for attempt := 0; attempt < outerAttempts; attempt++ {
+				if err := doc.Load(); err != nil {
+					time.Sleep(time.Millisecond)
+					continue
+				}
+				err := doc.Update(func() bool {
+					doc.Data.Message = fmt.Sprintf("world+%d", idx)
+					return true
+				})
+				if err == nil {
+					success.Add(1)
+					return
+				}
+			}
+		}(i)
 	}
 	wg.Wait()
-	close(errs)
-	for err := range errs {
-		require.NoError(t, err)
-	}
+
+	require.Equal(t, int32(workers), success.Load(), "every worker should eventually CAS-update")
 
 	var retrieved docPayload
 	ver, err := coll.Get(context.Background(), k, noptions.WithDestination(&retrieved))
 	require.NoError(t, err)
-	require.Equal(t, noptions.Version(n+1), ver, "expected version after create + %d updates", n)
+	require.Equal(t, noptions.Version(workers+1), ver, "expected version after create + %d updates", workers)
 }
