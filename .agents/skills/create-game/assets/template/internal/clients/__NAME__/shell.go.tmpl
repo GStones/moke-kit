@@ -2,6 +2,7 @@ package __NAME__
 
 import (
 	"net"
+	"os"
 
 	"github.com/abiosoft/ishell"
 
@@ -9,10 +10,37 @@ import (
 	"github.com/gstones/moke-kit/server/tools"
 )
 
+// RunGrpcOptions configures the interactive gRPC shell.
+type RunGrpcOptions struct {
+	GameURL string
+	AuthURL string // informational for platform wiring; stub auth does not dial it
+}
+
+// RunGrpc starts the interactive gRPC shell against gameURL.
 func RunGrpc(url string) {
+	RunGrpcWithOptions(RunGrpcOptions{GameURL: url})
+}
+
+// RunGrpcWithOptions starts the interactive gRPC shell.
+// Scaffold default uses stub AuthModule: set token via "<name> token".
+// When swapping to platform AuthMiddlewareModule, point AuthURL at AuthService
+// and add platform authclient.CreateAuthClient (see moke-game/game clients).
+func RunGrpcWithOptions(opts RunGrpcOptions) {
 	sh := ishell.New()
-	slogger.Info(sh, "interactive __NAME__ connect to "+url)
-	conn, err := tools.DialInsecure(url)
+	gameURL := opts.GameURL
+	authURL := opts.AuthURL
+	if authURL == "" {
+		authURL = os.Getenv("AUTH_URL")
+	}
+	if authURL == "" {
+		authURL = gameURL
+	}
+
+	slogger.Info(sh, "interactive __NAME__ connect to "+gameURL)
+	slogger.Info(sh, "auth URL hint: "+authURL+" (stub AuthModule ignores AUTH_URL; use __NAME__ token)")
+	slogger.Info(sh, "flow: __NAME__ token → __NAME__ hi")
+
+	conn, err := tools.DialInsecure(gameURL)
 	if err != nil {
 		slogger.Die(sh, err)
 	}

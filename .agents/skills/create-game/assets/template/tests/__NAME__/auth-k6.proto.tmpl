@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package auth.v1;
+option go_package = "auth/api/;v1";
+
+service AuthService {
+  rpc Authenticate (AuthenticateRequest) returns (AuthenticateResponse) {};
+  rpc ValidateToken (ValidateTokenRequest) returns (ValidateTokenResponse) {};
+}
+
+message AuthenticateRequest {
+  string app_id = 1;
+  string id = 2;
+}
+
+message AuthenticateResponse {
+  string access_token = 1;
+  string refresh_token = 2;
+  string uid = 3;
+  bool is_override = 4;
+}
+
+message ValidateTokenRequest {
+  string access_token = 1;
+}
+
+message ValidateTokenResponse {
+  string uid = 1;
+  bytes custom_data = 2;
+}
