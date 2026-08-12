@@ -5,6 +5,7 @@ reference platform and game repositories.
 
 | moke-kit version | platform | game | Notes |
 | --- | --- | --- | --- |
+| `v1.0.5-0.20260812022140-acb9f313d7fd` ([#228](https://github.com/GStones/moke-kit/pull/228)) | [platform#27](https://github.com/moke-game/platform/pull/27) | [game#22](https://github.com/moke-game/game/pull/22) | CAS/StopServing/MQ race tests + CI lint/vuln; platform jwt/v5 + CAS/chat lifecycle |
 | `v1.0.5-0.20260811094419-bcdfe55515cd` (#224) + create-game [#226](https://github.com/GStones/moke-kit/pull/226) | [platform#25](https://github.com/moke-game/platform/pull/25) | [game#20](https://github.com/moke-game/game/pull/20) | Binder fail-closed + scaffold auth defaults |
 | `v1.0.5-0.20260811094419-bcdfe55515cd` (#224) | [platform#24](https://github.com/moke-game/platform/pull/24) | [game#19](https://github.com/moke-game/game/pull/19) | Subscribe/CAS/CORS/TLS/Auth + binder fail-closed |
 | `v1.0.5-0.20260811085843-60e104db6db7` (#221) | platform#24 base | game#19 base | Request-path auth fail-closed only |
@@ -12,6 +13,8 @@ reference platform and game repositories.
 
 `create-game` skill templates follow game secure defaults (`AllModule` + stub auth in
 `main`, no `WithoutAuth` on public services, gRPC+HTTP default, TCP opt-in, cancelable Watch).
+
+Consumers may still pin `go.mod` to `#224` while `#228` lands on `main`; bump when you need the StopServing deadline behavior or want CI parity.
 
 ## Tracking issues
 
