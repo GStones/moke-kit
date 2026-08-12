@@ -274,15 +274,17 @@ func TestDocumentCache(t *testing.T) {
 		k, err := key.NewKeyFromParts("test", "cache", "item1")
 		helper.RequireNoError(err)
 
-		data := &TestData{Message: "cached data", Count: 100}
+		data := map[string]any{
+			"Message": "cached data",
+			"Count":   100,
+		}
 
-		// Test cache set (default implementation does nothing)
-		cache.SetCache(helper.Context(), k, data, 5*time.Minute)
+		// Test cache set (default implementation is a no-op)
+		helper.RequireNoError(cache.SetCache(helper.Context(), k, data, 5*time.Minute))
 
-		// Test cache get (default implementation returns false)
-		var retrieved TestData
-		found := cache.GetCache(helper.Context(), k, &retrieved)
-		helper.AssertFalse(found, "Default cache should not find items")
+		// Test cache get (default implementation returns nil)
+		found := cache.GetCache(helper.Context(), k)
+		helper.AssertTrue(len(found) == 0, "Default cache should not find items")
 
 		// Test cache delete (default implementation does nothing)
 		cache.DeleteCache(helper.Context(), k)

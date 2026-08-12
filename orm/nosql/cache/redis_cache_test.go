@@ -16,10 +16,11 @@ func TestRedisCacheNilClientNoPanic(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	var dst map[string]string
-	if c.GetCache(context.Background(), k, &dst) {
+	if got := c.GetCache(context.Background(), k); got != nil {
 		t.Fatal("expected cache miss")
 	}
-	c.SetCache(context.Background(), k, map[string]string{"x": "y"}, time.Minute)
+	if err := c.SetCache(context.Background(), k, map[string]any{"x": "y"}, time.Minute); err != nil {
+		t.Fatal(err)
+	}
 	c.DeleteCache(context.Background(), k)
 }

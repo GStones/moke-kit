@@ -2,61 +2,102 @@ package cache
 
 import (
 	"context"
-	"encoding/json"
 	"time"
 
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 
+	"github.com/gstones/moke-kit/orm/nosql/diface"
 	"github.com/gstones/moke-kit/orm/nosql/key"
 )
 
 var (
-	// ExpireRangeMin is the minimum expire time
+	// ExpireRangeMin is the minimum expire time used by callers for jittered TTLs.
 	ExpireRangeMin = 40 * time.Minute
-	// ExpireRangeMax is the maximum expire time
+	// ExpireRangeMax is the maximum expire time used by callers for jittered TTLs.
 	ExpireRangeMax = 60 * time.Minute
 )
 
-// RedisCache is a redis cache
+// RedisCache is a redis HASH cache.
 type RedisCache struct {
 	logger *zap.Logger
 	*redis.Client
 }
 
-// CreateRedisCache creates a redis cache
+var _ diface.ICache = (*RedisCache)(nil)
+
+// CreateRedisCache creates a redis cache.
 func CreateRedisCache(logger *zap.Logger, client *redis.Client) *RedisCache {
 	return &RedisCache{logger, client}
 }
 
-// GetCache gets cache
-func (c *RedisCache) GetCache(ctx context.Context, key key.Key, doc any) bool {
+// GetCache loads HASH fields. When fields is empty, all fields are returned.
+func (c *RedisCache) GetCache(ctx context.Context, key key.Key, fields ...string) map[string]any {
 	if c == nil || c.Client == nil {
-		return false
+		return nil
 	}
-	if res := c.Get(ctx, key.String()); res.Err() != nil {
-		return false
-	} else if data, err := res.Bytes(); err != nil {
-		return false
-	} else if err := json.Unmarshal(data, doc); err != nil {
-		return false
+
+	keyStr := key.String()
+	if len(fields) > 0 {
+		result, err := c.HMGet(ctx, keyStr, fields...).Result()
+		if err != nil {
+			c.logger.Error("get cache failed", zap.Error(err), zap.String("key", keyStr))
+			return nil
+		}
+		data := make(map[string]any, len(fields))
+		for i, field := range fields {
+			if result[i] != nil {
+				data[field] = result[i]
+			}
+		}
+		if len(data) == 0 {
+			return nil
+		}
+		return data
 	}
-	return true
+
+	allData, err := c.HGetAll(ctx, keyStr).Result()
+	if err != nil {
+		c.logger.Error("get cache failed", zap.Error(err), zap.String("key", keyStr))
+		return nil
+	}
+	if len(allData) == 0 {
+		return nil
+	}
+	res := make(map[string]any, len(allData))
+	for k, v := range allData {
+		if v != "" {
+			res[k] = v
+		}
+	}
+	return res
 }
 
-// SetCache sets cache
-func (c *RedisCache) SetCache(ctx context.Context, key key.Key, doc any, expire time.Duration) {
+// SetCache writes HASH fields with HSET and optional EXPIRE.
+func (c *RedisCache) SetCache(
+	ctx context.Context,
+	key key.Key,
+	data map[string]any,
+	expire time.Duration,
+) error {
 	if c == nil || c.Client == nil {
-		return
+		return nil
 	}
-	if data, err := json.Marshal(doc); err != nil {
-		return
-	} else if res := c.Set(ctx, key.String(), data, expire); res.Err() != nil {
-		return
+	if len(data) == 0 {
+		return nil
 	}
+	if res := c.HSet(ctx, key.String(), data); res.Err() != nil {
+		return res.Err()
+	}
+	if expire > 0 {
+		if res := c.Expire(ctx, key.String(), expire); res.Err() != nil {
+			return res.Err()
+		}
+	}
+	return nil
 }
 
-// DeleteCache deletes cache
+// DeleteCache deletes cache.
 func (c *RedisCache) DeleteCache(ctx context.Context, key key.Key) {
 	if c == nil || c.Client == nil {
 		return
