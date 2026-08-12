@@ -1,0 +1,26 @@
+package main
+
+import (
+	"github.com/gstones/moke-kit/fxmain"
+	"github.com/gstones/moke-kit/mq/pkg/mfx"
+	"github.com/gstones/moke-kit/orm/pkg/ofx"
+
+	"__MODULE__/pkg/dfx"
+	"__MODULE__/pkg/modules"
+)
+
+// Thin-style entry: game transports only (no in-process platform services).
+// Scaffold default still uses dfx.AuthModule stub locally.
+// When wiring platform: replace dfx.AuthModule with auth.AuthMiddlewareModule,
+// set AUTH_URL to the remote AuthService, and add platform *ClientModule imports.
+// Do not keep stub + platform middleware (both provide AuthMiddleware).
+func main() {
+	fxmain.Main(
+		mfx.NatsModule,
+		mfx.LocalModule,
+		ofx.RedisCacheModule,
+
+		modules.AllModule,
+		dfx.AuthModule,
+	)
+}

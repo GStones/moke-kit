@@ -7,18 +7,18 @@ import (
 	"__MODULE__/pkg/dfx"
 )
 
-// GrpcModule starts the game gRPC service with AuthModule.
+// GrpcModule starts the game gRPC service only.
+// Auth is not included — pair dfx.AuthModule (or platform middleware) in main.
 var GrpcModule = fx.Module("grpcService",
 	dfx.SettingsModule,
-	dfx.AuthModule,
 	__NAME__.ServiceInstance,
 	__NAME__.GrpcService,
 )
 
-// HttpModule starts gRPC + grpc-gateway with AuthModule.
+// HttpModule starts gRPC + grpc-gateway.
+// Auth is not included — pair auth in main the same way as GrpcModule / AllModule.
 var HttpModule = fx.Module("httpService",
 	dfx.SettingsModule,
-	dfx.AuthModule,
 	__NAME__.ServiceInstance,
 	__NAME__.GrpcService,
 	__NAME__.HttpService,
