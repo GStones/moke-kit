@@ -2,7 +2,9 @@ package __NAME__
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"sync"
 
 	"github.com/abiosoft/ishell"
 	mm "github.com/grpc-ecosystem/go-grpc-middleware/v2/metadata"
@@ -16,6 +18,9 @@ import (
 type GrpcCli struct {
 	client pb.__NAME_TITLE__ServiceClient
 	cmd    *ishell.Cmd
+
+	mu    sync.RWMutex
+	token string
 }
 
 func NewGrpcCli(conn *grpc.ClientConn) *GrpcCli {
@@ -27,6 +32,7 @@ func NewGrpcCli(conn *grpc.ClientConn) *GrpcCli {
 	p := &GrpcCli{
 		client: pb.New__NAME_TITLE__ServiceClient(conn),
 		cmd:    cmd,
+		token:  "10000", // stub AuthModule default uid bearer
 	}
 	p.initSubShells()
 	return p
@@ -34,9 +40,48 @@ func NewGrpcCli(conn *grpc.ClientConn) *GrpcCli {
 
 func (p *GrpcCli) GetCmd() *ishell.Cmd { return p.cmd }
 
+func (p *GrpcCli) SetAccessToken(token string) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.token = token
+}
+
+func (p *GrpcCli) accessToken() string {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	return p.token
+}
+
 func (p *GrpcCli) initSubShells() {
+	p.cmd.AddCmd(&ishell.Cmd{
+		Name:    "token",
+		Help:    "set bearer token (stub AuthModule: any non-empty token becomes uid)",
+		Aliases: []string{"t"},
+		Func:    p.setToken,
+	})
 	p.cmd.AddCmd(&ishell.Cmd{Name: "hi", Help: "say hi", Aliases: []string{"hi"}, Func: p.sayHi})
 	p.cmd.AddCmd(&ishell.Cmd{Name: "watch", Help: "watch topic", Aliases: []string{"w"}, Func: p.watch})
+}
+
+func (p *GrpcCli) setToken(c *ishell.Context) {
+	c.ShowPrompt(false)
+	defer c.ShowPrompt(true)
+	tok := slogger.ReadLine(c, "access token (default stub uid bearer): ")
+	if tok == "" {
+		slogger.Warn(c, errors.New("empty token"))
+		return
+	}
+	p.SetAccessToken(tok)
+	slogger.Infof(c, "token set (%d chars)", len(tok))
+}
+
+func (p *GrpcCli) authCtx() (context.Context, error) {
+	tok := p.accessToken()
+	if tok == "" {
+		return nil, errors.New("no access token; run: __NAME__ token")
+	}
+	md := metadata.Pairs("authorization", fmt.Sprintf("%s %s", "bearer", tok))
+	return mm.MD(md).ToOutgoing(context.Background()), nil
 }
 
 func (p *GrpcCli) sayHi(c *ishell.Context) {
@@ -50,9 +95,11 @@ func (p *GrpcCli) sayHi(c *ishell.Context) {
 	if t := slogger.ReadLine(c, "topic(default:__NAME__): "); t != "" {
 		topic = t
 	}
-	// Stub AuthModule sets UID from bearer; request.uid is ignored by the server.
-	md := metadata.Pairs("authorization", fmt.Sprintf("%s %s", "bearer", "10000"))
-	ctx := mm.MD(md).ToOutgoing(context.Background())
+	ctx, err := p.authCtx()
+	if err != nil {
+		slogger.Warn(c, err)
+		return
+	}
 	resp, err := p.client.Hi(ctx, &pb.HiRequest{Message: msg, Topic: topic})
 	if err != nil {
 		slogger.Warn(c, err)
@@ -68,8 +115,11 @@ func (p *GrpcCli) watch(c *ishell.Context) {
 	if t := slogger.ReadLine(c, "topic(default:__NAME__): "); t != "" {
 		topic = t
 	}
-	md := metadata.Pairs("authorization", fmt.Sprintf("%s %s", "bearer", "10000"))
-	ctx := mm.MD(md).ToOutgoing(context.Background())
+	ctx, err := p.authCtx()
+	if err != nil {
+		slogger.Warn(c, err)
+		return
+	}
 	stream, err := p.client.Watch(ctx, &pb.WatchRequest{Topic: topic})
 	if err != nil {
 		slogger.Warn(c, err)

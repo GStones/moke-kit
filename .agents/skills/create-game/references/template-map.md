@@ -31,7 +31,12 @@ Templates live in `assets/template/`. Placeholders:
   pkg/modules/<name>_module.go  # Grpc/Http/All modules have no auth provider
   deployment/docker-compose/...
   build/package/docker/Dockerfile
-  tests/<name>/<name>.js
+  .github/workflows/go.yml      # lint/vet/govulncheck/buf breaking
+  .golangci.yml
+  tests/common/common.js
+  tests/<name>/<name>.js        # stub bearer or USE_PLATFORM_AUTH=1 Authenticate
+  tests/<name>/*-k6.proto
+  internal/services/<name>/domain/watch_test.go
 ```
 
 ## Preferred creation command

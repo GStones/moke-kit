@@ -1,0 +1,99 @@
+package domain
+
+import (
+	"context"
+	"errors"
+	"sync/atomic"
+	"testing"
+	"time"
+
+	"github.com/gstones/moke-kit/mq/miface"
+	"go.uber.org/zap"
+
+	"__MODULE__/internal/services/__NAME__/db_nosql"
+)
+
+type fakeSub struct {
+	calls *atomic.Int32
+}
+
+func (f *fakeSub) IsValid() bool { return true }
+func (f *fakeSub) Unsubscribe() error {
+	if f.calls != nil {
+		f.calls.Add(1)
+	}
+	return nil
+}
+
+type fakeMQ struct {
+	subs  int32
+	calls *atomic.Int32
+	errOn int32
+	err   error
+}
+
+func (f *fakeMQ) Subscribe(context.Context, string, miface.SubResponseHandler, ...miface.SubOption) (miface.Subscription, error) {
+	n := atomic.AddInt32(&f.subs, 1)
+	if f.errOn > 0 && n == f.errOn {
+		if f.err != nil {
+			return nil, f.err
+		}
+		return nil, errors.New("subscribe failed")
+	}
+	return &fakeSub{calls: f.calls}, nil
+}
+func (f *fakeMQ) Publish(string, ...miface.PubOption) error { return nil }
+
+func TestWatchUnsubscribesOnCancel(t *testing.T) {
+	t.Parallel()
+
+	var unsubs atomic.Int32
+	mq := &fakeMQ{calls: &unsubs}
+	g := NewGame(zap.NewNop(), db_nosql.Database{}, mq, nil)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan error, 1)
+	go func() {
+		done <- g.Watch(ctx, "room-1", func(string) error { return nil })
+	}()
+
+	deadline := time.Now().Add(time.Second)
+	for time.Now().Before(deadline) {
+		if atomic.LoadInt32(&mq.subs) >= 2 {
+			break
+		}
+		time.Sleep(5 * time.Millisecond)
+	}
+	if atomic.LoadInt32(&mq.subs) < 2 {
+		t.Fatalf("expected 2 subscriptions, got %d", mq.subs)
+	}
+
+	cancel()
+	select {
+	case err := <-done:
+		if err != context.Canceled {
+			t.Fatalf("Watch returned %v, want context.Canceled", err)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("Watch did not return after cancel")
+	}
+
+	if got := unsubs.Load(); got != 2 {
+		t.Fatalf("Unsubscribe calls = %d, want 2", got)
+	}
+}
+
+func TestWatchCleansNatsSubWhenLocalSubscribeFails(t *testing.T) {
+	t.Parallel()
+
+	var unsubs atomic.Int32
+	mq := &fakeMQ{calls: &unsubs, errOn: 2}
+	g := NewGame(zap.NewNop(), db_nosql.Database{}, mq, nil)
+	err := g.Watch(context.Background(), "room-2", func(string) error { return nil })
+	if err == nil {
+		t.Fatal("expected local subscribe failure")
+	}
+	if got := unsubs.Load(); got != 1 {
+		t.Fatalf("Unsubscribe calls = %d, want 1 (nats cleanup)", got)
+	}
+}

@@ -1,0 +1,8 @@
+export const makeParams = (token) => {
+  return {
+    metadata: {
+      authorization: "bearer " + token,
+    },
+    tags: { k6test: "yes" },
+  };
+};
