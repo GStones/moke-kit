@@ -10,9 +10,10 @@ import (
 )
 
 // Thin-style entry: game transports only (no in-process platform services).
-// Scaffold default still uses dfx.AuthModule stub locally.
+// Scaffold default still uses dfx.AuthModule stub locally (no AUTH_URL dial).
 // When wiring platform: replace dfx.AuthModule with auth.AuthMiddlewareModule,
-// set AUTH_URL to the remote AuthService, and add platform *ClientModule imports.
+// set AUTH_URL to the *remote* AuthService (not this process PORT), and add
+// platform *ClientModule imports.
 // Do not keep stub + platform middleware (both provide AuthMiddleware).
 func main() {
 	fxmain.Main(
