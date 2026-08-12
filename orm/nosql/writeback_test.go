@@ -10,6 +10,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/gstones/moke-kit/mq/miface"
+	"github.com/gstones/moke-kit/orm/nosql/diface"
 	"github.com/gstones/moke-kit/orm/nosql/key"
 	"github.com/gstones/moke-kit/orm/nosql/mock"
 	"github.com/gstones/moke-kit/orm/nosql/noptions"
@@ -165,6 +166,66 @@ func TestWriteBackWorker_ApplyNewerTargetVersion(t *testing.T) {
 	assert.Equal(t, "latest", got.Message)
 	// Fast-forward must land exactly on the optimistic target version.
 	assert.Equal(t, noptions.Version(5), ver)
+}
+
+type jumpOnSecondGetCollection struct {
+	diface.ICollection
+	gets int
+}
+
+func (c *jumpOnSecondGetCollection) Get(
+	ctx context.Context,
+	k key.Key,
+	opts ...noptions.Option,
+) (noptions.Version, error) {
+	c.gets++
+	if c.gets == 2 {
+		// Between fast-forward iterations, an external writer advances the chain.
+		ver, err := c.ICollection.Get(ctx, k, opts...)
+		if err != nil {
+			return ver, err
+		}
+		_, err = c.ICollection.Set(
+			ctx,
+			k,
+			noptions.WithSource(&docPayload{Message: "external"}),
+			noptions.WithVersion(ver),
+		)
+		if err != nil {
+			return 0, err
+		}
+	}
+	return c.ICollection.Get(ctx, k, opts...)
+}
+
+func TestApplyWriteBackSnapshot_AbortsOnExternalVersionJump(t *testing.T) {
+	logger := zap.NewNop()
+	provider := mock.NewMockDriverProvider(logger)
+	coll, err := provider.OpenDbDriver("wb-jump")
+	assert.NoError(t, err)
+
+	k, err := key.NewKeyFromParts("demo", "jump-1")
+	assert.NoError(t, err)
+	_, err = coll.Set(context.Background(), k, noptions.WithSource(&docPayload{Message: "v1"}))
+	assert.NoError(t, err)
+
+	wrapped := &jumpOnSecondGetCollection{ICollection: coll}
+	err = applyWriteBackSnapshot(
+		context.Background(),
+		wrapped,
+		k,
+		map[string]any{"message": "wb"},
+		5,
+		nil,
+		0,
+	)
+	assert.ErrorIs(t, err, errWriteBackStale)
+
+	var got docPayload
+	ver, err := coll.Get(context.Background(), k, noptions.WithDestination(&got))
+	assert.NoError(t, err)
+	assert.Equal(t, "external", got.Message)
+	assert.Equal(t, noptions.Version(3), ver)
 }
 
 func TestWriteBackWorker_OutOfOrderTargetsKeepNewest(t *testing.T) {

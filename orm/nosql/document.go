@@ -154,11 +154,14 @@ func (d *DocumentBase) cacheEnvelope() (map[string]any, error) {
 		cacheFieldVersion: d.version,
 		cacheFieldData:    string(raw),
 	}
-	// Omit zero epochs so Load-from-DB after restart does not fence in-flight write-backs.
 	if d.epoch != 0 {
 		envelope[cacheFieldEpoch] = d.epoch
 	}
 	return envelope, nil
+}
+
+func newDocumentEpoch() int64 {
+	return time.Now().UnixNano()
 }
 
 func (d *DocumentBase) updateCache() error {
@@ -211,22 +214,33 @@ func scheduleWriteBack(
 	return mq.Publish(WriteBackTopic, miface.WithJSON(payload))
 }
 
-var errWriteBackStale = errors.New("write-back snapshot is stale")
+var (
+	errWriteBackStale = errors.New("write-back snapshot is stale")
+	errWriteBackEpoch = errors.New("write-back epoch mismatch")
+)
 
 // applyWriteBackSnapshot installs src and advances the DB CAS version up to targetVersion.
 // Store Set only $inc version by 1, so a gapped target (e.g. 5 while DB is 1) is
 // fast-forwarded with the same payload until DB version == targetVersion.
-// Older/equal targets are dropped so out-of-order delayed messages cannot clobber newer data.
+// Epoch is re-checked every iteration, and an unexpected version jump aborts so a
+// concurrent non-write-back writer is not overwritten across the remaining gap.
 func applyWriteBackSnapshot(
 	ctx context.Context,
 	coll diface.ICollection,
 	docKey key.Key,
 	src any,
 	targetVersion noptions.Version,
+	cache diface.ICache,
+	epoch int64,
 ) error {
+	var expectCurrent noptions.Version
+	hasExpect := false
 	for {
 		if err := ctx.Err(); err != nil {
 			return err
+		}
+		if cacheEpochMismatch(ctx, cache, docKey, epoch) {
+			return errWriteBackEpoch
 		}
 		var discard any
 		current, err := coll.Get(ctx, docKey, noptions.WithDestination(&discard))
@@ -234,6 +248,12 @@ func applyWriteBackSnapshot(
 			return err
 		}
 		if targetVersion <= current {
+			if hasExpect && current >= targetVersion {
+				return nil
+			}
+			return errWriteBackStale
+		}
+		if hasExpect && current != expectCurrent {
 			return errWriteBackStale
 		}
 		newVer, err := coll.Set(
@@ -245,10 +265,11 @@ func applyWriteBackSnapshot(
 		if err != nil {
 			return err
 		}
+		expectCurrent = newVer
+		hasExpect = true
 		if newVer >= targetVersion {
 			return nil
 		}
-		// Version advanced but still behind the optimistic target; keep fast-forwarding.
 	}
 }
 
@@ -257,7 +278,7 @@ func applyWriteBackSnapshot(
 // delete/recreate generation can be fenced across DocumentBase instances.
 func (d *DocumentBase) Create() error {
 	prevEpoch := d.epoch
-	d.epoch = time.Now().UnixNano()
+	d.epoch = newDocumentEpoch()
 	if d.epoch == prevEpoch {
 		d.epoch++
 	}
@@ -287,6 +308,8 @@ func (d *DocumentBase) Load() error {
 			return nil
 		}
 		// Corrupt/incomplete cache entries fall through to the database.
+		// Delete after the failed decode; a concurrent Create/SaveAsync may rewrite
+		// a fresh epoch before we reconstruct below.
 		d.cache.DeleteCache(d.ctx, d.Key)
 		d.clear()
 	}
@@ -300,13 +323,16 @@ func (d *DocumentBase) Load() error {
 		return err
 	}
 	d.version = version
-	// DB has no persisted epoch. Preserve any existing cache fence so a concurrent
-	// Create/SaveAsync generation is not wiped by this read-through rewrite.
+	// Preserve a concurrent generation fence when present; otherwise mint a new
+	// epoch so in-flight write-backs from a lost optimistic cache lineage are fenced.
 	d.epoch = 0
 	if cached := d.cache.GetCache(d.ctx, d.Key, cacheFieldEpoch); len(cached) > 0 {
 		if ep, ok := parseCacheVersion(cached[cacheFieldEpoch]); ok {
 			d.epoch = ep
 		}
+	}
+	if d.epoch == 0 {
+		d.epoch = newDocumentEpoch()
 	}
 	return d.updateCache()
 }
@@ -374,10 +400,7 @@ func (d *DocumentBase) SaveAsync() error {
 			}
 			fbCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 			defer cancel()
-			if cacheEpochMismatch(fbCtx, cache, docKey, epoch) {
-				return
-			}
-			_ = applyWriteBackSnapshot(fbCtx, store, docKey, src, next)
+			_ = applyWriteBackSnapshot(fbCtx, store, docKey, src, next, cache, epoch)
 		}
 	}()
 	return nil

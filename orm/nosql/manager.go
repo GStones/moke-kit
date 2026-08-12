@@ -80,6 +80,9 @@ func (m *WriteBackManager) Start() error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
+	if len(m.workers) > 0 {
+		return errors.New("WriteBack manager already started")
+	}
 	if m.cache == nil {
 		return errors.New("WriteBack manager requires a document cache for epoch fencing")
 	}

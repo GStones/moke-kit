@@ -383,6 +383,57 @@ func TestDocumentBase_DeleteRecreateFencesOldWriteBack(t *testing.T) {
 	require.Equal(t, int64(0), worker.GetMetrics().ProcessedCount)
 }
 
+func TestDocumentBase_ColdLoadMintsEpochAndFencesWriteBack(t *testing.T) {
+	t.Parallel()
+
+	logger := zaptest.NewLogger(t)
+	provider := mock.NewMockDriverProvider(logger)
+	coll, err := provider.OpenDbDriver("doc-cold-load-epoch")
+	require.NoError(t, err)
+
+	k, err := key.NewKeyFromParts("demo", "cold-1")
+	require.NoError(t, err)
+
+	cache := newMemoryHashCache()
+	mq := &capturingMQ{}
+	worker := NewWriteBackWorker(mq, provider, logger).WithCache(cache)
+	require.NoError(t, worker.Start())
+	defer worker.Stop()
+
+	td := &testDoc{ID: "cold-1", Data: &docPayload{Message: "gen1"}}
+	td.InitWithCache(context.Background(), &td.Data, func() { td.Data = nil }, coll, k, cache)
+	require.NoError(t, td.Create())
+	oldEpoch := td.epoch
+	require.NoError(t, td.EnableWriteBackWithMQ(mq, 60*time.Millisecond))
+
+	require.NoError(t, td.UpdateAsync(func() bool {
+		td.Data.Message = "stale-async"
+		return true
+	}))
+
+	// Simulate cache TTL loss, then read-through reconstructs with a new epoch.
+	cache.DeleteCache(context.Background(), k)
+	loaded := &testDoc{ID: "cold-1", Data: &docPayload{}}
+	loaded.InitWithCache(context.Background(), &loaded.Data, func() { loaded.Data = nil }, coll, k, cache)
+	require.NoError(t, loaded.Load())
+	require.NotZero(t, loaded.epoch)
+	require.NotEqual(t, oldEpoch, loaded.epoch)
+	require.NoError(t, loaded.Update(func() bool {
+		loaded.Data.Message = "sync-after-reload"
+		return true
+	}))
+
+	require.Eventually(t, func() bool {
+		return worker.GetMetrics().FailedCount >= 1
+	}, 2*time.Second, 20*time.Millisecond)
+
+	var got docPayload
+	_, err = coll.Get(context.Background(), k, noptions.WithDestination(&got))
+	require.NoError(t, err)
+	require.Equal(t, "sync-after-reload", got.Message)
+	require.Equal(t, int64(0), worker.GetMetrics().ProcessedCount)
+}
+
 func TestDocumentBase_SaveAsyncPublishFailureRespectsEpoch(t *testing.T) {
 	t.Parallel()
 

@@ -185,6 +185,23 @@ func TestWriteBackManager_EnabledRequiresCache(t *testing.T) {
 	assert.Error(t, manager.Start())
 }
 
+func TestWriteBackManager_StartIdempotent(t *testing.T) {
+	config := DefaultWriteBackConfig()
+	config.Enabled = true
+
+	manager, err := NewWriteBackManager(
+		config,
+		&capturingMQ{},
+		mock.NewMockDriverProvider(zap.NewNop()),
+		zap.NewNop(),
+		newMemoryHashCache(),
+	)
+	assert.NoError(t, err)
+	assert.NoError(t, manager.Start())
+	assert.Error(t, manager.Start())
+	assert.NoError(t, manager.Stop())
+}
+
 func TestWriteBackManager_IsHealthy(t *testing.T) {
 	config := DefaultWriteBackConfig()
 

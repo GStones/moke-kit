@@ -122,17 +122,7 @@ func (w *WriteBackWorker) consumeWriteBack(
 	src any,
 	payload WriteBackPayload,
 ) common.ConsumptionCode {
-	if cacheEpochMismatch(ctx, w.cache, docKey, payload.Epoch) {
-		w.failedCount.Add(1)
-		w.logger.Warn("WriteBack epoch mismatch; dropping message",
-			zap.String("key", payload.Key),
-			zap.Int64("payload_epoch", payload.Epoch),
-			zap.Int64("target_version", int64(payload.Version)),
-		)
-		return common.ConsumeNackPersistentFailure
-	}
-
-	err := applyWriteBackSnapshot(ctx, coll, docKey, src, payload.Version)
+	err := applyWriteBackSnapshot(ctx, coll, docKey, src, payload.Version, w.cache, payload.Epoch)
 	if err == nil {
 		w.processedCount.Add(1)
 		w.lastProcessed.Store(time.Now())
@@ -140,6 +130,14 @@ func (w *WriteBackWorker) consumeWriteBack(
 	}
 
 	switch {
+	case errors.Is(err, errWriteBackEpoch):
+		w.failedCount.Add(1)
+		w.logger.Warn("WriteBack epoch mismatch; dropping message",
+			zap.String("key", payload.Key),
+			zap.Int64("payload_epoch", payload.Epoch),
+			zap.Int64("target_version", int64(payload.Version)),
+		)
+		return common.ConsumeNackPersistentFailure
 	case errors.Is(err, errWriteBackStale):
 		w.failedCount.Add(1)
 		w.logger.Warn("WriteBack snapshot is stale; dropping message",
