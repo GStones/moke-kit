@@ -97,7 +97,7 @@ func TestGrpcServerStopServingForceWhenRPCBlocks(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer conn.Close()
+	defer func() { _ = conn.Close() }()
 
 	invokeDone := make(chan error, 1)
 	go func() {
