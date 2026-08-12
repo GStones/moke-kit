@@ -124,7 +124,7 @@ func TestWriteBackWorker_StartSubscribeError(t *testing.T) {
 	assert.Error(t, worker.Start())
 }
 
-func TestWriteBackWorker_RebaseOnVersionGap(t *testing.T) {
+func TestWriteBackWorker_RebaseOnAdjacentVersionGap(t *testing.T) {
 	logger := zap.NewNop()
 	provider := mock.NewMockDriverProvider(logger)
 	coll, err := provider.OpenDbDriver("wb-rebase")
@@ -145,7 +145,7 @@ func TestWriteBackWorker_RebaseOnVersionGap(t *testing.T) {
 		CollectionName: "wb-rebase",
 		Key:            k.String(),
 		Data:           json.RawMessage(`{"message":"rebased"}`),
-		Version:        5, // gap: earlier write-backs never arrived
+		Version:        2, // exactly one ahead: safe adjacent rebase
 	})))
 
 	assert.Eventually(t, func() bool {
@@ -157,6 +157,41 @@ func TestWriteBackWorker_RebaseOnVersionGap(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "rebased", got.Message)
 	assert.Equal(t, noptions.Version(2), ver)
+}
+
+func TestWriteBackWorker_RejectAmbiguousVersionGap(t *testing.T) {
+	logger := zap.NewNop()
+	provider := mock.NewMockDriverProvider(logger)
+	coll, err := provider.OpenDbDriver("wb-gap")
+	assert.NoError(t, err)
+
+	k, err := key.NewKeyFromParts("demo", "gap-1")
+	assert.NoError(t, err)
+
+	_, err = coll.Set(context.Background(), k, noptions.WithSource(&docPayload{Message: "fresh"}))
+	assert.NoError(t, err)
+
+	mq := &capturingMQ{}
+	worker := NewWriteBackWorker(mq, provider, logger)
+	assert.NoError(t, worker.Start())
+	defer worker.Stop()
+
+	assert.NoError(t, mq.Publish(WriteBackTopic, miface.WithJSON(&WriteBackPayload{
+		CollectionName: "wb-gap",
+		Key:            k.String(),
+		Data:           json.RawMessage(`{"message":"stale-inflight"}`),
+		Version:        9, // large gap: treat as ambiguous / possible recreate
+	})))
+
+	assert.Eventually(t, func() bool {
+		return worker.GetMetrics().FailedCount >= 1
+	}, time.Second, 10*time.Millisecond)
+
+	var got docPayload
+	_, err = coll.Get(context.Background(), k, noptions.WithDestination(&got))
+	assert.NoError(t, err)
+	assert.Equal(t, "fresh", got.Message)
+	assert.Equal(t, int64(0), worker.GetMetrics().ProcessedCount)
 }
 
 func TestWriteBackPayload_JSON(t *testing.T) {

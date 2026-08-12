@@ -101,60 +101,42 @@ func (w *WriteBackWorker) handleVersionMismatch(
 	payload WriteBackPayload,
 	setErr error,
 ) common.ConsumptionCode {
-	var discard any
-	current, err := coll.Get(ctx, docKey, noptions.WithDestination(&discard))
-	if err != nil {
+	w.logger.Warn("WriteBack CAS mismatch; attempting bounded rebase",
+		zap.String("key", payload.Key),
+		zap.Int64("payload_version", int64(payload.Version)),
+		zap.Error(setErr),
+	)
+
+	err := applyWriteBackSnapshot(ctx, coll, docKey, src, payload.Version)
+	if err == nil {
+		w.processedCount.Add(1)
+		w.lastProcessed.Store(time.Now())
+		return common.ConsumeAck
+	}
+
+	switch {
+	case errors.Is(err, errWriteBackStale), errors.Is(err, errWriteBackAmbiguousGap):
 		w.failedCount.Add(1)
-		if errors.Is(err, nerrors.ErrNotFound) {
-			w.logger.Warn("WriteBack target missing; dropping message",
-				zap.String("key", payload.Key),
-				zap.Error(setErr),
-			)
-			return common.ConsumeNackPersistentFailure
-		}
-		w.logger.Warn("WriteBack version check failed; will retry",
+		w.logger.Warn("WriteBack snapshot rejected",
+			zap.String("key", payload.Key),
+			zap.Int64("payload_version", int64(payload.Version)),
+			zap.Error(err),
+		)
+		return common.ConsumeNackPersistentFailure
+	case errors.Is(err, nerrors.ErrNotFound):
+		w.failedCount.Add(1)
+		w.logger.Warn("WriteBack target missing; dropping message",
 			zap.String("key", payload.Key),
 			zap.Error(err),
 		)
-		return common.ConsumeNackTransientFailure
-	}
-
-	// Stale snapshot: a newer write already landed.
-	if payload.Version < current {
-		w.failedCount.Add(1)
-		w.logger.Warn("WriteBack snapshot is stale; dropping message",
-			zap.String("key", payload.Key),
-			zap.Int64("payload_version", int64(payload.Version)),
-			zap.Int64("current_version", int64(current)),
-		)
 		return common.ConsumeNackPersistentFailure
-	}
-
-	// Missing earlier write-back (publish lost / recreated doc / gap): rebase the
-	// full snapshot onto the current DB version instead of nacking forever.
-	w.logger.Warn("WriteBack rebasing onto current version",
-		zap.String("key", payload.Key),
-		zap.Int64("payload_version", int64(payload.Version)),
-		zap.Int64("current_version", int64(current)),
-		zap.Error(setErr),
-	)
-	if _, rebaseErr := coll.Set(
-		ctx,
-		docKey,
-		noptions.WithSource(src),
-		noptions.WithVersion(current),
-	); rebaseErr != nil {
+	case isVersionMismatch(err):
 		w.failedCount.Add(1)
-		if isVersionMismatch(rebaseErr) {
-			// Concurrent writer raced the rebase; one bounded retry via MQ is enough.
-			return common.ConsumeNackTransientFailure
-		}
-		return w.handleError(rebaseErr, payload)
+		// Concurrent writer raced the rebase; one bounded retry via MQ is enough.
+		return common.ConsumeNackTransientFailure
+	default:
+		return w.handleError(err, payload)
 	}
-
-	w.processedCount.Add(1)
-	w.lastProcessed.Store(time.Now())
-	return common.ConsumeAck
 }
 
 func (w *WriteBackWorker) handleError(err error, payload WriteBackPayload) common.ConsumptionCode {

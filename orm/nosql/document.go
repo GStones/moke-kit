@@ -194,6 +194,53 @@ func scheduleWriteBack(
 	return mq.Publish(WriteBackTopic, miface.WithJSON(payload))
 }
 
+var (
+	errWriteBackStale        = errors.New("write-back snapshot is stale")
+	errWriteBackAmbiguousGap = errors.New("write-back version gap is ambiguous")
+)
+
+// applyWriteBackSnapshot CAS-writes src at expected, rebasing at most one version ahead.
+// Larger gaps are rejected so delete/recreate cannot be overwritten by in-flight old messages.
+func applyWriteBackSnapshot(
+	ctx context.Context,
+	coll diface.ICollection,
+	docKey key.Key,
+	src any,
+	expected noptions.Version,
+) error {
+	_, err := coll.Set(
+		ctx,
+		docKey,
+		noptions.WithSource(src),
+		noptions.WithVersion(expected),
+	)
+	if err == nil {
+		return nil
+	}
+	if !isVersionMismatch(err) {
+		return err
+	}
+
+	var discard any
+	current, gerr := coll.Get(ctx, docKey, noptions.WithDestination(&discard))
+	if gerr != nil {
+		return gerr
+	}
+	if expected < current {
+		return errWriteBackStale
+	}
+	if expected > current+1 {
+		return errWriteBackAmbiguousGap
+	}
+	_, err = coll.Set(
+		ctx,
+		docKey,
+		noptions.WithSource(src),
+		noptions.WithVersion(current),
+	)
+	return err
+}
+
 // Create data and version in the database.
 func (d *DocumentBase) Create() error {
 	version, err := d.DocumentStore.Set(
@@ -276,7 +323,6 @@ func (d *DocumentBase) SaveAsync() error {
 	mq := d.writeBack.MQ
 	store := d.DocumentStore
 	docKey := d.Key
-	ctx := d.ctx
 	collectionName := store.GetName()
 	keyStr := docKey.String()
 	delay := d.writeBack.Delay
@@ -286,16 +332,14 @@ func (d *DocumentBase) SaveAsync() error {
 		}
 		if err := scheduleWriteBack(mq, collectionName, keyStr, raw, prev); err != nil {
 			// Publish failed: best-effort sync fallback so data is not stuck in cache only.
+			// Use a fresh timeout context; the request ctx is usually already cancelled.
 			var src any
 			if json.Unmarshal(raw, &src) != nil {
 				return
 			}
-			_, _ = store.Set(
-				ctx,
-				docKey,
-				noptions.WithSource(src),
-				noptions.WithVersion(prev),
-			)
+			fbCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			defer cancel()
+			_ = applyWriteBackSnapshot(fbCtx, store, docKey, src, prev)
 		}
 	}()
 	return nil
