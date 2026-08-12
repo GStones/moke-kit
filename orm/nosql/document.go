@@ -300,9 +300,14 @@ func (d *DocumentBase) Load() error {
 		return err
 	}
 	d.version = version
-	// DB has no persisted epoch; clear any prior HASH generation before rewrite.
+	// DB has no persisted epoch. Preserve any existing cache fence so a concurrent
+	// Create/SaveAsync generation is not wiped by this read-through rewrite.
 	d.epoch = 0
-	d.cache.DeleteCache(d.ctx, d.Key)
+	if cached := d.cache.GetCache(d.ctx, d.Key, cacheFieldEpoch); len(cached) > 0 {
+		if ep, ok := parseCacheVersion(cached[cacheFieldEpoch]); ok {
+			d.epoch = ep
+		}
+	}
 	return d.updateCache()
 }
 
