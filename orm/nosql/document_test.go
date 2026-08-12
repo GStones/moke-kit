@@ -2,6 +2,7 @@ package nosql
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 	"sync/atomic"
@@ -215,6 +216,54 @@ func TestDocumentBase_SaveAsyncWithoutWriteBackPersists(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "persisted", retrieved.Message)
 	require.Equal(t, noptions.Version(2), ver)
+}
+
+type failPublishMQ struct {
+	handler miface.SubResponseHandler
+}
+
+func (m *failPublishMQ) Publish(topic string, opts ...miface.PubOption) error {
+	return errors.New("publish failed")
+}
+
+func (m *failPublishMQ) Subscribe(
+	ctx context.Context,
+	topic string,
+	handler miface.SubResponseHandler,
+	opts ...miface.SubOption,
+) (miface.Subscription, error) {
+	m.handler = handler
+	return &noopSub{}, nil
+}
+
+func TestDocumentBase_SaveAsyncPublishFailureFallsBack(t *testing.T) {
+	t.Parallel()
+
+	logger := zaptest.NewLogger(t)
+	provider := mock.NewMockDriverProvider(logger)
+	coll, err := provider.OpenDbDriver("doc-publish-fail")
+	require.NoError(t, err)
+
+	k, err := key.NewKeyFromParts("demo", "pub-fail-1")
+	require.NoError(t, err)
+
+	cache := newMemoryHashCache()
+	mq := &failPublishMQ{}
+	td := &testDoc{ID: "pub-fail-1", Data: &docPayload{Message: "hello"}}
+	td.InitWithCache(context.Background(), &td.Data, func() { td.Data = nil }, coll, k, cache)
+	require.NoError(t, td.Create())
+	require.NoError(t, td.EnableWriteBackWithMQ(mq, time.Millisecond))
+
+	require.NoError(t, td.UpdateAsync(func() bool {
+		td.Data.Message = "fallback"
+		return true
+	}))
+
+	require.Eventually(t, func() bool {
+		var got docPayload
+		_, err := coll.Get(context.Background(), k, noptions.WithDestination(&got))
+		return err == nil && got.Message == "fallback"
+	}, time.Second, 10*time.Millisecond)
 }
 
 func TestDocumentBase_SaveAsyncDisableWriteBackNoPanic(t *testing.T) {

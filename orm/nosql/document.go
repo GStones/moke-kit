@@ -274,14 +274,29 @@ func (d *DocumentBase) SaveAsync() error {
 
 	// Capture publish dependencies so DisableWriteBack cannot nil-deref the goroutine.
 	mq := d.writeBack.MQ
-	collectionName := d.DocumentStore.GetName()
-	keyStr := d.Key.String()
+	store := d.DocumentStore
+	docKey := d.Key
+	ctx := d.ctx
+	collectionName := store.GetName()
+	keyStr := docKey.String()
 	delay := d.writeBack.Delay
 	go func() {
 		if delay > 0 {
 			time.Sleep(delay)
 		}
-		_ = scheduleWriteBack(mq, collectionName, keyStr, raw, prev)
+		if err := scheduleWriteBack(mq, collectionName, keyStr, raw, prev); err != nil {
+			// Publish failed: best-effort sync fallback so data is not stuck in cache only.
+			var src any
+			if json.Unmarshal(raw, &src) != nil {
+				return
+			}
+			_, _ = store.Set(
+				ctx,
+				docKey,
+				noptions.WithSource(src),
+				noptions.WithVersion(prev),
+			)
+		}
 	}()
 	return nil
 }

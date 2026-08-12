@@ -10,6 +10,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/gstones/moke-kit/mq/miface"
+	"github.com/gstones/moke-kit/orm/nosql/key"
 	"github.com/gstones/moke-kit/orm/nosql/mock"
 	"github.com/gstones/moke-kit/orm/nosql/noptions"
 )
@@ -121,6 +122,41 @@ func TestWriteBackWorker_StartSubscribeError(t *testing.T) {
 		zap.NewNop(),
 	)
 	assert.Error(t, worker.Start())
+}
+
+func TestWriteBackWorker_RebaseOnVersionGap(t *testing.T) {
+	logger := zap.NewNop()
+	provider := mock.NewMockDriverProvider(logger)
+	coll, err := provider.OpenDbDriver("wb-rebase")
+	assert.NoError(t, err)
+
+	k, err := key.NewKeyFromParts("demo", "rebase-1")
+	assert.NoError(t, err)
+
+	_, err = coll.Set(context.Background(), k, noptions.WithSource(&docPayload{Message: "v1"}))
+	assert.NoError(t, err)
+
+	mq := &capturingMQ{}
+	worker := NewWriteBackWorker(mq, provider, logger)
+	assert.NoError(t, worker.Start())
+	defer worker.Stop()
+
+	assert.NoError(t, mq.Publish(WriteBackTopic, miface.WithJSON(&WriteBackPayload{
+		CollectionName: "wb-rebase",
+		Key:            k.String(),
+		Data:           json.RawMessage(`{"message":"rebased"}`),
+		Version:        5, // gap: earlier write-backs never arrived
+	})))
+
+	assert.Eventually(t, func() bool {
+		return worker.GetMetrics().ProcessedCount >= 1
+	}, time.Second, 10*time.Millisecond)
+
+	var got docPayload
+	ver, err := coll.Get(context.Background(), k, noptions.WithDestination(&got))
+	assert.NoError(t, err)
+	assert.Equal(t, "rebased", got.Message)
+	assert.Equal(t, noptions.Version(2), ver)
 }
 
 func TestWriteBackPayload_JSON(t *testing.T) {

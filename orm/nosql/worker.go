@@ -97,14 +97,14 @@ func (w *WriteBackWorker) handleVersionMismatch(
 	ctx context.Context,
 	coll diface.ICollection,
 	docKey key.Key,
+	src any,
 	payload WriteBackPayload,
 	setErr error,
 ) common.ConsumptionCode {
-	w.failedCount.Add(1)
-
 	var discard any
 	current, err := coll.Get(ctx, docKey, noptions.WithDestination(&discard))
 	if err != nil {
+		w.failedCount.Add(1)
 		if errors.Is(err, nerrors.ErrNotFound) {
 			w.logger.Warn("WriteBack target missing; dropping message",
 				zap.String("key", payload.Key),
@@ -121,6 +121,7 @@ func (w *WriteBackWorker) handleVersionMismatch(
 
 	// Stale snapshot: a newer write already landed.
 	if payload.Version < current {
+		w.failedCount.Add(1)
 		w.logger.Warn("WriteBack snapshot is stale; dropping message",
 			zap.String("key", payload.Key),
 			zap.Int64("payload_version", int64(payload.Version)),
@@ -129,14 +130,31 @@ func (w *WriteBackWorker) handleVersionMismatch(
 		return common.ConsumeNackPersistentFailure
 	}
 
-	// Out-of-order delivery: an earlier write-back has not been applied yet.
-	w.logger.Warn("WriteBack arrived early; will retry",
+	// Missing earlier write-back (publish lost / recreated doc / gap): rebase the
+	// full snapshot onto the current DB version instead of nacking forever.
+	w.logger.Warn("WriteBack rebasing onto current version",
 		zap.String("key", payload.Key),
 		zap.Int64("payload_version", int64(payload.Version)),
 		zap.Int64("current_version", int64(current)),
 		zap.Error(setErr),
 	)
-	return common.ConsumeNackTransientFailure
+	if _, rebaseErr := coll.Set(
+		ctx,
+		docKey,
+		noptions.WithSource(src),
+		noptions.WithVersion(current),
+	); rebaseErr != nil {
+		w.failedCount.Add(1)
+		if isVersionMismatch(rebaseErr) {
+			// Concurrent writer raced the rebase; one bounded retry via MQ is enough.
+			return common.ConsumeNackTransientFailure
+		}
+		return w.handleError(rebaseErr, payload)
+	}
+
+	w.processedCount.Add(1)
+	w.lastProcessed.Store(time.Now())
+	return common.ConsumeAck
 }
 
 func (w *WriteBackWorker) handleError(err error, payload WriteBackPayload) common.ConsumptionCode {
@@ -213,7 +231,7 @@ func (w *WriteBackWorker) Start() error {
 				zap.Duration("latency", latency),
 			)
 			if isVersionMismatch(setErr) {
-				return w.handleVersionMismatch(dbCtx, coll, docKey, payload, setErr)
+				return w.handleVersionMismatch(dbCtx, coll, docKey, src, payload, setErr)
 			}
 			return w.handleError(setErr, payload)
 		}
