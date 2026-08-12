@@ -124,7 +124,7 @@ func TestWriteBackWorker_StartSubscribeError(t *testing.T) {
 	assert.Error(t, worker.Start())
 }
 
-func TestWriteBackWorker_RebaseOnAdjacentVersionGap(t *testing.T) {
+func TestWriteBackWorker_ApplyNewerTargetVersion(t *testing.T) {
 	logger := zap.NewNop()
 	provider := mock.NewMockDriverProvider(logger)
 	coll, err := provider.OpenDbDriver("wb-rebase")
@@ -141,34 +141,48 @@ func TestWriteBackWorker_RebaseOnAdjacentVersionGap(t *testing.T) {
 	assert.NoError(t, worker.Start())
 	defer worker.Stop()
 
+	// Newer target arrives first (rapid SaveAsync / reordered MQ).
 	assert.NoError(t, mq.Publish(WriteBackTopic, miface.WithJSON(&WriteBackPayload{
 		CollectionName: "wb-rebase",
 		Key:            k.String(),
-		Data:           json.RawMessage(`{"message":"rebased"}`),
-		Version:        2, // exactly one ahead: safe adjacent rebase
+		Data:           json.RawMessage(`{"message":"latest"}`),
+		Version:        5,
+	})))
+	assert.NoError(t, mq.Publish(WriteBackTopic, miface.WithJSON(&WriteBackPayload{
+		CollectionName: "wb-rebase",
+		Key:            k.String(),
+		Data:           json.RawMessage(`{"message":"older"}`),
+		Version:        2,
 	})))
 
 	assert.Eventually(t, func() bool {
-		return worker.GetMetrics().ProcessedCount >= 1
+		return worker.GetMetrics().ProcessedCount >= 1 && worker.GetMetrics().FailedCount >= 1
 	}, time.Second, 10*time.Millisecond)
 
 	var got docPayload
 	ver, err := coll.Get(context.Background(), k, noptions.WithDestination(&got))
 	assert.NoError(t, err)
-	assert.Equal(t, "rebased", got.Message)
+	assert.Equal(t, "latest", got.Message)
 	assert.Equal(t, noptions.Version(2), ver)
 }
 
-func TestWriteBackWorker_RejectAmbiguousVersionGap(t *testing.T) {
+func TestWriteBackWorker_RejectStaleTargetVersion(t *testing.T) {
 	logger := zap.NewNop()
 	provider := mock.NewMockDriverProvider(logger)
-	coll, err := provider.OpenDbDriver("wb-gap")
+	coll, err := provider.OpenDbDriver("wb-stale")
 	assert.NoError(t, err)
 
-	k, err := key.NewKeyFromParts("demo", "gap-1")
+	k, err := key.NewKeyFromParts("demo", "stale-1")
 	assert.NoError(t, err)
 
-	_, err = coll.Set(context.Background(), k, noptions.WithSource(&docPayload{Message: "fresh"}))
+	_, err = coll.Set(context.Background(), k, noptions.WithSource(&docPayload{Message: "seed"}))
+	assert.NoError(t, err)
+	_, err = coll.Set(
+		context.Background(),
+		k,
+		noptions.WithSource(&docPayload{Message: "fresh"}),
+		noptions.WithVersion(1),
+	)
 	assert.NoError(t, err)
 
 	mq := &capturingMQ{}
@@ -177,10 +191,10 @@ func TestWriteBackWorker_RejectAmbiguousVersionGap(t *testing.T) {
 	defer worker.Stop()
 
 	assert.NoError(t, mq.Publish(WriteBackTopic, miface.WithJSON(&WriteBackPayload{
-		CollectionName: "wb-gap",
+		CollectionName: "wb-stale",
 		Key:            k.String(),
-		Data:           json.RawMessage(`{"message":"stale-inflight"}`),
-		Version:        9, // large gap: treat as ambiguous / possible recreate
+		Data:           json.RawMessage(`{"message":"stale"}`),
+		Version:        2, // not newer than current DB version 2
 	})))
 
 	assert.Eventually(t, func() bool {

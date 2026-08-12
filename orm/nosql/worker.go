@@ -16,7 +16,6 @@ import (
 	"github.com/gstones/moke-kit/orm/nerrors"
 	"github.com/gstones/moke-kit/orm/nosql/diface"
 	"github.com/gstones/moke-kit/orm/nosql/key"
-	"github.com/gstones/moke-kit/orm/nosql/noptions"
 )
 
 // WriteBackWorker consumes delayed write-back messages and persists them.
@@ -93,20 +92,13 @@ func isVersionMismatch(err error) bool {
 	return strings.Contains(msg, "version mismatch") || strings.Contains(msg, "ErrVersionNotMatch")
 }
 
-func (w *WriteBackWorker) handleVersionMismatch(
+func (w *WriteBackWorker) consumeWriteBack(
 	ctx context.Context,
 	coll diface.ICollection,
 	docKey key.Key,
 	src any,
 	payload WriteBackPayload,
-	setErr error,
 ) common.ConsumptionCode {
-	w.logger.Warn("WriteBack CAS mismatch; attempting bounded rebase",
-		zap.String("key", payload.Key),
-		zap.Int64("payload_version", int64(payload.Version)),
-		zap.Error(setErr),
-	)
-
 	err := applyWriteBackSnapshot(ctx, coll, docKey, src, payload.Version)
 	if err == nil {
 		w.processedCount.Add(1)
@@ -115,11 +107,11 @@ func (w *WriteBackWorker) handleVersionMismatch(
 	}
 
 	switch {
-	case errors.Is(err, errWriteBackStale), errors.Is(err, errWriteBackAmbiguousGap):
+	case errors.Is(err, errWriteBackStale):
 		w.failedCount.Add(1)
-		w.logger.Warn("WriteBack snapshot rejected",
+		w.logger.Warn("WriteBack snapshot is stale; dropping message",
 			zap.String("key", payload.Key),
-			zap.Int64("payload_version", int64(payload.Version)),
+			zap.Int64("target_version", int64(payload.Version)),
 			zap.Error(err),
 		)
 		return common.ConsumeNackPersistentFailure
@@ -132,7 +124,7 @@ func (w *WriteBackWorker) handleVersionMismatch(
 		return common.ConsumeNackPersistentFailure
 	case isVersionMismatch(err):
 		w.failedCount.Add(1)
-		// Concurrent writer raced the rebase; one bounded retry via MQ is enough.
+		// Concurrent writer raced the apply; one bounded retry via MQ is enough.
 		return common.ConsumeNackTransientFailure
 	default:
 		return w.handleError(err, payload)
@@ -199,29 +191,9 @@ func (w *WriteBackWorker) Start() error {
 		defer dbCancel()
 
 		startTime := time.Now()
-		_, setErr := coll.Set(
-			dbCtx,
-			docKey,
-			noptions.WithSource(src),
-			noptions.WithVersion(payload.Version),
-		)
-		latency := time.Since(startTime)
-		if setErr != nil {
-			w.logger.Error("Failed to write back document",
-				zap.String("key", payload.Key),
-				zap.Error(setErr),
-				zap.Duration("latency", latency),
-			)
-			if isVersionMismatch(setErr) {
-				return w.handleVersionMismatch(dbCtx, coll, docKey, src, payload, setErr)
-			}
-			return w.handleError(setErr, payload)
-		}
-
-		w.processedCount.Add(1)
-		w.totalLatency.Add(int64(latency))
-		w.lastProcessed.Store(time.Now())
-		return common.ConsumeAck
+		code := w.consumeWriteBack(dbCtx, coll, docKey, src, payload)
+		w.totalLatency.Add(int64(time.Since(startTime)))
+		return code
 	}
 
 	consumer, err := w.mqClient.Subscribe(w.ctx, WriteBackTopic, handler)

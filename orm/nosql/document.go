@@ -194,43 +194,25 @@ func scheduleWriteBack(
 	return mq.Publish(WriteBackTopic, miface.WithJSON(payload))
 }
 
-var (
-	errWriteBackStale        = errors.New("write-back snapshot is stale")
-	errWriteBackAmbiguousGap = errors.New("write-back version gap is ambiguous")
-)
+var errWriteBackStale = errors.New("write-back snapshot is stale")
 
-// applyWriteBackSnapshot CAS-writes src at expected, rebasing at most one version ahead.
-// Larger gaps are rejected so delete/recreate cannot be overwritten by in-flight old messages.
+// applyWriteBackSnapshot installs src when targetVersion is newer than the DB version.
+// payload.Version is the optimistic target version (cache version after SaveAsync).
+// Older/equal targets are dropped so out-of-order delayed messages cannot clobber newer data.
 func applyWriteBackSnapshot(
 	ctx context.Context,
 	coll diface.ICollection,
 	docKey key.Key,
 	src any,
-	expected noptions.Version,
+	targetVersion noptions.Version,
 ) error {
-	_, err := coll.Set(
-		ctx,
-		docKey,
-		noptions.WithSource(src),
-		noptions.WithVersion(expected),
-	)
-	if err == nil {
-		return nil
-	}
-	if !isVersionMismatch(err) {
+	var discard any
+	current, err := coll.Get(ctx, docKey, noptions.WithDestination(&discard))
+	if err != nil {
 		return err
 	}
-
-	var discard any
-	current, gerr := coll.Get(ctx, docKey, noptions.WithDestination(&discard))
-	if gerr != nil {
-		return gerr
-	}
-	if expected < current {
+	if targetVersion <= current {
 		return errWriteBackStale
-	}
-	if expected > current+1 {
-		return errWriteBackAmbiguousGap
 	}
 	_, err = coll.Set(
 		ctx,
@@ -296,7 +278,7 @@ func (d *DocumentBase) Save() error {
 }
 
 // SaveAsync optimistically updates the HASH cache and schedules a delayed DB write-back.
-// The DB CAS uses the previous version; the cache stores previous+1.
+// The write-back payload carries the optimistic target version (previous+1).
 // When write-back is disabled, SaveAsync falls back to synchronous Save().
 func (d *DocumentBase) SaveAsync() error {
 	if d.version == noptions.NoVersion {
@@ -313,7 +295,8 @@ func (d *DocumentBase) SaveAsync() error {
 	}
 
 	prev := d.version
-	d.version = prev + 1
+	next := prev + 1
+	d.version = next
 	if err := d.updateCache(); err != nil {
 		d.version = prev
 		return err
@@ -330,7 +313,8 @@ func (d *DocumentBase) SaveAsync() error {
 		if delay > 0 {
 			time.Sleep(delay)
 		}
-		if err := scheduleWriteBack(mq, collectionName, keyStr, raw, prev); err != nil {
+		// Version is the optimistic target version (next), not the CAS base.
+		if err := scheduleWriteBack(mq, collectionName, keyStr, raw, next); err != nil {
 			// Publish failed: best-effort sync fallback so data is not stuck in cache only.
 			// Use a fresh timeout context; the request ctx is usually already cancelled.
 			var src any
@@ -339,7 +323,7 @@ func (d *DocumentBase) SaveAsync() error {
 			}
 			fbCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 			defer cancel()
-			_ = applyWriteBackSnapshot(fbCtx, store, docKey, src, prev)
+			_ = applyWriteBackSnapshot(fbCtx, store, docKey, src, next)
 		}
 	}()
 	return nil
