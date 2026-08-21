@@ -2,12 +2,14 @@ package nosql
 
 import (
 	"context"
+	"encoding/json"
 	"math"
 	"math/rand"
 	"time"
 
 	"github.com/pkg/errors"
 
+	"github.com/gstones/moke-kit/mq/miface"
 	"github.com/gstones/moke-kit/orm/nerrors"
 	"github.com/gstones/moke-kit/orm/nosql/diface"
 	"github.com/gstones/moke-kit/orm/nosql/key"
@@ -15,23 +17,70 @@ import (
 )
 
 const (
-	// MaxRetries is the maximum number of retries for update operations
+	// MaxRetries is the maximum number of retries for update operations.
 	MaxRetries = 5
-	// DefaultCacheTTL is the default cache TTL for read-through caching
-	DefaultCacheTTL = 30 * time.Minute
+	// DefaultWriteBackDelay is the default async write-back delay.
+	DefaultWriteBackDelay = 500 * time.Millisecond
+	// ExpireRangeMin is the minimum jittered cache expiration.
+	ExpireRangeMin = 6 * time.Hour
+	// ExpireRangeMax is the maximum jittered cache expiration.
+	ExpireRangeMax = 12 * time.Hour
+	// WriteBackTopic is the MQ topic used for delayed Mongo write-back.
+	WriteBackTopic = "nats://writeback"
 )
 
-// DocumentBase represents a base document structure for NoSQL operations
+// WriteBackPayload is the delayed write-back message payload.
+type WriteBackPayload struct {
+	CollectionName string          `json:"collection"`
+	Key            string          `json:"key"`
+	Data           json.RawMessage `json:"data"`
+	// Version is the optimistic target version after SaveAsync (not the CAS base).
+	Version noptions.Version `json:"version"`
+	// Epoch fences delete/recreate generations when workers can read cache.
+	Epoch int64 `json:"epoch"`
+}
+
+// WriteBackOptions configures delayed write-back behavior.
+type WriteBackOptions struct {
+	Enabled bool
+	Delay   time.Duration
+	MQ      miface.MessageQueue
+}
+
+// DefaultWriteBackOptions returns disabled write-back options.
+func DefaultWriteBackOptions() WriteBackOptions {
+	return WriteBackOptions{
+		Enabled: false,
+		Delay:   DefaultWriteBackDelay,
+		MQ:      nil,
+	}
+}
+
+// Validate validates write-back options.
+func (opts WriteBackOptions) Validate() error {
+	if opts.Enabled && opts.MQ == nil {
+		return errors.New("MQ client is required when WriteBack is enabled")
+	}
+	if opts.Delay < 0 {
+		return errors.New("WriteBack delay cannot be negative")
+	}
+	return nil
+}
+
+// DocumentBase represents a base document structure for NoSQL operations.
 type DocumentBase struct {
 	Key key.Key
 
 	clear   func()
 	data    any
 	version noptions.Version
+	epoch   int64
 
 	DocumentStore diface.ICollection
 	cache         diface.ICache
 	ctx           context.Context
+
+	writeBack WriteBackOptions
 }
 
 // Init performs an in-place initialization of a DocumentBase.
@@ -61,48 +110,209 @@ func (d *DocumentBase) InitWithCache(
 	d.DocumentStore = store
 	d.Key = key
 	d.cache = cache
+	d.version = noptions.NoVersion
+	d.epoch = 0
+	d.writeBack = DefaultWriteBackOptions()
+}
+
+// EnableWriteBackWithMQ enables delayed MQ write-back.
+func (d *DocumentBase) EnableWriteBackWithMQ(mqClient miface.MessageQueue, delay time.Duration) error {
+	if mqClient == nil {
+		return errors.New("MQ client cannot be nil")
+	}
+	d.writeBack.Enabled = true
+	d.writeBack.MQ = mqClient
+	if delay > 0 {
+		d.writeBack.Delay = delay
+	}
+	return d.writeBack.Validate()
+}
+
+// DisableWriteBack disables delayed write-back.
+func (d *DocumentBase) DisableWriteBack() {
+	d.writeBack.Enabled = false
+	d.writeBack.MQ = nil
 }
 
 // Clear clears all data on this DocumentBase.
 func (d *DocumentBase) Clear() {
 	d.version = noptions.NoVersion
+	d.epoch = 0
 	d.clear()
 }
 
-// Create  data and version in the database.
+func randomExpiration() time.Duration {
+	return ExpireRangeMin + time.Duration(rand.Int63n(int64(ExpireRangeMax-ExpireRangeMin)))
+}
+
+func (d *DocumentBase) cacheEnvelope() (map[string]any, error) {
+	raw, err := json.Marshal(d.data)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to marshal document for cache")
+	}
+	envelope := map[string]any{
+		cacheFieldVersion: d.version,
+		cacheFieldData:    string(raw),
+	}
+	if d.epoch != 0 {
+		envelope[cacheFieldEpoch] = d.epoch
+	}
+	return envelope, nil
+}
+
+func newDocumentEpoch() int64 {
+	return time.Now().UnixNano()
+}
+
+func (d *DocumentBase) updateCache() error {
+	envelope, err := d.cacheEnvelope()
+	if err != nil {
+		return err
+	}
+	return d.cache.SetCache(d.ctx, d.Key, envelope, randomExpiration())
+}
+
+func (d *DocumentBase) loadFromCache(m map[string]any) error {
+	ver, ok := parseCacheVersion(m[cacheFieldVersion])
+	if !ok {
+		return errors.New("cache entry missing version")
+	}
+	raw, err := asJSONBytes(m[cacheFieldData])
+	if err != nil {
+		return errors.Wrap(err, "cache entry missing data")
+	}
+	if err := json.Unmarshal(raw, d.data); err != nil {
+		return errors.Wrap(err, "failed to unmarshal cached document")
+	}
+	d.version = ver
+	if ep, ok := parseCacheVersion(m[cacheFieldEpoch]); ok {
+		d.epoch = ep
+	} else {
+		d.epoch = 0
+	}
+	return nil
+}
+
+func scheduleWriteBack(
+	mq miface.MessageQueue,
+	collectionName string,
+	keyStr string,
+	raw json.RawMessage,
+	version noptions.Version,
+	epoch int64,
+) error {
+	if mq == nil {
+		return errors.New("MQ client is nil")
+	}
+	payload := &WriteBackPayload{
+		CollectionName: collectionName,
+		Key:            keyStr,
+		Data:           raw,
+		Version:        version,
+		Epoch:          epoch,
+	}
+	return mq.Publish(WriteBackTopic, miface.WithJSON(payload))
+}
+
+var (
+	errWriteBackStale = errors.New("write-back snapshot is stale")
+	errWriteBackEpoch = errors.New("write-back epoch mismatch")
+)
+
+// applyWriteBackSnapshot installs src and advances the DB CAS version up to targetVersion.
+// Store Set only $inc version by 1, so a gapped target (e.g. 5 while DB is 1) is
+// fast-forwarded with the same payload until DB version == targetVersion.
+// Epoch is re-checked every iteration, and an unexpected version jump aborts so a
+// concurrent non-write-back writer is not overwritten across the remaining gap.
+func applyWriteBackSnapshot(
+	ctx context.Context,
+	coll diface.ICollection,
+	docKey key.Key,
+	src any,
+	targetVersion noptions.Version,
+	cache diface.ICache,
+	epoch int64,
+) error {
+	var expectCurrent noptions.Version
+	hasExpect := false
+	for {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		if cacheEpochMismatch(ctx, cache, docKey, epoch) {
+			return errWriteBackEpoch
+		}
+		var discard any
+		current, err := coll.Get(ctx, docKey, noptions.WithDestination(&discard))
+		if err != nil {
+			return err
+		}
+		// An unexpected CAS jump means another writer advanced the chain; do not
+		// treat overshoot as a successful apply of this snapshot.
+		if hasExpect && current != expectCurrent {
+			return errWriteBackStale
+		}
+		if targetVersion <= current {
+			return errWriteBackStale
+		}
+		newVer, err := coll.Set(
+			ctx,
+			docKey,
+			noptions.WithSource(src),
+			noptions.WithVersion(current),
+		)
+		if err != nil {
+			return err
+		}
+		expectCurrent = newVer
+		hasExpect = true
+		if newVer >= targetVersion {
+			return nil
+		}
+	}
+}
+
+// Create data and version in the database.
+// Each Create assigns a unique epoch so delayed write-backs from a prior
+// delete/recreate generation can be fenced across DocumentBase instances.
 func (d *DocumentBase) Create() error {
+	prevEpoch := d.epoch
+	d.epoch = newDocumentEpoch()
+	if d.epoch == prevEpoch {
+		d.epoch++
+	}
 	version, err := d.DocumentStore.Set(
 		d.ctx,
 		d.Key,
 		noptions.WithSource(d.data),
 	)
 	if err != nil {
+		d.epoch = prevEpoch
 		return err
 	}
 	d.version = version
+	if err := d.updateCache(); err != nil {
+		d.epoch = prevEpoch
+		return err
+	}
 	return nil
 }
 
-// VersionCache is a cache of a version and its data structure.
-type VersionCache struct {
-	Version any
-	Data    any
-}
-
-// Load implements Read-Through caching
+// Load implements Read-Through caching through Redis HASH fields.
 func (d *DocumentBase) Load() error {
 	d.clear()
-	cache := &VersionCache{
-		Version: &d.version,
-		Data:    d.data,
+
+	if cached := d.cache.GetCache(d.ctx, d.Key); len(cached) > 0 {
+		if err := d.loadFromCache(cached); err == nil {
+			return nil
+		}
+		// Corrupt/incomplete cache entries fall through to the database.
+		// Delete after the failed decode; a concurrent Create/SaveAsync may rewrite
+		// a fresh epoch before we reconstruct below.
+		d.cache.DeleteCache(d.ctx, d.Key)
+		d.clear()
 	}
 
-	// Try cache first
-	if d.cache.GetCache(d.ctx, d.Key, cache) {
-		return nil
-	}
-
-	// Cache miss - load from database
 	version, err := d.DocumentStore.Get(
 		d.ctx,
 		d.Key,
@@ -111,20 +321,23 @@ func (d *DocumentBase) Load() error {
 	if err != nil {
 		return err
 	}
-
 	d.version = version
-	// Update cache after loading from database
-	d.cache.SetCache(d.ctx, d.Key, &VersionCache{
-		Version: d.version,
-		Data:    d.data,
-	}, DefaultCacheTTL)
-
-	return nil
+	// Preserve a concurrent generation fence when present; otherwise mint a new
+	// epoch so in-flight write-backs from a lost optimistic cache lineage are fenced.
+	d.epoch = 0
+	if cached := d.cache.GetCache(d.ctx, d.Key, cacheFieldEpoch); len(cached) > 0 {
+		if ep, ok := parseCacheVersion(cached[cacheFieldEpoch]); ok {
+			d.epoch = ep
+		}
+	}
+	if d.epoch == 0 {
+		d.epoch = newDocumentEpoch()
+	}
+	return d.updateCache()
 }
 
-// Save implements synchronous write with cache update
+// Save implements synchronous write with HASH cache update.
 func (d *DocumentBase) Save() error {
-	// 直接同步写入数据库
 	version, err := d.DocumentStore.Set(
 		d.ctx,
 		d.Key,
@@ -135,13 +348,60 @@ func (d *DocumentBase) Save() error {
 		return err
 	}
 	d.version = version
+	return d.updateCache()
+}
 
-	// 更新缓存
-	d.cache.SetCache(d.ctx, d.Key, &VersionCache{
-		Version: d.version,
-		Data:    d.data,
-	}, DefaultCacheTTL)
+// SaveAsync optimistically updates the HASH cache and schedules a delayed DB write-back.
+// The write-back payload carries the optimistic target version (previous+1).
+// When write-back is disabled, SaveAsync falls back to synchronous Save().
+func (d *DocumentBase) SaveAsync() error {
+	if d.version == noptions.NoVersion {
+		return errors.New("cannot async-save a document without a version")
+	}
 
+	if !d.writeBack.Enabled || d.writeBack.MQ == nil {
+		return d.Save()
+	}
+
+	raw, err := json.Marshal(d.data)
+	if err != nil {
+		return errors.Wrap(err, "failed to marshal document for async save")
+	}
+
+	prev := d.version
+	next := prev + 1
+	d.version = next
+	if err := d.updateCache(); err != nil {
+		d.version = prev
+		return err
+	}
+
+	// Capture publish dependencies so DisableWriteBack cannot nil-deref the goroutine.
+	mq := d.writeBack.MQ
+	store := d.DocumentStore
+	cache := d.cache
+	docKey := d.Key
+	collectionName := store.GetName()
+	keyStr := docKey.String()
+	delay := d.writeBack.Delay
+	epoch := d.epoch
+	go func() {
+		if delay > 0 {
+			time.Sleep(delay)
+		}
+		// Version is the optimistic target version (next), not the CAS base.
+		if err := scheduleWriteBack(mq, collectionName, keyStr, raw, next, epoch); err != nil {
+			// Publish failed: best-effort sync fallback so data is not stuck in cache only.
+			// Use a fresh timeout context; the request ctx is usually already cancelled.
+			var src any
+			if json.Unmarshal(raw, &src) != nil {
+				return
+			}
+			fbCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			defer cancel()
+			_ = applyWriteBackSnapshot(fbCtx, store, docKey, src, next, cache, epoch)
+		}
+	}()
 	return nil
 }
 
@@ -156,13 +416,12 @@ func (d *DocumentBase) doUpdate(f func() bool, u func() error) error {
 			return nil
 		} else {
 			lastErr = err
-			// Exponential backoff with jitter
 			backoff := time.Duration(math.Pow(2, float64(r))) * time.Millisecond
 			jitter := time.Duration(rand.Float64() * float64(backoff))
 			time.Sleep(backoff + jitter)
 
 			if err := d.Load(); err != nil {
-				return err
+				return errors.Wrap(err, "failed to reload during update retry")
 			}
 		}
 	}
@@ -172,20 +431,22 @@ func (d *DocumentBase) doUpdate(f func() bool, u func() error) error {
 	return errors.Wrap(nerrors.ErrTooManyRetries, "no underlying error")
 }
 
-// Update change the data with the given function and CAS(compare and swap) save it to the database.
-// If the function returns false, the update will be aborted.
-// If the update CAS fails, the function will be retried up to MaxRetries times with a randomized backoff.
+// Update changes data with CAS save and retries.
 func (d *DocumentBase) Update(f func() bool) error {
-	if err := d.doUpdate(f, func() error {
+	return d.doUpdate(f, func() error {
 		return d.Save()
-	}); err != nil {
-		return err
-	} else {
-		return nil
-	}
+	})
 }
 
-// Delete delete data from the database.
+// UpdateAsync mutates in-memory data, updates HASH cache, and schedules write-back.
+func (d *DocumentBase) UpdateAsync(f func() bool) error {
+	if !f() {
+		return nerrors.ErrUpdateLogicFailed
+	}
+	return d.SaveAsync()
+}
+
+// Delete deletes data from the database and cache.
 func (d *DocumentBase) Delete() error {
 	if err := d.DocumentStore.Delete(d.ctx, d.Key); err != nil {
 		return err
