@@ -37,8 +37,7 @@ type WriteBackManagerMetrics struct {
 }
 
 // NewWriteBackManager creates a write-back manager.
-// cache may be nil; when set, workers fence delete/recreate generations via __epoch.
-func NewWriteBackManager(
+// When write-back is enabled, cache must be non-nil so workers can fence delete/recreate generations via __epoch.
 	config WriteBackConfig,
 	mqClient miface.MessageQueue,
 	dbProvider diface.IDocumentProvider,
