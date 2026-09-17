@@ -3,10 +3,8 @@ package mfx
 import (
 	"go.uber.org/fx"
 
-	"github.com/gstones/moke-kit/mq/common"
 	"github.com/gstones/moke-kit/mq/internal"
 	"github.com/gstones/moke-kit/mq/miface"
-	"github.com/gstones/moke-kit/utility"
 )
 
 type MessageQueueParams struct {
@@ -28,20 +26,14 @@ type MQImplementations struct {
 	LocalMQ miface.MessageQueue `name:"LocalMQ" optional:"true"`
 }
 
-type deploymentParams struct {
-	fx.In
-
-	Deployment string `name:"Deployment"`
-}
-
 func (g *MessageQueueResult) init(mqs MQImplementations) (err error) {
 	g.MessageQueue = internal.NewMessageQueue(mqs.NatsMQ, mqs.LocalMQ)
 	return nil
 }
 
 // CreateMessageQueueModule creates a new message queue module.
-func CreateMessageQueueModule(deploy utility.Deployments, mqs MQImplementations) (MessageQueueResult, error) {
-	common.SetNamespace(deploy.String())
+// Namespace is owned by app settings; this does not overwrite it.
+func CreateMessageQueueModule(mqs MQImplementations) (MessageQueueResult, error) {
 	out := MessageQueueResult{}
 	err := out.init(mqs)
 	return out, err
@@ -49,8 +41,7 @@ func CreateMessageQueueModule(deploy utility.Deployments, mqs MQImplementations)
 
 // MqModule is a module that provides the message queue.
 var MqModule = fx.Provide(
-	func(ap deploymentParams, mqs MQImplementations) (out MessageQueueResult, err error) {
-		deployment := utility.ParseDeployments(ap.Deployment)
-		return CreateMessageQueueModule(deployment, mqs)
+	func(mqs MQImplementations) (out MessageQueueResult, err error) {
+		return CreateMessageQueueModule(mqs)
 	},
 )

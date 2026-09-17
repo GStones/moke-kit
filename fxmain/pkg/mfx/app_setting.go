@@ -1,7 +1,6 @@
 package mfx
 
 import (
-	"github.com/gstones/moke-kit/orm/nosql/key"
 	"github.com/gstones/moke-kit/utility"
 
 	"go.uber.org/fx"
@@ -35,8 +34,9 @@ func (ar *AppResult) loadFromEnv() error {
 	if err := utility.Load(ar); err != nil {
 		return err
 	}
+	// Own the process-wide ORM/MQ prefix. Do not re-normalize here — later
+	// modules (especially MQ) must not overwrite this value.
 	utility.SetNamespace(ar.Deployment)
-	key.SetNamespace(ar.Deployment)
 	return nil
 }
 

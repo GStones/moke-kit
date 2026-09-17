@@ -2,11 +2,15 @@ package ofx
 
 import (
 	"context"
+	"errors"
 
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
+
+// ErrGormDialectorRequired is returned when GormModule is included without a Dialector.
+var ErrGormDialectorRequired = errors.New("gorm Dialector is required")
 
 type GormParams struct {
 	fx.In
@@ -23,7 +27,7 @@ type GormResult struct {
 type GormDriverParams struct {
 	fx.In
 
-	Dialector gorm.Dialector `name:"Dialector" optional:"true"`
+	Dialector gorm.Dialector `name:"Dialector"`
 }
 
 type GormDriverResult struct {
@@ -38,8 +42,7 @@ func (mr *GormResult) init(
 	dialector gorm.Dialector,
 ) error {
 	if dialector == nil {
-		logger.Info("no gorm driver")
-		return nil
+		return ErrGormDialectorRequired
 	} else if db, err := gorm.Open(dialector, &gorm.Config{}); err != nil {
 		return err
 	} else {
