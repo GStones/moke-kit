@@ -11,7 +11,7 @@ func (t Tag) String() string {
 	return string(t)
 }
 
-const WithOutTag Tag = "auth.disabled"
+const WithoutTag Tag = "auth.disabled"
 
 // WithoutAuth overrides the default auth behavior and allows all methods to be called without an access token.
 type WithoutAuth struct {
@@ -19,6 +19,6 @@ type WithoutAuth struct {
 
 // AuthFuncOverride allows all methods to be unauthenticated.
 func (w *WithoutAuth) AuthFuncOverride(ctx context.Context, _ string) (context.Context, error) {
-	ctx = context.WithValue(ctx, WithOutTag, true)
+	ctx = context.WithValue(ctx, WithoutTag, true)
 	return ctx, nil
 }

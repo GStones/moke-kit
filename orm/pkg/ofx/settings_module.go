@@ -26,7 +26,7 @@ type SettingsParams struct {
 type SettingsResult struct {
 	fx.Out
 
-	DocumentURL      string `name:"DatabaseURL" envconfig:"DATABASE_URL" default:"mongodb://localhost:27017"`
+	DatabaseURL      string `name:"DatabaseURL" envconfig:"DATABASE_URL" default:"mongodb://localhost:27017"`
 	DatabaseUser     string `name:"DatabaseUser" envconfig:"DATABASE_USER" default:""`
 	DatabasePassword string `name:"DatabasePassword" envconfig:"DATABASE_PASSWORD" default:""`
 	CacheURL         string `name:"CacheURL" envconfig:"CACHE_URL" default:"redis://localhost:6379"`

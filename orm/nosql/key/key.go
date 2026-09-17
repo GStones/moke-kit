@@ -67,11 +67,11 @@ func NewKeyFromParts(parts ...string) (key Key, err error) {
 // NewKeyFromString creates a new keys within the current core.Namespace from a string
 // representation, validating each part.
 func NewKeyFromString(value string) (key Key, err error) {
-	if namespaceKeyPrefix != "" && !strings.HasPrefix(value, namespaceKeyPrefix) {
+	if prefix := NamespaceKeyPrefix(); prefix != "" && !strings.HasPrefix(value, prefix) {
 		if strings.HasPrefix(value, KeySeparator) {
 			value = value[1:]
 		}
-		value = namespaceKeyPrefix + value
+		value = prefix + value
 	}
 
 	if !validatePathExp.MatchString(value) {

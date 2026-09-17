@@ -55,8 +55,8 @@ func CreateSetting() (SettingResult, error) {
 	return out, err
 }
 
-// SettingModule is a fx setting module that provides an IAPClient
-var SettingModule = fx.Provide(
+// SettingsModule is a fx setting module that provides an IAPClient
+var SettingsModule = fx.Provide(
 	func() (SettingResult, error) {
 		return CreateSetting()
 	})

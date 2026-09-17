@@ -37,15 +37,15 @@ func (ar *SettingsResult) loadFromEnv() (err error) {
 	return
 }
 
-// CreateSettingsModule creates a new settings module.
+// CreateSettings creates a new settings result from environment variables.
 func CreateSettingsModule() (SettingsResult, error) {
 	out := SettingsResult{}
 	err := out.loadFromEnv()
 	return out, err
 }
 
-// SettingModule is a module that provides the settings.
-var SettingModule = fx.Provide(
+// SettingsModule is a module that provides the settings.
+var SettingsModule = fx.Provide(
 	func() (out SettingsResult, err error) {
 		return CreateSettingsModule()
 	},

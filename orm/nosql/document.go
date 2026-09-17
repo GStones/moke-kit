@@ -6,7 +6,7 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/pkg/errors"
+	"fmt"
 
 	"github.com/gstones/moke-kit/orm/nerrors"
 	"github.com/gstones/moke-kit/orm/nosql/diface"
@@ -124,7 +124,6 @@ func (d *DocumentBase) Load() error {
 
 // Save implements synchronous write with cache update
 func (d *DocumentBase) Save() error {
-	// 直接同步写入数据库
 	version, err := d.DocumentStore.Set(
 		d.ctx,
 		d.Key,
@@ -135,8 +134,6 @@ func (d *DocumentBase) Save() error {
 		return err
 	}
 	d.version = version
-
-	// 更新缓存
 	d.cache.SetCache(d.ctx, d.Key, &VersionCache{
 		Version: d.version,
 		Data:    d.data,
@@ -167,9 +164,9 @@ func (d *DocumentBase) doUpdate(f func() bool, u func() error) error {
 		}
 	}
 	if lastErr != nil {
-		return errors.Wrap(nerrors.ErrTooManyRetries, lastErr.Error())
+		return fmt.Errorf("%w: %w", nerrors.ErrTooManyRetries, lastErr)
 	}
-	return errors.Wrap(nerrors.ErrTooManyRetries, "no underlying error")
+	return fmt.Errorf("%w: no underlying error", nerrors.ErrTooManyRetries)
 }
 
 // Update change the data with the given function and CAS(compare and swap) save it to the database.

@@ -55,8 +55,8 @@ func fieldsFromCtx(ctx context.Context) logging.Fields {
 	if v, ok := ctx.Value(utility.UIDContextKey).(string); ok {
 		fields = append(fields, utility.UIDContextKey.String(), v)
 	}
-	if v, ok := ctx.Value(utility.WithOutTag).(bool); ok {
-		fields = append(fields, utility.WithOutTag.String(), v)
+	if v, ok := ctx.Value(utility.WithoutTag).(bool); ok {
+		fields = append(fields, utility.WithoutTag.String(), v)
 	}
 	return fields
 }

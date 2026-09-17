@@ -8,7 +8,7 @@ import (
 
 // AgonesSDKModule is a module that provides the Agones go client SDK.
 // https://agones.dev/site/docs/guides/client-sdks/
-var AgonesSDKModule = fx.Module("agonesSDk",
+var AgonesSDKModule = fx.Module("agonesSDK",
 	agonesfx.SettingsModule,
 	agonesfx.AgonesSDKModule,
 )

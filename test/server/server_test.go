@@ -47,6 +47,11 @@ func (m *MockConnectionMux) HTTPListener() (net.Listener, error) {
 	return args.Get(0).(net.Listener), args.Error(1)
 }
 
+func (m *MockConnectionMux) WSListener() (net.Listener, error) {
+	args := m.Called()
+	return args.Get(0).(net.Listener), args.Error(1)
+}
+
 // MockGrpcServer is a mock implementation of IGrpcServer
 type MockGrpcServer struct {
 	MockServer

@@ -2,7 +2,6 @@ package authfx
 
 import (
 	"context"
-	"sync"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/auth"
 	"github.com/supabase-community/supabase-go"
@@ -14,24 +13,18 @@ import (
 	"github.com/gstones/moke-kit/utility"
 )
 
-// supabase auth middleware
+// SupabaseAuthor authenticates gRPC requests using Supabase.
 // https://supabase.com/docs/guides/auth
-
-// SupabaseAuthor is auth for grpc middleware
 type SupabaseAuthor struct {
-	client        *supabase.Client
-	mu            sync.RWMutex
-	unAuthMethods map[string]struct{}
+	unauthTracker
+	client *supabase.Client
 }
 
-// Auth will auth every grpc request with supabase
+// Auth authenticates every incoming gRPC request with Supabase.
 func (d *SupabaseAuthor) Auth(ctx context.Context) (context.Context, error) {
 	method, _ := grpc.Method(ctx)
-	d.mu.RLock()
-	_, skip := d.unAuthMethods[method]
-	d.mu.RUnlock()
-	if skip {
-		return context.WithValue(ctx, utility.WithOutTag, true), nil
+	if d.isUnauth(method) {
+		return context.WithValue(ctx, utility.WithoutTag, true), nil
 	} else if token, err := auth.AuthFromMD(ctx, string(utility.TokenContextKey)); err != nil {
 		return ctx, err
 	} else if resp, err := d.client.Auth.WithToken(token).GetUser(); err != nil {
@@ -42,17 +35,7 @@ func (d *SupabaseAuthor) Auth(ctx context.Context) (context.Context, error) {
 	}
 }
 
-// AddUnAuthMethod add unauth method
-func (d *SupabaseAuthor) AddUnAuthMethod(method string) {
-	d.mu.Lock()
-	defer d.mu.Unlock()
-	if d.unAuthMethods == nil {
-		d.unAuthMethods = make(map[string]struct{})
-	}
-	d.unAuthMethods[method] = struct{}{}
-}
-
-// SupabaseCheckModule is the supabase Auth module for grpc middleware
+// SupabaseCheckModule is the Supabase auth module for the gRPC middleware.
 var SupabaseCheckModule = fx.Provide(
 	func(
 		l *zap.Logger,
@@ -63,8 +46,8 @@ var SupabaseCheckModule = fx.Provide(
 			return
 		}
 		out.AuthMiddleware = &SupabaseAuthor{
+			unauthTracker: newUnauthTracker(),
 			client:        c,
-			unAuthMethods: map[string]struct{}{},
 		}
 		return
 	},
