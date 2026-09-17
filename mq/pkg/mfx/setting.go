@@ -44,9 +44,12 @@ func CreateSettingsModule() (SettingsResult, error) {
 	return out, err
 }
 
-// SettingModule is a module that provides the settings.
-var SettingModule = fx.Provide(
+// SettingsModule is a module that provides the settings.
+var SettingsModule = fx.Provide(
 	func() (out SettingsResult, err error) {
 		return CreateSettingsModule()
 	},
 )
+
+// SettingModule is a compatibility alias for SettingsModule.
+var SettingModule = SettingsModule

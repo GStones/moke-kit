@@ -2,7 +2,6 @@ package miface
 
 import (
 	"github.com/gstones/moke-kit/mq/common"
-	"github.com/gstones/moke-kit/mq/internal/qerrors"
 )
 
 // SubOptions contains all the various options that the provided WithXyz functions construct.
@@ -32,7 +31,7 @@ func NewSubOptions(opts ...SubOption) (options SubOptions, err error) {
 func WithAtLeastOnceDelivery() SubOption {
 	return func(o *SubOptions) error {
 		if o.DeliverySemantics != common.Unset {
-			return qerrors.ErrSemanticsAlreadySet
+			return ErrSemanticsAlreadySet
 		} else {
 			o.DeliverySemantics = common.AtLeastOnce
 			return nil
@@ -47,7 +46,7 @@ func WithAtLeastOnceDelivery() SubOption {
 func WithAtMostOnceDelivery(groupId common.GroupId) SubOption {
 	return func(o *SubOptions) error {
 		if o.DeliverySemantics != common.Unset {
-			return qerrors.ErrSemanticsAlreadySet
+			return ErrSemanticsAlreadySet
 		} else {
 			o.DeliverySemantics = common.AtMostOnce
 			o.GroupId = string(groupId)

@@ -2,11 +2,10 @@ package nosql
 
 import (
 	"context"
+	"fmt"
 	"math"
 	"math/rand"
 	"time"
-
-	"github.com/pkg/errors"
 
 	"github.com/gstones/moke-kit/orm/nerrors"
 	"github.com/gstones/moke-kit/orm/nosql/diface"
@@ -167,9 +166,9 @@ func (d *DocumentBase) doUpdate(f func() bool, u func() error) error {
 		}
 	}
 	if lastErr != nil {
-		return errors.Wrap(nerrors.ErrTooManyRetries, lastErr.Error())
+		return fmt.Errorf("%w: %w", nerrors.ErrTooManyRetries, lastErr)
 	}
-	return errors.Wrap(nerrors.ErrTooManyRetries, "no underlying error")
+	return fmt.Errorf("%w: no underlying error", nerrors.ErrTooManyRetries)
 }
 
 // Update change the data with the given function and CAS(compare and swap) save it to the database.

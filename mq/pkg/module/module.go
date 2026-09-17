@@ -9,5 +9,5 @@ import (
 // Module is the module for mq
 var Module = fx.Module("mq",
 	mfx.MqModule,
-	mfx.SettingModule,
+	mfx.SettingsModule,
 )

@@ -19,6 +19,10 @@ reference platform and game repositories.
 `create-game` also ships `service-thin`, CI lint templates, k6 stub/platform auth modes, and
 keeps auth out of transport modules (pair stub or platform middleware in `main` only).
 
+`fxmain.Core` is the thin graph (settings + logging). `fxmain.Main` is unchanged
+(batteries-included). `server.Module` now binds services itself. Default `orm.Module`
+no longer includes GORM (`ofx.GormModule` is opt-in). MQ backends are NATS + local only.
+
 ## Tracking issues
 
 - kit plan: https://github.com/GStones/moke-kit/issues/223

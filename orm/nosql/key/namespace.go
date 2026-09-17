@@ -1,26 +1,22 @@
 package key
 
-// This is a convenience mechanism for supporting multi-tenant usage of
-// a single NoSQL deployment. When referencing a nosql, abstractions
-// within this library will prefix the nosql's coordinates with the namespace.
-//
-// It's important for consumers of this library to understand that this mechanism
-// relies on global state. This is fine as long as the library's usage is
-// confined to a single process.
-var namespace = ""
-var namespaceKeyPrefix = ""
+import "github.com/gstones/moke-kit/utility"
 
-// Namespace returns the current global fxapp namespace.
+// Namespace returns the current global deployment namespace.
 func Namespace() string {
-	return namespace
+	return utility.Namespace()
 }
 
+// NamespaceKeyPrefix returns the nosql key prefix for the current namespace.
 func NamespaceKeyPrefix() string {
-	return namespaceKeyPrefix
+	ns := utility.Namespace()
+	if ns == "" {
+		return ""
+	}
+	return KeySeparator + ns + KeySeparator
 }
 
-// SetNamespace sets the global fxapp namespace.
+// SetNamespace sets the process-wide namespace used to prefix nosql keys.
 func SetNamespace(ns string) {
-	namespace = ns
-	namespaceKeyPrefix = KeySeparator + ns + KeySeparator
+	utility.SetNamespace(ns)
 }

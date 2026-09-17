@@ -43,7 +43,7 @@ go run ./cmd/<name>/service/main.go
 ```
 
 Run the service in the background / a dedicated terminal so it keeps listening.
-Defaults: HTTP/gRPC `:8081`. TCP `:8888` only with `AllWithTCPModule`.
+Defaults: HTTP/gRPC `:8081` via `fxmain.Main`. Thin entry uses `fxmain.Core` plus explicit modules. TCP `:8888` only with `AllWithTCPModule`.
 
 ## 3) Smoke
 

@@ -1,10 +1,20 @@
 # MAIN
 
-Bind,Manager and Run all services with [uber fx](https://github.com/uber-go/fx)
+Bind, manage, and run services with [uber fx](https://github.com/uber-go/fx).
+
+## Entries
+
+| Function | Graph | Use |
+| --- | --- | --- |
+| `fxmain.Main(opts...)` | `AppModule` = settings + logging + server + orm + mq | Typical game / API binary |
+| `fxmain.Core(opts...)` | `CoreModule` = settings + logging | Workers, CLIs, or an explicit LEGO stack |
+
+`server.Module` binds gRPC / gateway / zinx itself. A `Core` process that omits it does not listen on `PORT`.
 
 ## Modules
 
-* `AppModule`: app module init with  `server`, `orm`, `mq`, `logging` modules and inject custom modules
+* `CoreModule`: app settings + logging
+* `AppModule`: `CoreModule` plus `server`, `orm`, and `mq`
 
 ## Environment Variables
 

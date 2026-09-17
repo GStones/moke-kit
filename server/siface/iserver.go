@@ -24,6 +24,7 @@ type IConnectionMux interface {
 	IServer
 	GrpcListener() (net.Listener, error)
 	HTTPListener() (net.Listener, error)
+	WSListener() (net.Listener, error)
 }
 
 // IGrpcServer is the interface for the grpc server, which is used to create the grpc server.

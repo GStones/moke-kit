@@ -33,7 +33,7 @@ func (c *RedisCacheResult) init(
 	return nil
 }
 
-// CreateRedisCache creates a redis cathe .
+// CreateRedisCache creates a redis cache.
 func CreateRedisCache(
 	l *zap.Logger,
 	rParams RedisParams,

@@ -35,6 +35,7 @@ func (ar *AppResult) loadFromEnv() error {
 	if err := utility.Load(ar); err != nil {
 		return err
 	}
+	utility.SetNamespace(ar.Deployment)
 	key.SetNamespace(ar.Deployment)
 	return nil
 }
@@ -46,9 +47,12 @@ func CreateAppModule() (AppResult, error) {
 	return out, err
 }
 
-// SettingModule is a module that provides the application settings.
-var SettingModule = fx.Provide(
+// SettingsModule is a module that provides the application settings.
+var SettingsModule = fx.Provide(
 	func() (out AppResult, err error) {
 		return CreateAppModule()
 	},
 )
+
+// SettingModule is a compatibility alias for SettingsModule.
+var SettingModule = SettingsModule

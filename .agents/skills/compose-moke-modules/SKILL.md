@@ -1,6 +1,6 @@
 ---
 name: compose-moke-modules
-description: Compose moke-kit and platform uber/fx modules into fxmain.Main (LEGO assembly). Use when wiring infra (NATS, Redis cache, Mongo), choosing Grpc/Http/Tcp modules, or importing platform auth/profile/mail into a game or service entrypoint.
+description: Compose moke-kit and platform uber/fx modules into fxmain.Main or fxmain.Core (LEGO assembly). Use when wiring infra (NATS, Redis cache, Mongo), choosing Grpc/Http/Tcp modules, or importing platform auth/profile/mail into a game or service entrypoint.
 paths:
   - "**/cmd/**/main.go"
   - "**/pkg/modules/**/*.go"
@@ -11,6 +11,15 @@ paths:
 
 Assemble services like LEGO. Prefer existing modules over new globals or manual server bootstrap.
 
+## Choose an entry
+
+| Entry | Graph | Use |
+| --- | --- | --- |
+| `fxmain.Main(opts...)` | `AppModule` = settings + logging + server + orm + mq | Game / API binaries |
+| `fxmain.Core(opts...)` | `CoreModule` = settings + logging only | Workers, CLIs, or explicit stacks |
+
+`server.Module` binds gRPC / gateway / zinx itself. Omit it from `Core` when the process should not listen.
+
 ## What AppModule already provides
 
 `fxmain.Main(opts...)` always includes `module.AppModule`:
@@ -18,21 +27,22 @@ Assemble services like LEGO. Prefer existing modules over new globals or manual 
 | Area | Module contents |
 | --- | --- |
 | App settings | `APP_NAME`, `APP_ID`, `DEPLOYMENT`, `VERSION` |
-| Server | ports, TLS/mTLS, cmux, OTel settings |
-| ORM | Mongo document store, Redis, GORM drivers |
+| Server | ports, TLS/mTLS, cmux, OTel settings + binder |
+| ORM | Mongo document store, Redis (GORM is opt-in `ofx.GormModule`) |
 | Logging | logging module |
 | MQ settings | mq setting module (still need a concrete MQ provider) |
 
-Then it `Invoke`s `ServiceBinder`, which binds all group-provided gRPC / gateway / zinx services.
+## Common extra infra
 
-## Common extra infra (pass into Main)
+| Need | Module | Pass into |
+| --- | --- | --- |
+| NATS JetStream MQ | `mfx.NatsModule` | Main or Core + `mq.Module` |
+| In-process MQ | `mfx.LocalModule` | Main or Core + `mq.Module` |
+| Redis cache-aside | `ofx.RedisCacheModule` | Main or Core + `orm`/`RedisModule` |
+| GORM | `ofx.GormModule` + a `Dialector` | opt-in |
+| Agones / IAP | modules under `moke-kit/3rd/...` | either |
 
-| Need | Module |
-| --- | --- |
-| NATS JetStream MQ | `mfx.NatsModule` |
-| In-process MQ | `mfx.LocalModule` |
-| Redis cache-aside | `ofx.RedisCacheModule` |
-| Agones / IAP | modules under `moke-kit/3rd/...` |
+MQ topics: `nats://...` and `local://...` only. `kafka://` / `nsq://` are unsupported.
 
 Import paths:
 
@@ -40,6 +50,17 @@ Import paths:
 github.com/gstones/moke-kit/fxmain
 github.com/gstones/moke-kit/mq/pkg/mfx
 github.com/gstones/moke-kit/orm/pkg/ofx
+github.com/gstones/moke-kit/server/pkg/module
+```
+
+Thin worker example:
+
+```go
+fxmain.Core(
+    mq.Module,
+    mfx.NatsModule,
+    myWorker.Module,
+)
 ```
 
 ## Game service modules
@@ -78,12 +99,13 @@ Single platform binary example: `fxmain.Main(ofx.RedisCacheModule, module.AuthMo
 
 1. Implement providers in `pkg/<x>fx` or `internal` returning `sfx.*ServiceResult` or plain deps
 2. Export `fx.Module("name", ...)` from `pkg/module` or game `pkg/modules`
-3. Pass that module into `fxmain.Main` at the desired binary
+3. Pass that module into `fxmain.Main` or `fxmain.Core` at the desired binary
 4. Register lifecycle cleanup via fx when starting listeners/subscribers
 
 ## Anti-patterns
 
 - Calling `grpc.NewServer` / listening ports outside moke-kit server modules
 - Forgetting `mfx.NatsModule` or `mfx.LocalModule` while code injects `miface.MessageQueue`
-- Adding every platform module “just in case” — keep Main minimal
+- Adding every platform module “just in case” — keep Main/Core minimal
 - Putting game-only logic into platform repos
+- Using `fxmain.Main` for a process that only needs MQ or ORM

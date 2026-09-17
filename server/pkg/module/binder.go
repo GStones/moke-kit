@@ -8,7 +8,6 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 
-	"github.com/gstones/moke-kit/fxmain/pkg/mfx"
 	"github.com/gstones/moke-kit/server/internal/srpc"
 	"github.com/gstones/moke-kit/server/internal/zinx"
 	"github.com/gstones/moke-kit/server/pkg/sfx"
@@ -23,7 +22,10 @@ type BinderFunc func(*zap.Logger) ([]LifecycleHook, error)
 // Service types: grpc, zinx, gateway and opentelemetry provider
 type ServiceBinder struct {
 	fx.In
-	mfx.AppParams // app settings params
+
+	AppName    string `name:"AppName"`
+	Deployment string `name:"Deployment"`
+	Version    string `name:"Version"`
 
 	sfx.SettingsParams         // server settings
 	sfx.SecuritySettingsParams // server security settings

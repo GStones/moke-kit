@@ -23,7 +23,7 @@ Templates live in `assets/template/`. Placeholders:
   api/<name>/<name>.proto
   api/gen/...                 # from buf generate
   cmd/<name>/service/main.go       # AllModule + dfx.AuthModule stub (TCP opt-in)
-  cmd/<name>/service-thin/main.go  # game-only thin topology (swap stub for platform middleware)
+  cmd/<name>/service-thin/main.go  # fxmain.Core + explicit server/orm/mq
   cmd/<name>/client/main.go
   internal/services/<name>/...  # no WithoutAuth; UID from auth context only
   internal/clients/<name>/...

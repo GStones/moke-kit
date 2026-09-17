@@ -3,8 +3,6 @@ package miface
 import (
 	"encoding/json"
 	"time"
-
-	"github.com/gstones/moke-kit/mq/internal/qerrors"
 )
 
 // PubOptions contains all the various options that the provided WithXyz functions construct.
@@ -31,7 +29,7 @@ func NewPubOptions(opts ...PubOption) (options PubOptions, err error) {
 func WithBytes(data []byte) PubOption {
 	return func(o *PubOptions) error {
 		if len(o.Data) != 0 {
-			return qerrors.ErrDataAlreadySet
+			return ErrDataAlreadySet
 		} else {
 			o.Data = data
 			return nil
@@ -43,7 +41,7 @@ func WithBytes(data []byte) PubOption {
 func WithJSON(data any) PubOption {
 	return func(o *PubOptions) (err error) {
 		if len(o.Data) != 0 {
-			return qerrors.ErrDataAlreadySet
+			return ErrDataAlreadySet
 		} else {
 			o.Data, err = json.Marshal(data)
 			return

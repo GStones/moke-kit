@@ -27,7 +27,7 @@ Needs on the machine: Go (see [`go.mod`](./go.mod)), [Docker](https://docs.docke
 
 | Piece | Role |
 | --- | --- |
-| [`fxmain`](./fxmain) | `fxmain.Main(...)` app entry |
+| [`fxmain`](./fxmain) | `fxmain.Main(...)` full stack; `fxmain.Core(...)` thin entry |
 | [`server`](./server) | gRPC / grpc-gateway / zinx (TCP·WS·KCP) |
 | [`orm`](./orm) | Mongo, Redis/Dragonfly, GORM |
 | [`mq`](./mq) | NATS + local MQ |

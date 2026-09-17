@@ -23,7 +23,7 @@ type GormResult struct {
 type GormDriverParams struct {
 	fx.In
 
-	Dialector gorm.Dialector `name:"Dialector"`
+	Dialector gorm.Dialector `name:"Dialector" optional:"true"`
 }
 
 type GormDriverResult struct {
