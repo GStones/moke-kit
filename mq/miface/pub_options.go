@@ -2,8 +2,12 @@ package miface
 
 import (
 	"encoding/json"
+	"errors"
 	"time"
 )
+
+// ErrDataAlreadySet is returned when a data payload has already been set on a PubOptions.
+var ErrDataAlreadySet = errors.New("ErrDataAlreadySet")
 
 // PubOptions contains all the various options that the provided WithXyz functions construct.
 type PubOptions struct {

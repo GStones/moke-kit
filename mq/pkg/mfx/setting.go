@@ -37,7 +37,7 @@ func (ar *SettingsResult) loadFromEnv() (err error) {
 	return
 }
 
-// CreateSettingsModule creates a new settings module.
+// CreateSettings creates a new settings result from environment variables.
 func CreateSettingsModule() (SettingsResult, error) {
 	out := SettingsResult{}
 	err := out.loadFromEnv()

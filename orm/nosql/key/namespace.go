@@ -2,6 +2,13 @@ package key
 
 import "github.com/gstones/moke-kit/utility"
 
+// Namespace is a convenience mechanism for supporting multi-tenant usage of
+// a single NoSQL deployment. When referencing a nosql, abstractions
+// within this library will prefix the nosql's coordinates with the namespace.
+//
+// It's important for consumers of this library to understand that this mechanism
+// relies on process-wide state shared with MQ topics via utility.Namespace.
+
 // Namespace returns the current global deployment namespace.
 func Namespace() string {
 	return utility.Namespace()

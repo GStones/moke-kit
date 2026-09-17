@@ -9,6 +9,6 @@ import (
 // IAPModule is a fx module that provides an IAPClient
 // https://github.com/awa/go-iap
 var IAPModule = fx.Module("iap",
-	iapfx.SettingModule,
+	iapfx.SettingsModule,
 	iapfx.ClientsModule,
 )

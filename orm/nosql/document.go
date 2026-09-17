@@ -123,7 +123,6 @@ func (d *DocumentBase) Load() error {
 
 // Save implements synchronous write with cache update
 func (d *DocumentBase) Save() error {
-	// 直接同步写入数据库
 	version, err := d.DocumentStore.Set(
 		d.ctx,
 		d.Key,
@@ -134,8 +133,6 @@ func (d *DocumentBase) Save() error {
 		return err
 	}
 	d.version = version
-
-	// 更新缓存
 	d.cache.SetCache(d.ctx, d.Key, &VersionCache{
 		Version: d.version,
 		Data:    d.data,

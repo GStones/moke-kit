@@ -18,8 +18,7 @@ type IServer interface {
 	StopServing(ctx context.Context) error
 }
 
-// IConnectionMux is the interface for the connection mux, which is used to create the listener for the grpc and http.
-// Implement this interface to create the listener for the grpc and http.
+// IConnectionMux is the interface for the connection mux, which is used to create listeners for gRPC, HTTP, and WebSocket.
 type IConnectionMux interface {
 	IServer
 	GrpcListener() (net.Listener, error)

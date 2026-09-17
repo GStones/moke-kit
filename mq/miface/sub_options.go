@@ -1,8 +1,13 @@
 package miface
 
 import (
+	"errors"
+
 	"github.com/gstones/moke-kit/mq/common"
 )
+
+// ErrSemanticsAlreadySet is returned when delivery semantics have already been set on a SubOptions.
+var ErrSemanticsAlreadySet = errors.New("ErrSemanticsAlreadySet")
 
 // SubOptions contains all the various options that the provided WithXyz functions construct.
 type SubOptions struct {
