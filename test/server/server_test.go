@@ -155,6 +155,11 @@ func TestServerInterfaces(t *testing.T) {
 		helper.RequireNoError(err)
 		helper.AssertNotNil(listener)
 
+		mockMux.On("WSListener").Return(mockListener, nil)
+		listener, err = mockMux.WSListener()
+		helper.RequireNoError(err)
+		helper.AssertNotNil(listener)
+
 		mockMux.AssertExpectations(t)
 	})
 

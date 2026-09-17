@@ -50,3 +50,6 @@ var SettingsModule = fx.Provide(
 		return CreateSettingsModule()
 	},
 )
+
+// SettingModule is a compatibility alias for SettingsModule.
+var SettingModule = SettingsModule

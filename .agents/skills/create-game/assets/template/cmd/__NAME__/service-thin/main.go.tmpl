@@ -2,21 +2,27 @@ package main
 
 import (
 	"github.com/gstones/moke-kit/fxmain"
+	mqmod "github.com/gstones/moke-kit/mq/pkg/module"
 	"github.com/gstones/moke-kit/mq/pkg/mfx"
+	nosql "github.com/gstones/moke-kit/orm/pkg/module"
 	"github.com/gstones/moke-kit/orm/pkg/ofx"
+	server "github.com/gstones/moke-kit/server/pkg/module"
 
 	"__MODULE__/pkg/dfx"
 	"__MODULE__/pkg/modules"
 )
 
-// Thin-style entry: game transports only (no in-process platform services).
+// Thin-style entry: explicit LEGO stack (no batteries-included AppModule).
 // Scaffold default still uses dfx.AuthModule stub locally (no AUTH_URL dial).
 // When wiring platform: replace dfx.AuthModule with auth.AuthMiddlewareModule,
 // set AUTH_URL to the *remote* AuthService (not this process PORT), and add
 // platform *ClientModule imports.
 // Do not keep stub + platform middleware (both provide AuthMiddleware).
 func main() {
-	fxmain.Main(
+	fxmain.Core(
+		server.Module,
+		nosql.Module,
+		mqmod.Module,
 		mfx.NatsModule,
 		mfx.LocalModule,
 		ofx.RedisCacheModule,

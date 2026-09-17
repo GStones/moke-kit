@@ -12,8 +12,6 @@ import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
 	"go.uber.org/fx"
-
-	"github.com/gstones/moke-kit/fxmain/pkg/mfx"
 )
 
 // https://github.com/open-telemetry/opentelemetry-go
@@ -34,7 +32,33 @@ type OTelProviderResult struct {
 	MetricProvider *sdkmetric.MeterProvider `name:"MetricProvider"`
 }
 
-func (otel *OTelProviderResult) init(appSetting mfx.AppParams, enable bool) (err error) {
+// AppIdentity is the subset of app settings used by OpenTelemetry resources.
+type AppIdentity struct {
+	AppName    string
+	AppId      string
+	Deployment string
+	Version    string
+}
+
+type appIdentityParams struct {
+	fx.In
+
+	AppName    string `name:"AppName"`
+	AppId      string `name:"AppId"`
+	Deployment string `name:"Deployment"`
+	Version    string `name:"Version"`
+}
+
+func (p appIdentityParams) identity() AppIdentity {
+	return AppIdentity{
+		AppName:    p.AppName,
+		AppId:      p.AppId,
+		Deployment: p.Deployment,
+		Version:    p.Version,
+	}
+}
+
+func (otel *OTelProviderResult) init(appSetting AppIdentity, enable bool) (err error) {
 	if !enable {
 		return
 	}
@@ -46,7 +70,7 @@ func (otel *OTelProviderResult) init(appSetting mfx.AppParams, enable bool) (err
 	return
 }
 
-func initResource(appSetting mfx.AppParams) (*sdkresource.Resource, error) {
+func initResource(appSetting AppIdentity) (*sdkresource.Resource, error) {
 	extraResources, err := sdkresource.New(
 		context.Background(),
 		sdkresource.WithOS(),
@@ -73,7 +97,7 @@ func initResource(appSetting mfx.AppParams) (*sdkresource.Resource, error) {
 	return resource, nil
 }
 
-func initTracerProvider(appSetting mfx.AppParams) (*sdktrace.TracerProvider, error) {
+func initTracerProvider(appSetting AppIdentity) (*sdktrace.TracerProvider, error) {
 	ctx := context.Background()
 	exporter, err := otlptracegrpc.New(ctx)
 	if err != nil {
@@ -94,7 +118,7 @@ func initTracerProvider(appSetting mfx.AppParams) (*sdktrace.TracerProvider, err
 	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
 	return tp, nil
 }
-func initMeterProvider(appSetting mfx.AppParams) (*sdkmetric.MeterProvider, error) {
+func initMeterProvider(appSetting AppIdentity) (*sdkmetric.MeterProvider, error) {
 	ctx := context.Background()
 	exporter, err := otlpmetricgrpc.New(ctx)
 	if err != nil {
@@ -115,7 +139,7 @@ func initMeterProvider(appSetting mfx.AppParams) (*sdkmetric.MeterProvider, erro
 
 // CreateOTelProvider creates a OTelProvider with the given settings
 func CreateOTelProvider(
-	appSetting mfx.AppParams,
+	appSetting AppIdentity,
 	sSetting SettingsParams,
 ) (out OTelProviderResult, err error) {
 	err = out.init(appSetting, sSetting.OtelEnable)
@@ -125,9 +149,9 @@ func CreateOTelProvider(
 // OTelModule OTelModule provides OTel Tracer and Meter
 var OTelModule = fx.Provide(
 	func(
-		appSetting mfx.AppParams,
+		appSetting appIdentityParams,
 		sSetting SettingsParams,
 	) (OTelProviderResult, error) {
-		return CreateOTelProvider(appSetting, sSetting)
+		return CreateOTelProvider(appSetting.identity(), sSetting)
 	},
 )

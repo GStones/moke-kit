@@ -10,13 +10,18 @@ import (
 	server "github.com/gstones/moke-kit/server/pkg/module"
 )
 
-// AppModule is the main module of the application.
-// It includes some required modules like:
-// SettingModule, server.Module, nosql.Module, logging.Module, and mq.Module.
-var AppModule = fx.Module("app",
+// CoreModule is the thin app graph: settings + logging only.
+// Compose server / orm / mq yourself (or use AppModule).
+var CoreModule = fx.Module("core",
 	mfx.SettingsModule,
+	logging.Module,
+)
+
+// AppModule is the batteries-included graph used by fxmain.Main:
+// settings, logging, server, orm, and mq settings/router.
+var AppModule = fx.Module("app",
+	CoreModule,
 	server.Module,
 	nosql.Module,
-	logging.Module,
 	mq.Module,
 )

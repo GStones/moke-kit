@@ -1,29 +1,29 @@
 package key
 
-import "go.uber.org/atomic"
+import "github.com/gstones/moke-kit/utility"
 
-// This is a convenience mechanism for supporting multi-tenant usage of
+// Namespace is a convenience mechanism for supporting multi-tenant usage of
 // a single NoSQL deployment. When referencing a nosql, abstractions
 // within this library will prefix the nosql's coordinates with the namespace.
 //
 // It's important for consumers of this library to understand that this mechanism
-// relies on global state. This is fine as long as the library's usage is
-// confined to a single process.
-var namespace = atomic.NewString("")
-var namespaceKeyPrefix = atomic.NewString("")
+// relies on process-wide state shared with MQ topics via utility.Namespace.
 
-// Namespace returns the current global fxapp namespace.
+// Namespace returns the current global deployment namespace.
 func Namespace() string {
-	return namespace.Load()
+	return utility.Namespace()
 }
 
-// NamespaceKeyPrefix returns the current global namespace key prefix.
+// NamespaceKeyPrefix returns the nosql key prefix for the current namespace.
 func NamespaceKeyPrefix() string {
-	return namespaceKeyPrefix.Load()
+	ns := utility.Namespace()
+	if ns == "" {
+		return ""
+	}
+	return KeySeparator + ns + KeySeparator
 }
 
-// SetNamespace sets the global fxapp namespace.
+// SetNamespace sets the process-wide namespace used to prefix nosql keys.
 func SetNamespace(ns string) {
-	namespace.Store(ns)
-	namespaceKeyPrefix.Store(KeySeparator + ns + KeySeparator)
+	utility.SetNamespace(ns)
 }

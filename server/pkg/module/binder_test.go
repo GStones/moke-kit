@@ -5,7 +5,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gstones/moke-kit/fxmain/pkg/mfx"
 	"github.com/gstones/moke-kit/server/pkg/sfx"
 	"github.com/gstones/moke-kit/server/siface"
 	"github.com/gstones/moke-kit/utility"
@@ -129,9 +128,7 @@ func TestServiceBinderCheckSecurityConfigWarnsForNonProdMissingAuth(t *testing.T
 	core, recorded := observer.New(zap.WarnLevel)
 	logger := zap.New(core)
 	binder := &ServiceBinder{
-		AppParams: mfx.AppParams{
-			Deployment: "dev",
-		},
+		Deployment: "dev",
 		GrpcServiceParams: sfx.GrpcServiceParams{
 			GrpcServices: make([]siface.IGrpcService, 1),
 		},
@@ -150,9 +147,7 @@ func TestServiceBinderCheckSecurityConfigWarnsForNonProdMissingAuth(t *testing.T
 
 func TestServiceBinderCheckSecurityConfigFailsProdGatewayWithoutCors(t *testing.T) {
 	binder := &ServiceBinder{
-		AppParams: mfx.AppParams{
-			Deployment: "prod-aws",
-		},
+		Deployment: "prod-aws",
 		SettingsParams: sfx.SettingsParams{
 			CorsAllowOrigins: " ",
 		},

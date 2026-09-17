@@ -11,9 +11,11 @@ applications, IoT messaging, and microservices architectures.
 
 A simple channel based message queue for local message passing.
 
+Topics use `nats://name` or `local://name`. Kafka and NSQ prefixes are not implemented.
+
 ## Modules:
 
-* `Module`: mq modules init
+* `Module`: mq settings + topic router (pair with `NatsModule` and/or `LocalModule`)
 
 ## Environment Variables:
 

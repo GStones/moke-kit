@@ -2,11 +2,10 @@ package nosql
 
 import (
 	"context"
+	"fmt"
 	"math"
 	"math/rand"
 	"time"
-
-	"fmt"
 
 	"github.com/gstones/moke-kit/orm/nerrors"
 	"github.com/gstones/moke-kit/orm/nosql/diface"

@@ -5,10 +5,10 @@ Database Adapter
 ## Modules:
 
 * [MongoPureModule](https://github.com/mongodb/mongo-go-driver): MongoDB driver for Go.
-* [GormModule](https://gorm.io/): The fantastic ORM library for Golang, aims to be developer friendly.
 * DocumentStoreModule: Document store adapter, now support MongoDB.
-* RedisModule: redis go client, provide redis(db0) and cache(db1) .
-* RedisCacheModule: redis cache adapter implement.
+* RedisModule: redis go client, provide redis(db0) and cache(db1).
+* RedisCacheModule: redis cache adapter (opt-in; not in the default `orm` module).
+* [GormModule](https://gorm.io/): opt-in only — pass `ofx.GormModule` and inject a `Dialector`.
 
 ## Environment Variables
 

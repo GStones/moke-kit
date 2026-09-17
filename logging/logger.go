@@ -5,9 +5,14 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
-	"github.com/gstones/moke-kit/fxmain/pkg/mfx"
 	"github.com/gstones/moke-kit/utility"
 )
+
+type loggerParams struct {
+	fx.In
+
+	Deployment string `name:"Deployment"`
+}
 
 // NewLogger creates a new logger based on the deployment environment.
 func NewLogger(deployment string) (logger *zap.Logger, err error) {
@@ -27,8 +32,7 @@ func NewLogger(deployment string) (logger *zap.Logger, err error) {
 
 // Module provides a zap logger in container.
 var Module = fx.Provide(
-	func(params mfx.AppParams) (logger *zap.Logger, err error) {
-		logger, err = NewLogger(params.Deployment)
-		return
+	func(params loggerParams) (logger *zap.Logger, err error) {
+		return NewLogger(params.Deployment)
 	},
 )

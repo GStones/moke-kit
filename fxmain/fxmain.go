@@ -12,8 +12,8 @@ import (
 	"go.uber.org/fx"
 )
 
-func appRun(opts ...fx.Option) error {
-	app := internal.NewApp(opts...)
+func appRun(base fx.Option, opts ...fx.Option) error {
+	app := internal.NewApp(base, fx.Options(opts...))
 	if err := app.Run(); err != nil {
 		return err
 	}
@@ -26,13 +26,17 @@ func appRun(opts ...fx.Option) error {
 	return nil
 }
 
-// Main starts the application
+// Main starts a batteries-included app (server + orm + mq + logging).
 func Main(opts ...fx.Option) {
-	if err := appRun(
-		module.AppModule,
-		fx.Options(opts...),
-		fx.Invoke(internal.Launch),
-	); err != nil {
+	if err := appRun(module.AppModule, opts...); err != nil {
+		panic(err)
+	}
+}
+
+// Core starts a thin app (settings + logging only). Pass server/orm/mq modules
+// explicitly when those stacks are needed.
+func Core(opts ...fx.Option) {
+	if err := appRun(module.CoreModule, opts...); err != nil {
 		panic(err)
 	}
 }

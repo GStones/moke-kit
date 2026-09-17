@@ -27,7 +27,7 @@
 
 | 目录 | 作用 |
 | --- | --- |
-| [`fxmain`](./fxmain) | `fxmain.Main(...)` 应用入口 |
+| [`fxmain`](./fxmain) | `fxmain.Main(...)` 全量栈；`fxmain.Core(...)` 精简入口 |
 | [`server`](./server) | gRPC / grpc-gateway / zinx（TCP·WS·KCP） |
 | [`orm`](./orm) | Mongo、Redis/Dragonfly、GORM |
 | [`mq`](./mq) | NATS + 本地 MQ |

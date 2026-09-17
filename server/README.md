@@ -2,8 +2,8 @@
 
 ## Modules:
 
-* `AuthService`: GRpc Authentication service, if you want to use it, you need to implement the `AuthService` interface
-  and inject it. Per request will be checked by the `AuthService` service .
+* `IAuthMiddleware`: gRPC authentication middleware. Implement and inject it; each request is checked.
+* `Module`: settings, cmux, OTel, and the service binder (self-contained — include this from `fxmain.Core` to listen).
 * `ConnectionMuxModule`: GRpc,Http will listen on the same port, and the connection will be handled by
   the `ConnectionMuxModule` .
 * `OTelModule`: grpc open telemetry module:  https://github.com/open-telemetry/opentelemetry-go.
