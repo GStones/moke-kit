@@ -1,15 +1,12 @@
 package internal
 
 import (
+	"context"
+	"fmt"
 	"strings"
 
-	"golang.org/x/net/context"
-
-	"github.com/gstones/moke-kit/mq/miface"
-
-	"github.com/pkg/errors"
-
 	"github.com/gstones/moke-kit/mq/internal/qerrors"
+	"github.com/gstones/moke-kit/mq/miface"
 )
 
 type MessageQueue struct {
@@ -49,7 +46,7 @@ func (m *MessageQueue) Subscribe(
 			}
 
 			if sub, err := m.kafkaMQ.Subscribe(ctx, t, handler, opts...); err != nil {
-				return nil, errors.Wrap(err, qerrors.ErrSubscriptionFailure.Error())
+				return nil, fmt.Errorf("%w: %w", qerrors.ErrSubscriptionFailure, err)
 			} else {
 				return sub, nil
 			}
@@ -60,7 +57,7 @@ func (m *MessageQueue) Subscribe(
 			}
 
 			if sub, err := m.natsMQ.Subscribe(ctx, t, handler, opts...); err != nil {
-				return nil, errors.Wrap(err, qerrors.ErrSubscriptionFailure.Error())
+				return nil, fmt.Errorf("%w: %w", qerrors.ErrSubscriptionFailure, err)
 			} else {
 				return sub, nil
 			}
@@ -69,7 +66,7 @@ func (m *MessageQueue) Subscribe(
 				return nil, qerrors.ErrNoNsqQueue
 			}
 			if sub, err := m.nsqMQ.Subscribe(ctx, t, handler, opts...); err != nil {
-				return nil, errors.Wrap(err, qerrors.ErrSubscriptionFailure.Error())
+				return nil, fmt.Errorf("%w: %w", qerrors.ErrSubscriptionFailure, err)
 			} else {
 				return sub, nil
 			}
@@ -79,7 +76,7 @@ func (m *MessageQueue) Subscribe(
 			}
 
 			if sub, err := m.localMQ.Subscribe(ctx, t, handler, opts...); err != nil {
-				return nil, errors.Wrap(err, qerrors.ErrSubscriptionFailure.Error())
+				return nil, fmt.Errorf("%w: %w", qerrors.ErrSubscriptionFailure, err)
 			} else {
 				return sub, nil
 			}

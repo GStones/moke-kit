@@ -46,8 +46,8 @@ func CreateAppModule() (AppResult, error) {
 	return out, err
 }
 
-// SettingModule is a module that provides the application settings.
-var SettingModule = fx.Provide(
+// SettingsModule is a module that provides the application settings.
+var SettingsModule = fx.Provide(
 	func() (out AppResult, err error) {
 		return CreateAppModule()
 	},

@@ -7,7 +7,7 @@ import (
 )
 
 // This is a convenience mechanism for supporting multi-tenant usage of
-// a single Kafka deployment. When referencing a topic, abstractions within this
+// a single message queue deployment. When referencing a topic, abstractions within this
 // library will prefix the topic name with the namespace.
 //
 // It's important for consumers of this library to understand that this mechanism

@@ -2,7 +2,6 @@ package authfx
 
 import (
 	"context"
-	"sync"
 
 	firebase "firebase.google.com/go/v4"
 	auth2 "firebase.google.com/go/v4/auth"
@@ -16,27 +15,21 @@ import (
 	"github.com/gstones/moke-kit/utility"
 )
 
-// firebase auth middleware
-
-// FirebaseAuthor is auth for grpc middleware
+// FirebaseAuthor authenticates gRPC requests using Firebase ID tokens.
+// https://firebase.google.com/docs/auth/admin/verify-id-tokens
+//
+// Note: VerifyIDToken is used here; it does not check for token revocation.
+// Use VerifyIDTokenAndCheckRevoked if revocation checking is required.
 type FirebaseAuthor struct {
-	client        *auth2.Client
-	mu            sync.RWMutex
-	unAuthMethods map[string]struct{}
+	unauthTracker
+	client *auth2.Client
 }
 
-// Auth will auth every grpc request with firebase
-// https://firebase.google.com/docs/auth/admin/verify-id-tokens
-// NOTE: here we use firebase verifyIDToken to auth every grpc request,not to check the
-// token has not been revoked or disabled.
-// if you need to check the token has not been revoked please use VerifyIDTokenAndCheckRevoked to replace VerifyIDToken.
+// Auth authenticates every incoming gRPC request with Firebase.
 func (d *FirebaseAuthor) Auth(ctx context.Context) (context.Context, error) {
 	method, _ := grpc.Method(ctx)
-	d.mu.RLock()
-	_, skip := d.unAuthMethods[method]
-	d.mu.RUnlock()
-	if skip {
-		return context.WithValue(ctx, utility.WithOutTag, true), nil
+	if d.isUnauth(method) {
+		return context.WithValue(ctx, utility.WithoutTag, true), nil
 	} else if token, err := auth.AuthFromMD(ctx, string(utility.TokenContextKey)); err != nil {
 		return ctx, err
 	} else if resp, err := d.client.VerifyIDToken(ctx, token); err != nil {
@@ -47,17 +40,7 @@ func (d *FirebaseAuthor) Auth(ctx context.Context) (context.Context, error) {
 	}
 }
 
-// AddUnAuthMethod add unauth method
-func (d *FirebaseAuthor) AddUnAuthMethod(method string) {
-	d.mu.Lock()
-	defer d.mu.Unlock()
-	if d.unAuthMethods == nil {
-		d.unAuthMethods = make(map[string]struct{})
-	}
-	d.unAuthMethods[method] = struct{}{}
-}
-
-// FirebaseCheckModule is the firebase Auth module for grpc middleware
+// FirebaseCheckModule is the Firebase auth module for the gRPC middleware.
 var FirebaseCheckModule = fx.Provide(
 	func(
 		l *zap.Logger,
@@ -72,10 +55,9 @@ var FirebaseCheckModule = fx.Provide(
 		if err != nil {
 			return
 		}
-
 		out.AuthMiddleware = &FirebaseAuthor{
+			unauthTracker: newUnauthTracker(),
 			client:        client,
-			unAuthMethods: map[string]struct{}{},
 		}
 		return
 	},

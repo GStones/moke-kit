@@ -14,7 +14,7 @@ import (
 // It includes some required modules like:
 // SettingModule, server.Module, nosql.Module, logging.Module, and mq.Module.
 var AppModule = fx.Module("app",
-	mfx.SettingModule,
+	mfx.SettingsModule,
 	server.Module,
 	nosql.Module,
 	logging.Module,

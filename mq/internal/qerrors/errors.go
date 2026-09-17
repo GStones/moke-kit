@@ -1,6 +1,6 @@
 package qerrors
 
-import "github.com/pkg/errors"
+import "errors"
 
 var (
 	//// mq package scope
@@ -21,12 +21,8 @@ var (
 	ErrNoLocalQueue = errors.New("ErrNoLocalQueue")
 	// ErrInvalidSubscription invalid Subscription
 	ErrInvalidSubscription = errors.New("ErrInvalidSubscription")
-	// ErrDataAlreadySet data payload already set for PubOptions object
-	ErrDataAlreadySet = errors.New("ErrDataAlreadySet")
 	// ErrEmptyTopic empty topic value passed in as argument
 	ErrEmptyTopic = errors.New("ErrEmptyTopic")
-	// ErrSemanticsAlreadySet delivery semantics already set
-	ErrSemanticsAlreadySet = errors.New("ErrSemanticsAlreadySet")
 	// ErrDelayedPublishUnsupported Delayed publishing not supported.
 	ErrDelayedPublishUnsupported = errors.New("ErrDelayedPublishUnsupported")
 )
