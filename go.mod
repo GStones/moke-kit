@@ -41,7 +41,7 @@ require (
 	google.golang.org/grpc v1.83.2 // stay on patched 1.83.x; 1.84.0 has GO-2026-6443 until 1.85
 	google.golang.org/protobuf v1.36.12
 	gopkg.in/fsnotify.v1 v1.4.7
-	gorm.io/gorm v1.31.2
+	gorm.io/gorm v1.25.12 // stay on 1.25.x; 1.31.x Raw().Scan() zeros unselected fields (go-gorm/gorm#7746, fix still open in #7749)
 )
 
 require (
